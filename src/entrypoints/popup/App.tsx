@@ -9,7 +9,7 @@ import {
   paginationAtom,
   isLoadingConversationsAtom,
 } from '@/utils/atoms'
-import { PLATFORM_CONFIG, type Platform } from '@/types'
+import { PLATFORM_CONFIG, type Platform, type Conversation } from '@/types'
 import { cn } from '@/utils/cn'
 
 export default function App() {
@@ -156,7 +156,7 @@ function PlatformTab({
   )
 }
 
-function ConversationItem({ conversation }: { conversation: any }) {
+function ConversationItem({ conversation }: { conversation: Conversation }) {
   const platformConfig = PLATFORM_CONFIG[conversation.platform as Platform]
 
   const handleClick = () => {

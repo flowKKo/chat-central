@@ -1,5 +1,6 @@
 import type { Conversation, Message } from '@/types'
 import type { PlatformAdapter } from './types'
+import { parseJsonIfString, parseSseData } from './helpers'
 
 /**
  * Claude API Endpoint Patterns
@@ -10,44 +11,11 @@ import type { PlatformAdapter } from './types'
  */
 const API_PATTERNS = {
   // Match conversation list
-  list: /\/api\/organizations\/[^/]+\/chat_conversations\/?(\?.*)?$/, 
+  list: /\/api\/organizations\/[^/]+\/chat_conversations\/?(\?.*)?$/,
   // Match conversation detail (exclude completion etc. subpaths)
-  detail: /\/api\/organizations\/[^/]+\/chat_conversations\/([a-f0-9-]+)\/?(?:\?.*)?$/, 
+  detail: /\/api\/organizations\/[^/]+\/chat_conversations\/([a-f0-9-]+)\/?(?:\?.*)?$/,
   // Match message stream
-  stream: /\/api\/organizations\/[^/]+\/chat_conversations\/([a-f0-9-]+)\/completion(?:\?.*)?$/, 
-}
-
-function parseJsonIfString(data: unknown): unknown {
-  if (typeof data !== 'string') return data
-  let text = data.trim()
-  if (!text) return null
-
-  if (text.startsWith("))}'")) {
-    const newlineIndex = text.indexOf('\n')
-    if (newlineIndex !== -1) {
-      text = text.slice(newlineIndex + 1).trimStart()
-    }
-  }
-
-  try {
-    return JSON.parse(text)
-  } catch {
-    return null
-  }
-}
-
-function parseSseData(raw: string): string[] {
-  return raw
-    .split(/\n\n+/) 
-    .map((block) =>
-      block
-        .split('\n')
-        .filter((line) => line.startsWith('data:'))
-        .map((line) => line.slice(5).trimStart())
-        .join('\n')
-        .trim()
-    )
-    .filter((data) => data.length > 0)
+  stream: /\/api\/organizations\/[^/]+\/chat_conversations\/([a-f0-9-]+)\/completion(?:\?.*)?$/,
 }
 
 function extractClaudeContent(payload: any): string {

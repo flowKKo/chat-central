@@ -1,5 +1,6 @@
 import type { Conversation, Message } from '@/types'
 import type { PlatformAdapter } from './types'
+import { parseJsonIfString, parseSseData } from './helpers'
 
 /**
  * ChatGPT API Endpoint Patterns
@@ -10,44 +11,11 @@ import type { PlatformAdapter } from './types'
  */
 const API_PATTERNS = {
   // Match conversation list
-  list: /\/backend-api\/conversations(\?.*)?$/, 
+  list: /\/backend-api\/conversations(\?.*)?$/,
   // Match conversation detail
-  detail: /\/backend-api\/conversation\/([a-f0-9-]+)\/?(?:\?.*)?$/, 
+  detail: /\/backend-api\/conversation\/([a-f0-9-]+)\/?(?:\?.*)?$/,
   // Match message stream POST
-  stream: /\/backend-api\/conversation\/?(?:\?.*)?$/, 
-}
-
-function parseJsonIfString(data: unknown): unknown {
-  if (typeof data !== 'string') return data
-  let text = data.trim()
-  if (!text) return null
-
-  if (text.startsWith(")))}'")) {
-    const newlineIndex = text.indexOf('\n')
-    if (newlineIndex !== -1) {
-      text = text.slice(newlineIndex + 1).trimStart()
-    }
-  }
-
-  try {
-    return JSON.parse(text)
-  } catch {
-    return null
-  }
-}
-
-function parseSseData(raw: string): string[] {
-  return raw
-    .split(/\n\n+/) 
-    .map((block) =>
-      block
-        .split('\n')
-        .filter((line) => line.startsWith('data:'))
-        .map((line) => line.slice(5).trimStart())
-        .join('\n')
-        .trim()
-    )
-    .filter((data) => data.length > 0)
+  stream: /\/backend-api\/conversation\/?(?:\?.*)?$/,
 }
 
 function extractContent(msg: any): string {
