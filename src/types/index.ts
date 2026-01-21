@@ -61,6 +61,10 @@ export const conversationSchema = z.object({
   tags: z.array(z.string()),
   // Last synced time
   syncedAt: z.number(),
+  // Detail sync status
+  detailStatus: z.enum(['none', 'partial', 'full']),
+  // Detail last synced time
+  detailSyncedAt: z.number().nullable(),
   // Original URL
   url: z.string().optional(),
 })

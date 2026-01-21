@@ -16,6 +16,18 @@ export class ChatCentralDB extends Dexie {
       conversations: 'id, platform, updatedAt, syncedAt, *tags',
       messages: 'id, conversationId, createdAt',
     })
+
+    this.version(2)
+      .stores({
+        conversations: 'id, platform, updatedAt, syncedAt, *tags',
+        messages: 'id, conversationId, createdAt',
+      })
+      .upgrade(async (tx) => {
+        await tx.table('conversations').toCollection().modify((conv) => {
+          if (!('detailStatus' in conv)) conv.detailStatus = 'none'
+          if (!('detailSyncedAt' in conv)) conv.detailSyncedAt = null
+        })
+      })
   }
 }
 
@@ -44,6 +56,16 @@ export async function getConversations(options?: {
 
 export async function getConversationById(id: string): Promise<Conversation | undefined> {
   return db.conversations.get(id)
+}
+
+export async function getExistingMessageIds(ids: string[]): Promise<Set<string>> {
+  if (ids.length === 0) return new Set()
+  const results = await db.messages.bulkGet(ids)
+  const existing = new Set<string>()
+  for (const msg of results) {
+    if (msg?.id) existing.add(msg.id)
+  }
+  return existing
 }
 
 export async function getConversationByOriginalId(

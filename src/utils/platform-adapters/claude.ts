@@ -116,6 +116,8 @@ export const claudeAdapter: PlatformAdapter = {
             preview: item.preview || '',
             tags: [],
             syncedAt: now,
+            detailStatus: 'none',
+            detailSyncedAt: null,
             url: this.buildConversationUrl(originalId),
           }
 
@@ -154,6 +156,8 @@ export const claudeAdapter: PlatformAdapter = {
       preview: '',
       tags: [],
       syncedAt: now,
+      detailStatus: 'full',
+      detailSyncedAt: now,
       url: this.buildConversationUrl(originalId),
     }
 
@@ -279,6 +283,8 @@ export const claudeAdapter: PlatformAdapter = {
       preview: content.slice(0, 200),
       tags: [],
       syncedAt: now,
+      detailStatus: 'partial',
+      detailSyncedAt: now,
       url: this.buildConversationUrl(conversationId),
     }
 

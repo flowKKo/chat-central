@@ -19,11 +19,10 @@ import {
   selectedConversationAtom,
   selectedMessagesAtom,
   loadConversationDetailAtom,
-  clearSelectionAtom,
   paginationAtom,
   isLoadingConversationsAtom,
 } from '@/utils/atoms'
-import { PLATFORM_CONFIG, type Platform, type Conversation } from '@/types'
+import { PLATFORM_CONFIG, type Platform, type Conversation, type Message } from '@/types'
 import { clearAllData, clearPlatformData } from '@/utils/db'
 import { cn } from '@/utils/cn'
 
@@ -105,7 +104,6 @@ function ConversationsTab() {
   const [selectedConversation] = useAtom(selectedConversationAtom)
   const [selectedMessages] = useAtom(selectedMessagesAtom)
   const [, loadDetail] = useAtom(loadConversationDetailAtom)
-  const [, clearSelection] = useAtom(clearSelectionAtom)
   const [pagination] = useAtom(paginationAtom)
   const [isLoading] = useAtom(isLoadingConversationsAtom)
 
@@ -203,7 +201,6 @@ function ConversationsTab() {
           <ConversationDetail
             conversation={selectedConversation}
             messages={selectedMessages}
-            onClose={clearSelection}
           />
         ) : (
           <div className="h-[600px] border border-dashed border-border rounded-lg flex items-center justify-center text-muted-foreground">
@@ -258,10 +255,10 @@ function ConversationDetail({
   messages,
 }: {
   conversation: Conversation
-  messages: any[]
-  onClose: () => void
+  messages: Message[]
 }) {
   const platformConfig = PLATFORM_CONFIG[conversation.platform]
+  const needsSync = conversation.detailStatus !== 'full' || messages.length === 0
 
   const handleExport = () => {
     const content = messages
@@ -313,21 +310,38 @@ function ConversationDetail({
             </button>
           </div>
         </div>
+        {needsSync && (
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+            <span>Not synced / Summary only. Open original chat to sync.</span>
+            <button
+              className="px-3 py-1.5 text-xs border border-border rounded-md hover:bg-muted transition-colors"
+              onClick={() => conversation.url && browser.tabs.create({ url: conversation.url })}
+            >
+              Open to sync
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Messages */}
       <div className="max-h-[500px] overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={cn('p-3 rounded-lg', message.role === 'user' ? 'bg-muted' : 'bg-card border border-border')}
-          >
-            <div className="text-xs font-medium text-muted-foreground mb-2">
-              {message.role === 'user' ? 'You' : 'Assistant'}
-            </div>
-            <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+        {messages.length === 0 ? (
+          <div className="p-6 text-center text-sm text-muted-foreground">
+            No synced messages yet.
           </div>
-        ))}
+        ) : (
+          messages.map((message) => (
+            <div
+              key={message.id}
+              className={cn('p-3 rounded-lg', message.role === 'user' ? 'bg-muted' : 'bg-card border border-border')}
+            >
+              <div className="text-xs font-medium text-muted-foreground mb-2">
+                {message.role === 'user' ? 'You' : 'Assistant'}
+              </div>
+              <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )

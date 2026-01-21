@@ -3,8 +3,9 @@ import { browser } from 'wxt/browser'
 import { getAdapterForUrl, type PlatformAdapter } from '@/utils/platform-adapters'
 import {
   upsertConversation,
-  upsertConversations,
   upsertMessages,
+  getConversationById,
+  getExistingMessageIds,
   getConversations,
   getMessagesByConversationId,
   getDBStats,
@@ -124,7 +125,9 @@ async function processConversationList(
 
   console.log(`[ChatCentral] Parsed ${conversations.length} conversations from ${adapter.platform}`)
 
-  await upsertConversations(conversations)
+  for (const conversation of conversations) {
+    await upsertConversationMerged(conversation)
+  }
 
   return { success: true, count: conversations.length }
 }
@@ -149,10 +152,7 @@ async function processConversationDetail(
     `[ChatCentral] Parsed conversation "${conversation.title}" with ${messages.length} messages`
   )
 
-  await upsertConversation(conversation)
-  if (messages.length > 0) {
-    await upsertMessages(messages)
-  }
+  await applyConversationUpdate(conversation, messages, 'full')
 
   return { success: true, count: messages.length }
 }
@@ -177,10 +177,7 @@ async function processStreamResponse(
   }
 
   const { conversation, messages } = result
-  await upsertConversation(conversation)
-  if (messages.length > 0) {
-    await upsertMessages(messages)
-  }
+  await applyConversationUpdate(conversation, messages, 'partial')
 
   return { success: true, count: messages.length }
 }
@@ -195,31 +192,153 @@ async function processUnknownResponse(
 ): Promise<{ success: boolean; count: number }> {
   const list = adapter.parseConversationList(data)
   if (list.length > 0) {
-    await upsertConversations(list)
+    for (const conversation of list) {
+      await upsertConversationMerged(conversation)
+    }
     return { success: true, count: list.length }
   }
 
   const detail = adapter.parseConversationDetail(data)
   if (detail) {
-    await upsertConversation(detail.conversation)
-    if (detail.messages.length > 0) {
-      await upsertMessages(detail.messages)
-    }
+    await applyConversationUpdate(detail.conversation, detail.messages, 'full')
     return { success: true, count: detail.messages.length }
   }
 
   if (adapter.parseStreamResponse) {
     const stream = adapter.parseStreamResponse(data, url)
     if (stream) {
-      await upsertConversation(stream.conversation)
-      if (stream.messages.length > 0) {
-        await upsertMessages(stream.messages)
-      }
+      await applyConversationUpdate(stream.conversation, stream.messages, 'partial')
       return { success: true, count: stream.messages.length }
     }
   }
 
   return { success: false, count: 0 }
+}
+
+type DetailStatus = 'none' | 'partial' | 'full'
+
+function rankDetailStatus(status: DetailStatus): number {
+  switch (status) {
+    case 'full':
+      return 2
+    case 'partial':
+      return 1
+    default:
+      return 0
+  }
+}
+
+function mergeConversation(existing: Conversation, incoming: Conversation): Conversation {
+  const incomingIsNewer = incoming.updatedAt > existing.updatedAt
+  const existingRank = rankDetailStatus(existing.detailStatus)
+  const incomingRank = rankDetailStatus(incoming.detailStatus)
+  let detailStatus = incomingRank >= existingRank ? incoming.detailStatus : existing.detailStatus
+  let detailSyncedAt =
+    incomingRank >= existingRank
+      ? Math.max(existing.detailSyncedAt ?? 0, incoming.detailSyncedAt ?? 0) || null
+      : existing.detailSyncedAt ?? null
+
+  if (incomingIsNewer && existing.detailStatus === 'full' && incomingRank < existingRank) {
+    detailStatus = 'partial'
+    detailSyncedAt = existing.detailSyncedAt ?? null
+  }
+
+  const title = incoming.title || existing.title
+  const preview =
+    incomingIsNewer && incoming.preview ? incoming.preview : existing.preview || incoming.preview
+  const messageCount = Math.max(existing.messageCount, incoming.messageCount)
+
+  return {
+    ...existing,
+    ...incoming,
+    title,
+    preview,
+    messageCount,
+    createdAt: Math.min(existing.createdAt, incoming.createdAt),
+    updatedAt: Math.max(existing.updatedAt, incoming.updatedAt),
+    syncedAt: Math.max(existing.syncedAt, incoming.syncedAt),
+    detailStatus,
+    detailSyncedAt,
+    url: existing.url ?? incoming.url,
+  }
+}
+
+async function upsertConversationMerged(conversation: Conversation): Promise<void> {
+  const existing = await getConversationById(conversation.id)
+  if (!existing) {
+    await upsertConversation(conversation)
+    return
+  }
+
+  await upsertConversation(mergeConversation(existing, conversation))
+}
+
+async function updateConversationFromMessages(
+  conversationId: string,
+  messages: Message[],
+  options: { mode: 'full' | 'partial'; existingIds?: Set<string> }
+): Promise<void> {
+  const existing = await getConversationById(conversationId)
+  if (!existing) return
+
+  const sortedMessages = [...messages].sort((a, b) => a.createdAt - b.createdAt)
+  let existingIds = options.existingIds
+  let newMessages = messages
+  let newCount = messages.length
+  if (options.mode === 'partial') {
+    if (!existingIds) {
+      existingIds = await getExistingMessageIds(messages.map((message) => message.id))
+    }
+    const knownIds = existingIds ?? new Set<string>()
+    newMessages = messages.filter((message) => !knownIds.has(message.id))
+    newCount = newMessages.length
+  }
+
+  const maxCreatedAt = messages.reduce((acc, message) => Math.max(acc, message.createdAt), 0)
+  const updatedAt = Math.max(existing.updatedAt, maxCreatedAt || existing.updatedAt)
+
+  let preview = existing.preview
+  if (options.mode === 'full') {
+    const firstUser = sortedMessages.find((message) => message.role === 'user')
+    preview = (firstUser?.content || sortedMessages[0]?.content || preview).slice(0, 200)
+  } else {
+    const latestUserMessage = [...newMessages].reverse().find((message) => message.role === 'user')
+    if (latestUserMessage) {
+      preview = latestUserMessage.content.slice(0, 200)
+    }
+  }
+
+  const messageCount =
+    options.mode === 'full' ? messages.length : existing.messageCount + newCount
+
+  await upsertConversation({
+    ...existing,
+    updatedAt,
+    preview,
+    messageCount,
+  })
+}
+
+async function applyConversationUpdate(
+  conversation: Conversation,
+  messages: Message[],
+  mode: 'full' | 'partial'
+): Promise<void> {
+  await upsertConversationMerged({
+    ...conversation,
+    detailStatus: mode === 'full' ? 'full' : 'partial',
+    detailSyncedAt: Date.now(),
+  })
+
+  if (messages.length === 0) return
+
+  const existingIds =
+    mode === 'partial'
+      ? await getExistingMessageIds(messages.map((message) => message.id))
+      : undefined
+
+  await upsertMessages(messages)
+  await updateConversationFromMessages(conversation.id, messages, { mode, existingIds })
 }
 
 /**

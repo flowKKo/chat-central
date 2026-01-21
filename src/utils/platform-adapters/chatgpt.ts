@@ -109,6 +109,8 @@ export const chatgptAdapter: PlatformAdapter = {
             preview: item.snippet || '',
             tags: [],
             syncedAt: now,
+            detailStatus: 'none',
+            detailSyncedAt: null,
             url: this.buildConversationUrl(originalId),
           }
 
@@ -164,6 +166,8 @@ export const chatgptAdapter: PlatformAdapter = {
       preview: '',
       tags: [],
       syncedAt: now,
+      detailStatus: 'full',
+      detailSyncedAt: now,
       url: this.buildConversationUrl(originalId),
     }
 
@@ -314,6 +318,8 @@ export const chatgptAdapter: PlatformAdapter = {
       preview: previewSource.slice(0, 200),
       tags: [],
       syncedAt: now,
+      detailStatus: 'partial',
+      detailSyncedAt: now,
       url: this.buildConversationUrl(conversationId),
     }
 

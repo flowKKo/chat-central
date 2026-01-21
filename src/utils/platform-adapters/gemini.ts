@@ -206,6 +206,8 @@ function buildConversation(id: string, title: string, createdAt: number, now: nu
     preview: '',
     tags: [],
     syncedAt: now,
+    detailStatus: 'none',
+    detailSyncedAt: null,
     url: `${GEMINI_APP_URL}${normalizedId}`,
   }
 }
@@ -402,6 +404,8 @@ function parseConversationDetailPayload(payload: unknown, now: number) {
       preview: preview.slice(0, 200),
       tags: [],
       syncedAt: now,
+      detailStatus: 'full' as const,
+      detailSyncedAt: now,
       url: `${GEMINI_APP_URL}${conversationId}`,
     },
     messages,
