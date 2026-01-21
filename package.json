@@ -16,6 +16,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",
+    "generate:ai-guides": "node scripts/generate-ai-guides.js",
     "postinstall": "wxt prepare"
   },
   "dependencies": {
