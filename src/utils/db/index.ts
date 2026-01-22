@@ -237,6 +237,37 @@ export async function searchConversations(query: string): Promise<Conversation[]
     .toArray()
 }
 
+export async function searchConversationsAndMessages(query: string): Promise<Conversation[]> {
+  const lowerQuery = query.toLowerCase()
+
+  // 1. Find conversations with matching titles
+  const titleMatches = await db.conversations
+    .filter((conv) => conv.title.toLowerCase().includes(lowerQuery))
+    .primaryKeys()
+
+  // 2. Find messages with matching content
+  // We limit to 500 matches to prevent performance issues
+  const messageMatches = await db.messages
+    .filter((msg) => msg.content.toLowerCase().includes(lowerQuery))
+    .limit(500)
+    .toArray()
+  
+  const messageConvIds = messageMatches.map((m) => m.conversationId)
+
+  // 3. Combine unique Conversation IDs
+  const allIds = new Set([...titleMatches, ...messageConvIds])
+
+  // 4. Fetch full conversation objects
+  // We assume the number of unique matches isn't massive (e.g. < 1000)
+  // If it grows, we might need to paginate this search too.
+  const results = await db.conversations.bulkGet(Array.from(allIds))
+  
+  // Filter out undefined and sort by updatedAt desc
+  return results
+    .filter((c): c is Conversation => !!c)
+    .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+}
+
 export async function searchMessages(query: string): Promise<Message[]> {
   const lowerQuery = query.toLowerCase()
 

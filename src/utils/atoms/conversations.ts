@@ -8,6 +8,7 @@ import {
   getFavoriteConversationCount,
   upsertMessages,
   deleteMessagesByConversationId,
+  searchConversationsAndMessages,
 } from '@/utils/db'
 
 // ============================================================================
@@ -227,6 +228,42 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
 })
 
 /**
+ * Perform search
+ */
+export const performSearchAtom = atom(null, async (_get, set, query: string) => {
+  if (!query.trim()) {
+    // Reset to normal view
+    await set(loadConversationsAtom, { reset: true })
+    return
+  }
+
+  set(isLoadingConversationsAtom, true)
+
+  try {
+    const results = await searchConversationsAndMessages(query)
+    
+    set(conversationsAtom, results)
+    
+    // Disable pagination for search results for now
+    set(paginationAtom, {
+      offset: 0,
+      limit: results.length,
+      hasMore: false,
+    })
+
+    // Update total count in stats to reflect search result count (optional, but helps UI)
+    // Actually, keeping the original counts is probably better for context, 
+    // but the UI might show "Showing X of Y". 
+    // For now, let's leave the global counts alone as they represent the DB state.
+
+  } catch (e) {
+    console.error('[ChatCentral] Failed to search:', e)
+  } finally {
+    set(isLoadingConversationsAtom, false)
+  }
+})
+
+/**
  * Load favorite conversation list
  */
 export const loadFavoritesAtom = atom(null, async (get, set, options?: { reset?: boolean }) => {
@@ -356,7 +393,7 @@ export const toggleFavoriteAtom = atom(
         value,
       })) as { conversation?: Conversation | null } | undefined
 
-      const updated: Conversation | null = response?.conversation ?? null
+      const updated: Conversation | null = (response as any)?.conversation ?? null
       if (!updated) return
 
       const applyUpdate = (list: Conversation[]) =>
