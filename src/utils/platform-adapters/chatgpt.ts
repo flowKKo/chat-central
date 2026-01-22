@@ -18,6 +18,25 @@ const API_PATTERNS = {
   stream: /\/backend-api\/conversation\/?(?:\?.*)?$/,
 }
 
+function parseChatGptTimestamp(value: any, fallback: number): number {
+  if (typeof value === 'number') {
+    return value > 1e12 ? value : value * 1000
+  }
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value)
+    if (!Number.isNaN(parsed)) return parsed
+  }
+  return fallback
+}
+
+function normalizeConversationItems(payload: any): any[] | null {
+  if (!payload || typeof payload !== 'object') return null
+  if (Array.isArray(payload.items)) return payload.items
+  if (Array.isArray(payload.conversations)) return payload.conversations
+  if (Array.isArray(payload.data?.items)) return payload.data.items
+  return null
+}
+
 function extractContent(msg: any): string {
   if (!msg) return ''
   if (Array.isArray(msg.content?.parts)) {
@@ -46,14 +65,9 @@ export const chatgptAdapter: PlatformAdapter = {
     // ChatGPT returned format
     // { items: [{ id, title, create_time, update_time, ... }], ... }
     const parsed = parseJsonIfString(data)
-    if (!parsed || typeof parsed !== 'object') {
+    const items = normalizeConversationItems(parsed)
+    if (!items) {
       console.warn('[ChatCentral] ChatGPT: Invalid conversation list data')
-      return []
-    }
-
-    const items = (parsed as any).items
-    if (!Array.isArray(items)) {
-      console.warn('[ChatCentral] ChatGPT: Expected items array')
       return []
     }
 
@@ -65,16 +79,19 @@ export const chatgptAdapter: PlatformAdapter = {
           const originalId = item.id
           if (!originalId) return null
 
+          const createdAt = parseChatGptTimestamp(item.create_time, now)
+          const updatedAt = parseChatGptTimestamp(item.update_time, createdAt)
+          const previewSource = item.snippet || item.title || ''
+
           const conversation: Conversation = {
             id: `chatgpt_${originalId}`,
             platform: 'chatgpt',
             originalId,
             title: item.title || 'New chat',
-            // ChatGPT uses Unix timestamp (seconds)
-            createdAt: item.create_time ? item.create_time * 1000 : now,
-            updatedAt: item.update_time ? item.update_time * 1000 : now,
+            createdAt,
+            updatedAt,
             messageCount: 0, // No message count in the list
-            preview: item.snippet || '',
+            preview: previewSource,
             tags: [],
             syncedAt: now,
             detailStatus: 'none',
@@ -125,13 +142,16 @@ export const chatgptAdapter: PlatformAdapter = {
 
     const now = Date.now()
 
+    const createdAt = parseChatGptTimestamp(item.create_time, now)
+    const updatedAt = parseChatGptTimestamp(item.update_time, createdAt)
+
     const conversation: Conversation = {
       id: `chatgpt_${originalId}`,
       platform: 'chatgpt',
       originalId,
       title: item.title || 'New chat',
-      createdAt: item.create_time ? item.create_time * 1000 : now,
-      updatedAt: item.update_time ? item.update_time * 1000 : now,
+      createdAt,
+      updatedAt,
       messageCount: 0,
       preview: '',
       tags: [],
@@ -175,7 +195,7 @@ export const chatgptAdapter: PlatformAdapter = {
             conversationId: conversation.id,
             role,
             content,
-            createdAt: msg.create_time ? msg.create_time * 1000 : now,
+            createdAt: parseChatGptTimestamp(msg.create_time, now),
             _raw: msg,
           })
         } catch (e) {
@@ -246,7 +266,7 @@ export const chatgptAdapter: PlatformAdapter = {
       const content = extractContent(msg)
       if (!content) continue
 
-      const createdAt = msg.create_time ? msg.create_time * 1000 : now
+      const createdAt = parseChatGptTimestamp(msg.create_time, now)
       const id = `chatgpt_${messageId}`
 
       const existing = messagesById.get(id)
