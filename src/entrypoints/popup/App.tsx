@@ -119,7 +119,7 @@ export default function App() {
           </div>
           <button
             className="text-primary hover:underline"
-            onClick={() => browser.runtime.openOptionsPage()}
+            onClick={() => browser.tabs.create({ url: browser.runtime.getURL('manage.html') })}
           >
             Manage
           </button>

@@ -190,21 +190,26 @@ async function processUnknownResponse(
   data: unknown,
   url: string
 ): Promise<{ success: boolean; count: number }> {
+  let handled = false
+  let count = 0
+
+  const detail = adapter.parseConversationDetail(data)
+  if (detail) {
+    await applyConversationUpdate(detail.conversation, detail.messages, 'full')
+    handled = true
+    count = detail.messages.length
+  }
+
   const list = adapter.parseConversationList(data)
   if (list.length > 0) {
     for (const conversation of list) {
       await upsertConversationMerged(conversation)
     }
-    return { success: true, count: list.length }
+    handled = true
+    if (!detail) count = list.length
   }
 
-  const detail = adapter.parseConversationDetail(data)
-  if (detail) {
-    await applyConversationUpdate(detail.conversation, detail.messages, 'full')
-    return { success: true, count: detail.messages.length }
-  }
-
-  if (adapter.parseStreamResponse) {
+  if (!handled && adapter.parseStreamResponse) {
     const stream = adapter.parseStreamResponse(data, url)
     if (stream) {
       await applyConversationUpdate(stream.conversation, stream.messages, 'partial')
@@ -212,7 +217,7 @@ async function processUnknownResponse(
     }
   }
 
-  return { success: false, count: 0 }
+  return { success: handled, count }
 }
 
 type DetailStatus = 'none' | 'partial' | 'full'
