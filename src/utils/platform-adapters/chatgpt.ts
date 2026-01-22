@@ -32,7 +32,7 @@ export const chatgptAdapter: PlatformAdapter = {
   platform: 'chatgpt',
 
   shouldCapture(url: string): boolean {
-    return url.includes('/backend-api/conversation')
+    return url.includes('/backend-api/conversation') || url.includes('/backend-api/conversations')
   },
 
   getEndpointType(url: string): 'list' | 'detail' | 'stream' | 'unknown' {

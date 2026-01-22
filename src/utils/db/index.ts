@@ -76,7 +76,35 @@ export async function getConversations(options?: {
     query = query.filter((conv) => conv.isFavorite)
   }
 
-  return query.offset(offset).limit(limit).toArray()
+  const results = await query.offset(offset).limit(limit).toArray()
+  if (results.length > 0) return results
+
+  const totalCount = platform
+    ? await db.conversations.where('platform').equals(platform).count()
+    : await db.conversations.count()
+
+  if (totalCount === 0) return results
+
+  const all = await db.conversations.toArray()
+  let filtered = all
+  if (platform) filtered = filtered.filter((conv) => conv.platform === platform)
+  if (favoritesOnly) filtered = filtered.filter((conv) => conv.isFavorite)
+
+  const score = (conv: Conversation) => {
+    switch (orderBy) {
+      case 'createdAt':
+        return conv.createdAt ?? 0
+      case 'syncedAt':
+        return conv.syncedAt ?? 0
+      case 'favoriteAt':
+        return conv.favoriteAt ?? 0
+      default:
+        return conv.updatedAt ?? 0
+    }
+  }
+
+  filtered.sort((a, b) => score(b) - score(a))
+  return filtered.slice(offset, offset + limit)
 }
 
 export async function getConversationById(id: string): Promise<Conversation | undefined> {

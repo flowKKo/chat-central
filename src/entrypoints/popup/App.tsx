@@ -44,6 +44,13 @@ export default function App() {
     return true
   })
 
+  const sortedConversations = [...filteredConversations].sort((a, b) => {
+    const primaryA = showFavoritesOnly ? a.favoriteAt ?? 0 : a.updatedAt ?? 0
+    const primaryB = showFavoritesOnly ? b.favoriteAt ?? 0 : b.updatedAt ?? 0
+    if (primaryA !== primaryB) return primaryB - primaryA
+    return (b.updatedAt ?? 0) - (a.updatedAt ?? 0)
+  })
+
   return (
     <div className="w-[400px] min-h-[500px] max-h-[600px] flex flex-col bg-background text-foreground">
       {/* Header */}
@@ -107,7 +114,7 @@ export default function App() {
           <EmptyState searchQuery={searchQuery} />
         ) : (
           <div className="divide-y divide-border">
-            {filteredConversations.map((conv) => (
+            {sortedConversations.map((conv) => (
               <ConversationItem key={conv.id} conversation={conv} />
             ))}
             {pagination.hasMore && (

@@ -54,6 +54,13 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
     return true
   })
 
+  const sortedConversations = [...filteredConversations].sort((a, b) => {
+    const primaryA = isFavorites ? a.favoriteAt ?? 0 : a.updatedAt ?? 0
+    const primaryB = isFavorites ? b.favoriteAt ?? 0 : b.updatedAt ?? 0
+    if (primaryA !== primaryB) return primaryB - primaryA
+    return (b.updatedAt ?? 0) - (a.updatedAt ?? 0)
+  })
+
   const emptyLabel = isFavorites ? 'No favorites yet' : 'No conversations found'
 
   return (
@@ -102,7 +109,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
           {filteredConversations.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">{emptyLabel}</div>
           ) : (
-            filteredConversations.map((conv) => (
+            sortedConversations.map((conv) => (
               <ConversationListItem
                 key={conv.id}
                 conversation={conv}

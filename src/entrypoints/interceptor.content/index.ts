@@ -38,7 +38,7 @@ function shouldCapture(url: string): boolean {
     return true
   }
   // ChatGPT
-  if (url.includes('/backend-api/conversation')) {
+  if (url.includes('/backend-api/conversation') || url.includes('/backend-api/conversations')) {
     return true
   }
   // Gemini

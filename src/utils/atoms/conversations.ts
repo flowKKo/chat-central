@@ -6,6 +6,8 @@ import {
   getMessagesByConversationId,
   getConversationCount,
   getFavoriteConversationCount,
+  upsertMessages,
+  deleteMessagesByConversationId,
 } from '@/utils/db'
 
 // ============================================================================
@@ -295,7 +297,9 @@ export const loadConversationDetailAtom = atom(null, async (get, set, conversati
       set(selectedConversationAtom, conversation)
     }
 
-    const messages = await getMessagesByConversationId(conversationId)
+    const messages = conversation
+      ? await loadMessagesWithFallback(conversation)
+      : await getMessagesByConversationId(conversationId)
     set(selectedMessagesAtom, messages)
   } catch (e) {
     console.error('[ChatCentral] Failed to load conversation detail:', e)
@@ -319,7 +323,9 @@ export const loadFavoriteDetailAtom = atom(null, async (get, set, conversationId
       set(selectedConversationAtom, conversation)
     }
 
-    const messages = await getMessagesByConversationId(conversationId)
+    const messages = conversation
+      ? await loadMessagesWithFallback(conversation)
+      : await getMessagesByConversationId(conversationId)
     set(selectedMessagesAtom, messages)
   } catch (e) {
     console.error('[ChatCentral] Failed to load favorite conversation detail:', e)
@@ -396,3 +402,29 @@ export const toggleFavoriteAtom = atom(
     }
   }
 )
+
+async function loadMessagesWithFallback(conversation: Conversation): Promise<Message[]> {
+  const primary = await getMessagesByConversationId(conversation.id)
+  if (primary.length > 0) return primary
+
+  if (conversation.platform !== 'gemini') return primary
+
+  const originalId = conversation.originalId
+  const altId = originalId.startsWith('c_')
+    ? `gemini_${originalId.slice(2)}`
+    : `gemini_c_${originalId}`
+
+  if (altId === conversation.id) return primary
+
+  const legacyMessages = await getMessagesByConversationId(altId)
+  if (legacyMessages.length === 0) return primary
+
+  const migrated = legacyMessages.map((msg) => ({
+    ...msg,
+    conversationId: conversation.id,
+  }))
+
+  await upsertMessages(migrated)
+  await deleteMessagesByConversationId(altId)
+  return migrated
+}
