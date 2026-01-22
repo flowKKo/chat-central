@@ -18,6 +18,7 @@ import {
   isLoadingFavoritesAtom,
   loadFavoriteDetailAtom,
   toggleFavoriteAtom,
+  performSearchAtom,
 } from '@/utils/atoms'
 import { PLATFORM_CONFIG, type Platform, type Conversation, type Message } from '@/types'
 import { cn } from '@/utils/cn'
@@ -35,6 +36,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
   const [pagination] = useAtom(isFavorites ? favoritesPaginationAtom : paginationAtom)
   const [isLoading] = useAtom(isFavorites ? isLoadingFavoritesAtom : isLoadingConversationsAtom)
   const [, toggleFavorite] = useAtom(toggleFavoriteAtom)
+  const [, searchConversations] = useAtom(performSearchAtom)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all')
@@ -43,14 +45,32 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
     loadConversations({ reset: true })
   }, [loadConversations])
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Only perform DB search for 'all' mode. Favorites usually are few enough for local filter,
+      // but for consistency we could search DB too. However, favorites search isn't implemented in DB yet (specifically).
+      // The current searchConversationsAndMessages searches ALL conversations.
+      // If we are in 'favorites' mode, we might want to stick to local filtering or filter the DB results.
+      // Given the requirement is generally "search", let's apply it to the main list.
+      if (!isFavorites) {
+        searchConversations(searchQuery)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery, searchConversations, isFavorites])
+
   const filteredConversations = conversations.filter((conv) => {
     if (selectedPlatform !== 'all' && conv.platform !== selectedPlatform) {
       return false
     }
-    if (searchQuery) {
+    // If in favorites mode, we keep local search
+    if (isFavorites && searchQuery) {
       const query = searchQuery.toLowerCase()
+      // For favorites, we might miss content matches if we don't load full content. 
+      // But for now, let's keep it simple for favorites (title/preview).
       return conv.title.toLowerCase().includes(query) || conv.preview.toLowerCase().includes(query)
     }
+    // For normal mode, the list is already filtered by DB search (performSearchAtom)
     return true
   })
 
