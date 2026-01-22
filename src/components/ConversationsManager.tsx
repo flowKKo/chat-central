@@ -290,14 +290,25 @@ function ConversationDetail({
             <div
               key={message.id}
               className={cn(
-                'p-3 rounded-lg',
-                message.role === 'user' ? 'bg-muted' : 'bg-card border border-border'
+                'flex',
+                message.role === 'user' ? 'justify-end' : 'justify-start'
               )}
             >
-              <div className="text-xs font-medium text-muted-foreground mb-2">
-                {message.role === 'user' ? 'You' : 'Assistant'}
+              <div
+                className={cn(
+                  'max-w-[75%] rounded-lg px-3 py-2',
+                  message.role === 'user'
+                    ? 'bg-primary/10 text-foreground'
+                    : 'bg-card border border-border'
+                )}
+              >
+                <div className="text-[11px] font-medium text-muted-foreground mb-1">
+                  {message.role === 'user' ? 'You' : 'Assistant'}
+                </div>
+                <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {message.content}
+                </div>
               </div>
-              <div className="text-sm whitespace-pre-wrap">{message.content}</div>
             </div>
           ))
         )}

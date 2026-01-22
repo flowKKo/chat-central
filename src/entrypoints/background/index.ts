@@ -1,11 +1,13 @@
 import { defineBackground } from 'wxt/sandbox'
 import { browser } from 'wxt/browser'
 import { getAdapterForUrl, type PlatformAdapter } from '@/utils/platform-adapters'
+import { dedupeMessagesByContent } from '@/utils/message-dedupe'
 import {
   upsertConversation,
   upsertMessages,
   getConversationById,
   getExistingMessageIds,
+  getMessagesByIds,
   getConversations,
   getMessagesByConversationId,
   getDBStats,
@@ -266,7 +268,27 @@ function mergeConversation(existing: Conversation, incoming: Conversation): Conv
     detailSyncedAt = existing.detailSyncedAt ?? null
   }
 
-  const title = incoming.title || existing.title
+  const shouldKeepExistingTitle = (() => {
+    if (existing.platform !== 'gemini') return false
+    if (!existing.title || !incoming.title) return false
+    if (existing.title === incoming.title) return false
+    const incomingTitle = incoming.title.trim()
+    const incomingPreview = incoming.preview.trim()
+    if (!incomingTitle) return true
+    if (/^(?:r|rc|c)_[a-z0-9]+$/i.test(incomingTitle)) return true
+    if (!incomingPreview) return false
+    const normalizedTitle = incomingTitle.replace(/\s+/g, ' ')
+    const normalizedPreview = incomingPreview.replace(/\s+/g, ' ')
+    if (normalizedPreview.startsWith(normalizedTitle)) return true
+    if (normalizedTitle.startsWith(normalizedPreview)) return true
+    if (normalizedTitle.length <= 6) return true
+    return false
+  })()
+
+  let title = existing.title || incoming.title
+  if (incoming.title && (!existing.title || !shouldKeepExistingTitle)) {
+    title = incoming.title
+  }
   const preview =
     incomingIsNewer && incoming.preview ? incoming.preview : existing.preview || incoming.preview
   const messageCount = Math.max(existing.messageCount, incoming.messageCount)
@@ -365,13 +387,26 @@ async function applyConversationUpdate(
 
   if (messages.length === 0) return
 
+  const normalizedMessages = await ensureUniqueGeminiMessages(conversation, messages)
+
   const existingIds =
     mode === 'partial'
-      ? await getExistingMessageIds(messages.map((message) => message.id))
+      ? await getExistingMessageIds(normalizedMessages.map((message) => message.id))
       : undefined
 
-  await upsertMessages(messages)
-  await updateConversationFromMessages(conversation.id, messages, { mode, existingIds })
+  await upsertMessages(normalizedMessages)
+  await updateConversationFromMessages(conversation.id, normalizedMessages, { mode, existingIds })
+}
+
+async function ensureUniqueGeminiMessages(
+  conversation: Conversation,
+  messages: Message[]
+): Promise<Message[]> {
+  if (conversation.platform !== 'gemini') return messages
+
+  const ids = messages.map((message) => message.id)
+  const existing = await getMessagesByIds(ids)
+  return dedupeMessagesByContent(messages, existing)
 }
 
 function registerContextMenus() {
@@ -424,7 +459,7 @@ async function handleContextMenuShown(_info: any, tab?: any) {
   browser.contextMenus.refresh()
 }
 
-async function toggleFavoriteFromTab(tab?: chrome.tabs.Tab) {
+async function toggleFavoriteFromTab(tab?: { url?: string }) {
   if (!tab?.url) return null
   const parsed = parseConversationFromUrl(tab.url)
   if (!parsed) return null

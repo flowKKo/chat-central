@@ -121,6 +121,16 @@ export async function getExistingMessageIds(ids: string[]): Promise<Set<string>>
   return existing
 }
 
+export async function getMessagesByIds(ids: string[]): Promise<Map<string, Message>> {
+  if (ids.length === 0) return new Map()
+  const results = await db.messages.bulkGet(ids)
+  const existing = new Map<string, Message>()
+  for (const msg of results) {
+    if (msg?.id) existing.set(msg.id, msg)
+  }
+  return existing
+}
+
 export async function getConversationByOriginalId(
   platform: Platform,
   originalId: string

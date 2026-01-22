@@ -350,11 +350,11 @@ export const toggleFavoriteAtom = atom(
   null,
   async (get, set, conversationId: string, value?: boolean) => {
     try {
-      const response = await browser.runtime.sendMessage({
+      const response = (await browser.runtime.sendMessage({
         action: 'TOGGLE_FAVORITE',
         conversationId,
         value,
-      })
+      })) as { conversation?: Conversation | null } | undefined
 
       const updated: Conversation | null = response?.conversation ?? null
       if (!updated) return
