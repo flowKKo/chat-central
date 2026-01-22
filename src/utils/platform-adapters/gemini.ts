@@ -208,6 +208,8 @@ function buildConversation(id: string, title: string, createdAt: number, now: nu
     syncedAt: now,
     detailStatus: 'none',
     detailSyncedAt: null,
+    isFavorite: false,
+    favoriteAt: null,
     url: `${GEMINI_APP_URL}${normalizedId}`,
   }
 }
@@ -406,6 +408,8 @@ function parseConversationDetailPayload(payload: unknown, now: number) {
       syncedAt: now,
       detailStatus: 'full' as const,
       detailSyncedAt: now,
+      isFavorite: false,
+      favoriteAt: null,
       url: `${GEMINI_APP_URL}${conversationId}`,
     },
     messages,

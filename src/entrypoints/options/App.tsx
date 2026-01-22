@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import { Trash2, Database, Settings, Info } from 'lucide-react'
+import { Trash2, Database, Settings, Info, Star } from 'lucide-react'
 import { PLATFORM_CONFIG, type Platform } from '@/types'
 import { clearAllData, clearPlatformData } from '@/utils/db'
 import { cn } from '@/utils/cn'
 import ConversationsManager from '@/components/ConversationsManager'
 
-type Tab = 'conversations' | 'settings' | 'about'
+type Tab = 'conversations' | 'favorites' | 'settings' | 'about'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('conversations')
@@ -23,6 +23,12 @@ export default function App() {
                 label="Conversations"
                 isActive={activeTab === 'conversations'}
                 onClick={() => setActiveTab('conversations')}
+              />
+              <TabButton
+                icon={<Star className="w-4 h-4" />}
+                label="Favorites"
+                isActive={activeTab === 'favorites'}
+                onClick={() => setActiveTab('favorites')}
               />
               <TabButton
                 icon={<Settings className="w-4 h-4" />}
@@ -44,6 +50,7 @@ export default function App() {
       {/* Content */}
       <main className="max-w-6xl mx-auto px-6 py-8">
         {activeTab === 'conversations' && <ConversationsManager />}
+        {activeTab === 'favorites' && <ConversationsManager mode="favorites" />}
         {activeTab === 'settings' && <SettingsTab />}
         {activeTab === 'about' && <AboutTab />}
       </main>

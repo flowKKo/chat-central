@@ -17,7 +17,7 @@ export default defineConfig({
         // Can generate fixed dev key later
       }),
 
-    permissions: ['storage', 'unlimitedStorage', 'tabs'],
+    permissions: ['storage', 'unlimitedStorage', 'tabs', 'contextMenus'],
 
     host_permissions: [
       'https://claude.ai/*',

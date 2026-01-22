@@ -65,6 +65,10 @@ export const conversationSchema = z.object({
   detailStatus: z.enum(['none', 'partial', 'full']),
   // Detail last synced time
   detailSyncedAt: z.number().nullable(),
+  // Favorite status
+  isFavorite: z.boolean(),
+  // Favorite timestamp
+  favoriteAt: z.number().nullable(),
   // Original URL
   url: z.string().optional(),
 })

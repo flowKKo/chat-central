@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { browser } from 'wxt/browser'
 import { useAtom } from 'jotai'
-import { Search, Download, RefreshCw, ExternalLink, ChevronRight } from 'lucide-react'
+import { Search, Download, RefreshCw, ExternalLink, ChevronRight, Star } from 'lucide-react'
 import {
   conversationsAtom,
   loadConversationsAtom,
@@ -11,19 +11,30 @@ import {
   loadConversationDetailAtom,
   paginationAtom,
   isLoadingConversationsAtom,
+  favoritesConversationsAtom,
+  loadFavoritesAtom,
+  favoriteCountsAtom,
+  favoritesPaginationAtom,
+  isLoadingFavoritesAtom,
+  loadFavoriteDetailAtom,
+  toggleFavoriteAtom,
 } from '@/utils/atoms'
 import { PLATFORM_CONFIG, type Platform, type Conversation, type Message } from '@/types'
 import { cn } from '@/utils/cn'
 
-export default function ConversationsManager() {
-  const [conversations] = useAtom(conversationsAtom)
-  const [counts] = useAtom(conversationCountsAtom)
-  const [, loadConversations] = useAtom(loadConversationsAtom)
+export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 'favorites' }) {
+  const isFavorites = mode === 'favorites'
+  const [conversations] = useAtom(
+    isFavorites ? favoritesConversationsAtom : conversationsAtom
+  )
+  const [counts] = useAtom(isFavorites ? favoriteCountsAtom : conversationCountsAtom)
+  const [, loadConversations] = useAtom(isFavorites ? loadFavoritesAtom : loadConversationsAtom)
   const [selectedConversation] = useAtom(selectedConversationAtom)
   const [selectedMessages] = useAtom(selectedMessagesAtom)
-  const [, loadDetail] = useAtom(loadConversationDetailAtom)
-  const [pagination] = useAtom(paginationAtom)
-  const [isLoading] = useAtom(isLoadingConversationsAtom)
+  const [, loadDetail] = useAtom(isFavorites ? loadFavoriteDetailAtom : loadConversationDetailAtom)
+  const [pagination] = useAtom(isFavorites ? favoritesPaginationAtom : paginationAtom)
+  const [isLoading] = useAtom(isFavorites ? isLoadingFavoritesAtom : isLoadingConversationsAtom)
+  const [, toggleFavorite] = useAtom(toggleFavoriteAtom)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all')
@@ -42,6 +53,8 @@ export default function ConversationsManager() {
     }
     return true
   })
+
+  const emptyLabel = isFavorites ? 'No favorites yet' : 'No conversations found'
 
   return (
     <div className="flex gap-6">
@@ -87,7 +100,7 @@ export default function ConversationsManager() {
         {/* List */}
         <div className="border border-border rounded-lg divide-y divide-border max-h-[600px] overflow-y-auto">
           {filteredConversations.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">No conversations found</div>
+            <div className="p-8 text-center text-muted-foreground">{emptyLabel}</div>
           ) : (
             filteredConversations.map((conv) => (
               <ConversationListItem
@@ -95,6 +108,7 @@ export default function ConversationsManager() {
                 conversation={conv}
                 isSelected={selectedConversation?.id === conv.id}
                 onClick={() => loadDetail(conv.id)}
+                onToggleFavorite={() => toggleFavorite(conv.id)}
               />
             ))
           )}
@@ -134,10 +148,12 @@ function ConversationListItem({
   conversation,
   isSelected,
   onClick,
+  onToggleFavorite,
 }: {
   conversation: Conversation
   isSelected: boolean
   onClick: () => void
+  onToggleFavorite: () => void
 }) {
   const platformConfig = PLATFORM_CONFIG[conversation.platform]
 
@@ -162,6 +178,21 @@ function ConversationListItem({
             <span>{new Date(conversation.updatedAt).toLocaleDateString()}</span>
           </div>
         </div>
+        <button
+          className="p-1 rounded-md hover:bg-muted transition-colors"
+          onClick={(event) => {
+            event.stopPropagation()
+            onToggleFavorite()
+          }}
+          title={conversation.isFavorite ? 'Unfavorite' : 'Favorite'}
+        >
+          <Star
+            className={cn(
+              'w-4 h-4',
+              conversation.isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
+            )}
+          />
+        </button>
         <ChevronRight className="w-4 h-4 text-muted-foreground" />
       </div>
     </div>

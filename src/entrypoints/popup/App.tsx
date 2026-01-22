@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { browser } from 'wxt/browser'
 import { useAtom } from 'jotai'
-import { Search, Settings, ExternalLink, Database } from 'lucide-react'
+import { Search, Settings, ExternalLink, Database, Star } from 'lucide-react'
 import {
   conversationsAtom,
   loadConversationsAtom,
   conversationCountsAtom,
   paginationAtom,
   isLoadingConversationsAtom,
+  toggleFavoriteAtom,
 } from '@/utils/atoms'
 import { PLATFORM_CONFIG, type Platform, type Conversation } from '@/types'
 import { cn } from '@/utils/cn'
@@ -20,6 +21,7 @@ export default function App() {
   const [isLoading] = useAtom(isLoadingConversationsAtom)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all')
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
 
   useEffect(() => {
     loadConversations({ reset: true })
@@ -28,6 +30,9 @@ export default function App() {
   // Filter conversations
   const filteredConversations = conversations.filter((conv) => {
     if (selectedPlatform !== 'all' && conv.platform !== selectedPlatform) {
+      return false
+    }
+    if (showFavoritesOnly && !conv.isFavorite) {
       return false
     }
     if (searchQuery) {
@@ -84,6 +89,16 @@ export default function App() {
             onClick={() => setSelectedPlatform(platform)}
           />
         ))}
+        <button
+          className={cn(
+            'px-2 py-1.5 text-xs font-medium rounded-md transition-colors',
+            showFavoritesOnly ? 'bg-yellow-400 text-black' : 'hover:bg-muted'
+          )}
+          onClick={() => setShowFavoritesOnly((value) => !value)}
+          title="Show favorites"
+        >
+          <Star className={cn('w-3 h-3', showFavoritesOnly ? 'fill-black' : 'text-muted-foreground')} />
+        </button>
       </div>
 
       {/* Conversation List */}
@@ -158,6 +173,7 @@ function PlatformTab({
 
 function ConversationItem({ conversation }: { conversation: Conversation }) {
   const platformConfig = PLATFORM_CONFIG[conversation.platform as Platform]
+  const [, toggleFavorite] = useAtom(toggleFavoriteAtom)
 
   const handleClick = () => {
     if (conversation.url) {
@@ -179,6 +195,21 @@ function ConversationItem({ conversation }: { conversation: Conversation }) {
           <div className="flex items-center gap-2">
             <h3 className="font-medium text-sm truncate">{conversation.title}</h3>
             <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+            <button
+              className="ml-auto p-1 rounded-md hover:bg-muted transition-colors"
+              onClick={(event) => {
+                event.stopPropagation()
+                toggleFavorite(conversation.id)
+              }}
+              title={conversation.isFavorite ? 'Unfavorite' : 'Favorite'}
+            >
+              <Star
+                className={cn(
+                  'w-3 h-3',
+                  conversation.isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
+                )}
+              />
+            </button>
           </div>
           {conversation.preview && (
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{conversation.preview}</p>

@@ -79,6 +79,8 @@ export const chatgptAdapter: PlatformAdapter = {
             syncedAt: now,
             detailStatus: 'none',
             detailSyncedAt: null,
+            isFavorite: false,
+            favoriteAt: null,
             url: this.buildConversationUrl(originalId),
           }
 
@@ -136,6 +138,8 @@ export const chatgptAdapter: PlatformAdapter = {
       syncedAt: now,
       detailStatus: 'full',
       detailSyncedAt: now,
+      isFavorite: false,
+      favoriteAt: null,
       url: this.buildConversationUrl(originalId),
     }
 
@@ -288,6 +292,8 @@ export const chatgptAdapter: PlatformAdapter = {
       syncedAt: now,
       detailStatus: 'partial',
       detailSyncedAt: now,
+      isFavorite: false,
+      favoriteAt: null,
       url: this.buildConversationUrl(conversationId),
     }
 

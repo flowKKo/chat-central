@@ -9,8 +9,9 @@ import {
   getConversations,
   getMessagesByConversationId,
   getDBStats,
+  updateConversationFavorite,
 } from '@/utils/db'
-import type { Conversation, Message, Platform } from '@/types'
+import { PLATFORM_CONFIG, type Conversation, type Message, type Platform } from '@/types'
 
 export default defineBackground({
   type: 'module',
@@ -18,8 +19,13 @@ export default defineBackground({
   main() {
     console.log('[ChatCentral] Background service worker started')
 
+    registerContextMenus()
+    const menus = browser.contextMenus
+    safeAddListener(menus?.onClicked, handleContextMenuClick)
+    safeAddListener(menus?.onShown, handleContextMenuShown)
+
     // Handle messages from content script
-    browser.runtime.onMessage.addListener((message: any, _sender: any, sendResponse: any) => {
+    safeAddListener(browser.runtime?.onMessage, (message: any, _sender: any, sendResponse: any) => {
       handleMessage(message)
         .then(sendResponse)
         .catch((e) => {
@@ -30,16 +36,25 @@ export default defineBackground({
     })
 
     // Handle extension install/update
-    browser.runtime.onInstalled.addListener((details: { reason: string }) => {
+    safeAddListener(browser.runtime?.onInstalled, (details: { reason: string }) => {
       if (details.reason === 'install') {
         console.log('[ChatCentral] Extension installed')
         // Open welcome page here
       } else if (details.reason === 'update') {
         console.log('[ChatCentral] Extension updated')
       }
+
+      registerContextMenus()
     })
   },
 })
+
+const FAVORITE_MENU_ID = 'chat-central-favorite-toggle'
+
+function safeAddListener(target: any, handler: (...args: any[]) => void) {
+  if (!target?.addListener) return
+  target.addListener(handler)
+}
 
 /**
  * Message handler router
@@ -62,6 +77,9 @@ async function handleMessage(message: any): Promise<any> {
 
     case 'SEARCH':
       return handleSearch(message)
+
+    case 'TOGGLE_FAVORITE':
+      return handleToggleFavorite(message)
 
     default:
       console.warn('[ChatCentral] Unknown action:', action)
@@ -252,6 +270,14 @@ function mergeConversation(existing: Conversation, incoming: Conversation): Conv
   const preview =
     incomingIsNewer && incoming.preview ? incoming.preview : existing.preview || incoming.preview
   const messageCount = Math.max(existing.messageCount, incoming.messageCount)
+  const isFavorite = existing.isFavorite || incoming.isFavorite
+  let favoriteAt = existing.favoriteAt ?? null
+
+  if (!existing.isFavorite && incoming.isFavorite) {
+    favoriteAt = incoming.favoriteAt ?? Date.now()
+  } else if (!isFavorite) {
+    favoriteAt = null
+  }
 
   return {
     ...existing,
@@ -264,6 +290,8 @@ function mergeConversation(existing: Conversation, incoming: Conversation): Conv
     syncedAt: Math.max(existing.syncedAt, incoming.syncedAt),
     detailStatus,
     detailSyncedAt,
+    isFavorite,
+    favoriteAt,
     url: existing.url ?? incoming.url,
   }
 }
@@ -344,6 +372,158 @@ async function applyConversationUpdate(
 
   await upsertMessages(messages)
   await updateConversationFromMessages(conversation.id, messages, { mode, existingIds })
+}
+
+function registerContextMenus() {
+  const menus = browser.contextMenus
+  if (!menus?.create) return
+
+  const clear = menus.removeAll?.()
+  const createMenu = () => {
+    menus.create({
+      id: FAVORITE_MENU_ID,
+      title: '收藏当前对话',
+      contexts: ['page'],
+      documentUrlPatterns: [
+        'https://claude.ai/*',
+        'https://chatgpt.com/*',
+        'https://chat.openai.com/*',
+        'https://gemini.google.com/*',
+      ],
+    })
+  }
+
+  if (clear && typeof (clear as Promise<void>).then === 'function') {
+    ;(clear as Promise<void>).then(createMenu).catch(createMenu)
+  } else {
+    createMenu()
+  }
+}
+
+async function handleContextMenuClick(info: any, tab?: any) {
+  if (info.menuItemId !== FAVORITE_MENU_ID) return
+  const result = await toggleFavoriteFromTab(tab)
+  if (!result) {
+    console.warn('[ChatCentral] Favorite toggle failed: no conversation detected')
+  }
+}
+
+async function handleContextMenuShown(_info: any, tab?: any) {
+  if (!tab?.url) return
+
+  const parsed = parseConversationFromUrl(tab.url)
+  if (!parsed) {
+    browser.contextMenus.update(FAVORITE_MENU_ID, { title: '收藏当前对话', enabled: false })
+    browser.contextMenus.refresh()
+    return
+  }
+
+  const existing = await getConversationById(parsed.conversationId)
+  const title = existing?.isFavorite ? '取消收藏' : '收藏当前对话'
+  browser.contextMenus.update(FAVORITE_MENU_ID, { title, enabled: true })
+  browser.contextMenus.refresh()
+}
+
+async function toggleFavoriteFromTab(tab?: chrome.tabs.Tab) {
+  if (!tab?.url) return null
+  const parsed = parseConversationFromUrl(tab.url)
+  if (!parsed) return null
+
+  let conversation = await getConversationById(parsed.conversationId)
+  if (!conversation) {
+    conversation = buildPlaceholderConversation(parsed, Date.now())
+    await upsertConversation(conversation)
+  }
+
+  const next = !conversation.isFavorite
+  return updateConversationFavorite(conversation.id, next)
+}
+
+async function handleToggleFavorite(message: {
+  conversationId: string
+  value?: boolean
+}): Promise<{ success: boolean; conversation?: Conversation | null }> {
+  const { conversationId, value } = message
+  const existing = await getConversationById(conversationId)
+  if (!existing) return { success: false, conversation: null }
+
+  const next = typeof value === 'boolean' ? value : !existing.isFavorite
+  const updated = await updateConversationFavorite(conversationId, next)
+  return { success: !!updated, conversation: updated }
+}
+
+type ParsedConversation = {
+  platform: Platform
+  originalId: string
+  conversationId: string
+  url: string
+}
+
+function parseConversationFromUrl(rawUrl: string): ParsedConversation | null {
+  try {
+    const url = new URL(rawUrl)
+    const { hostname, pathname } = url
+
+    if (hostname === 'claude.ai') {
+      const match = pathname.match(/\/chat\/([^/]+)/)
+      if (!match?.[1]) return null
+      const originalId = match[1]
+      return {
+        platform: 'claude',
+        originalId,
+        conversationId: `claude_${originalId}`,
+        url: rawUrl,
+      }
+    }
+
+    if (hostname === 'chatgpt.com' || hostname === 'chat.openai.com') {
+      const match = pathname.match(/\/c\/([^/]+)/)
+      if (!match?.[1]) return null
+      const originalId = match[1]
+      return {
+        platform: 'chatgpt',
+        originalId,
+        conversationId: `chatgpt_${originalId}`,
+        url: rawUrl,
+      }
+    }
+
+    if (hostname === 'gemini.google.com') {
+      const match = pathname.match(/\/app\/([^/]+)/)
+      if (!match?.[1]) return null
+      const originalId = match[1]
+      return {
+        platform: 'gemini',
+        originalId,
+        conversationId: `gemini_${originalId}`,
+        url: rawUrl,
+      }
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+function buildPlaceholderConversation(parsed: ParsedConversation, now: number): Conversation {
+  return {
+    id: parsed.conversationId,
+    platform: parsed.platform,
+    originalId: parsed.originalId,
+    title: 'Unknown conversation',
+    createdAt: now,
+    updatedAt: now,
+    messageCount: 0,
+    preview: '',
+    tags: [],
+    syncedAt: now,
+    detailStatus: 'none',
+    detailSyncedAt: null,
+    isFavorite: false,
+    favoriteAt: null,
+    url: parsed.url || PLATFORM_CONFIG[parsed.platform].baseUrl,
+  }
 }
 
 /**

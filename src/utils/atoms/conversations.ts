@@ -1,6 +1,12 @@
 import { atom } from 'jotai'
+import { browser } from 'wxt/browser'
 import type { Conversation, Message, Platform, SearchFilters, SyncState } from '@/types'
-import { getConversations, getMessagesByConversationId, getConversationCount } from '@/utils/db'
+import {
+  getConversations,
+  getMessagesByConversationId,
+  getConversationCount,
+  getFavoriteConversationCount,
+} from '@/utils/db'
 
 // ============================================================================
 // Conversation List State
@@ -15,6 +21,16 @@ export const conversationsAtom = atom<Conversation[]>([])
  * Whether conversations are loading
  */
 export const isLoadingConversationsAtom = atom(false)
+
+/**
+ * Favorite conversation list
+ */
+export const favoritesConversationsAtom = atom<Conversation[]>([])
+
+/**
+ * Whether favorite conversations are loading
+ */
+export const isLoadingFavoritesAtom = atom(false)
 
 /**
  * Conversation list filters
@@ -34,6 +50,15 @@ export const searchQueryAtom = atom('')
  * Pagination state
  */
 export const paginationAtom = atom({
+  offset: 0,
+  limit: 20,
+  hasMore: true,
+})
+
+/**
+ * Favorites pagination state
+ */
+export const favoritesPaginationAtom = atom({
   offset: 0,
   limit: 20,
   hasMore: true,
@@ -85,6 +110,16 @@ export const syncStateAtom = atom<SyncState>({
  * Conversation counts per platform
  */
 export const conversationCountsAtom = atom<Record<Platform | 'total', number>>({
+  claude: 0,
+  chatgpt: 0,
+  gemini: 0,
+  total: 0,
+})
+
+/**
+ * Favorite conversation counts per platform
+ */
+export const favoriteCountsAtom = atom<Record<Platform | 'total', number>>({
   claude: 0,
   chatgpt: 0,
   gemini: 0,
@@ -190,6 +225,62 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
 })
 
 /**
+ * Load favorite conversation list
+ */
+export const loadFavoritesAtom = atom(null, async (get, set, options?: { reset?: boolean }) => {
+  const { reset = false } = options ?? {}
+
+  set(isLoadingFavoritesAtom, true)
+
+  try {
+    const pagination = get(favoritesPaginationAtom)
+    const offset = reset ? 0 : pagination.offset
+    const limit = pagination.limit
+
+    const conversations = await getConversations({
+      limit: limit + 1,
+      offset,
+      favoritesOnly: true,
+      orderBy: 'favoriteAt',
+    })
+
+    const hasMore = conversations.length > limit
+    const data = hasMore ? conversations.slice(0, limit) : conversations
+
+    if (reset) {
+      set(favoritesConversationsAtom, data)
+    } else {
+      const existing = get(favoritesConversationsAtom)
+      set(favoritesConversationsAtom, [...existing, ...data])
+    }
+
+    set(favoritesPaginationAtom, {
+      ...pagination,
+      offset: offset + data.length,
+      hasMore,
+    })
+
+    const [claudeCount, chatgptCount, geminiCount, totalCount] = await Promise.all([
+      getFavoriteConversationCount('claude'),
+      getFavoriteConversationCount('chatgpt'),
+      getFavoriteConversationCount('gemini'),
+      getFavoriteConversationCount(),
+    ])
+
+    set(favoriteCountsAtom, {
+      claude: claudeCount,
+      chatgpt: chatgptCount,
+      gemini: geminiCount,
+      total: totalCount,
+    })
+  } catch (e) {
+    console.error('[ChatCentral] Failed to load favorite conversations:', e)
+  } finally {
+    set(isLoadingFavoritesAtom, false)
+  }
+})
+
+/**
  * Load conversation details
  */
 export const loadConversationDetailAtom = atom(null, async (get, set, conversationId: string) => {
@@ -214,6 +305,30 @@ export const loadConversationDetailAtom = atom(null, async (get, set, conversati
 })
 
 /**
+ * Load favorite conversation detail
+ */
+export const loadFavoriteDetailAtom = atom(null, async (get, set, conversationId: string) => {
+  set(isLoadingDetailAtom, true)
+  set(selectedConversationIdAtom, conversationId)
+
+  try {
+    const conversations = get(favoritesConversationsAtom)
+    const conversation = conversations.find((c) => c.id === conversationId)
+
+    if (conversation) {
+      set(selectedConversationAtom, conversation)
+    }
+
+    const messages = await getMessagesByConversationId(conversationId)
+    set(selectedMessagesAtom, messages)
+  } catch (e) {
+    console.error('[ChatCentral] Failed to load favorite conversation detail:', e)
+  } finally {
+    set(isLoadingDetailAtom, false)
+  }
+})
+
+/**
  * Clear selection
  */
 export const clearSelectionAtom = atom(null, (_get, set) => {
@@ -221,3 +336,63 @@ export const clearSelectionAtom = atom(null, (_get, set) => {
   set(selectedConversationAtom, null)
   set(selectedMessagesAtom, [])
 })
+
+/**
+ * Toggle favorite status
+ */
+export const toggleFavoriteAtom = atom(
+  null,
+  async (get, set, conversationId: string, value?: boolean) => {
+    try {
+      const response = await browser.runtime.sendMessage({
+        action: 'TOGGLE_FAVORITE',
+        conversationId,
+        value,
+      })
+
+      const updated: Conversation | null = response?.conversation ?? null
+      if (!updated) return
+
+      const applyUpdate = (list: Conversation[]) =>
+        list.map((item) => (item.id === updated.id ? updated : item))
+
+      set(conversationsAtom, applyUpdate(get(conversationsAtom)))
+
+      const favoriteList = get(favoritesConversationsAtom)
+      if (updated.isFavorite) {
+        const exists = favoriteList.some((item) => item.id === updated.id)
+        if (exists) {
+          set(favoritesConversationsAtom, applyUpdate(favoriteList))
+        } else {
+          set(favoritesConversationsAtom, [updated, ...favoriteList])
+        }
+      } else {
+        set(
+          favoritesConversationsAtom,
+          favoriteList.filter((item) => item.id !== updated.id)
+        )
+      }
+
+      const selected = get(selectedConversationAtom)
+      if (selected?.id === updated.id) {
+        set(selectedConversationAtom, updated)
+      }
+
+      const [claudeCount, chatgptCount, geminiCount, totalCount] = await Promise.all([
+        getFavoriteConversationCount('claude'),
+        getFavoriteConversationCount('chatgpt'),
+        getFavoriteConversationCount('gemini'),
+        getFavoriteConversationCount(),
+      ])
+
+      set(favoriteCountsAtom, {
+        claude: claudeCount,
+        chatgpt: chatgptCount,
+        gemini: geminiCount,
+        total: totalCount,
+      })
+    } catch (e) {
+      console.error('[ChatCentral] Failed to toggle favorite:', e)
+    }
+  }
+)

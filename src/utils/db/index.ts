@@ -28,6 +28,20 @@ export class ChatCentralDB extends Dexie {
           if (!('detailSyncedAt' in conv)) conv.detailSyncedAt = null
         })
       })
+
+    this.version(3)
+      .stores({
+        conversations: 'id, platform, updatedAt, syncedAt, isFavorite, favoriteAt, *tags',
+        messages: 'id, conversationId, createdAt',
+      })
+      .upgrade(async (tx) => {
+        await tx.table('conversations').toCollection().modify((conv) => {
+          if (!('detailStatus' in conv)) conv.detailStatus = 'none'
+          if (!('detailSyncedAt' in conv)) conv.detailSyncedAt = null
+          if (!('isFavorite' in conv)) conv.isFavorite = false
+          if (!('favoriteAt' in conv)) conv.favoriteAt = null
+        })
+      })
   }
 }
 
@@ -41,14 +55,25 @@ export async function getConversations(options?: {
   platform?: Platform
   limit?: number
   offset?: number
-  orderBy?: 'updatedAt' | 'createdAt' | 'syncedAt'
+  favoritesOnly?: boolean
+  orderBy?: 'updatedAt' | 'createdAt' | 'syncedAt' | 'favoriteAt'
 }): Promise<Conversation[]> {
-  const { platform, limit = 50, offset = 0, orderBy = 'updatedAt' } = options ?? {}
+  const {
+    platform,
+    limit = 50,
+    offset = 0,
+    favoritesOnly = false,
+    orderBy = 'updatedAt',
+  } = options ?? {}
 
   let query = db.conversations.orderBy(orderBy).reverse()
 
   if (platform) {
     query = db.conversations.where('platform').equals(platform).reverse()
+  }
+
+  if (favoritesOnly) {
+    query = query.filter((conv) => conv.isFavorite)
   }
 
   return query.offset(offset).limit(limit).toArray()
@@ -80,6 +105,19 @@ export async function upsertConversation(conversation: Conversation): Promise<vo
   await db.conversations.put(conversation)
 }
 
+export async function updateConversationFavorite(
+  id: string,
+  isFavorite: boolean
+): Promise<Conversation | null> {
+  const existing = await db.conversations.get(id)
+  if (!existing) return null
+
+  const favoriteAt = isFavorite ? existing.favoriteAt ?? Date.now() : null
+  const updated = { ...existing, isFavorite, favoriteAt }
+  await db.conversations.put(updated)
+  return updated
+}
+
 export async function upsertConversations(conversations: Conversation[]): Promise<void> {
   await db.conversations.bulkPut(conversations)
 }
@@ -96,6 +134,13 @@ export async function getConversationCount(platform?: Platform): Promise<number>
     return db.conversations.where('platform').equals(platform).count()
   }
   return db.conversations.count()
+}
+
+export async function getFavoriteConversationCount(platform?: Platform): Promise<number> {
+  if (platform) {
+    return db.conversations.where('platform').equals(platform).filter((conv) => conv.isFavorite).count()
+  }
+  return db.conversations.filter((conv) => conv.isFavorite).count()
 }
 
 // ============================================================================
