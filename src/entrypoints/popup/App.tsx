@@ -19,12 +19,17 @@ import {
   paginationAtom,
   isLoadingConversationsAtom,
   toggleFavoriteAtom,
+  performSearchAtom,
+  activeSearchQueryAtom,
+  searchResultsAtom,
 } from '@/utils/atoms'
 import { initializeSyncAtom } from '@/utils/atoms/sync'
 import { PLATFORM_CONFIG, type Platform, type Conversation } from '@/types'
 import { cn } from '@/utils/cn'
 import { SyncStatusBar, SyncSettingsModal, ConflictResolverModal } from '@/components/sync'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
+import { HighlightText } from '@/components/HighlightText'
+import type { SearchResultWithMatches } from '@/utils/db'
 
 export default function App() {
   const [conversations] = useAtom(conversationsAtom)
@@ -36,12 +41,23 @@ export default function App() {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [, initializeSync] = useAtom(initializeSyncAtom)
+  const [, performSearch] = useAtom(performSearchAtom)
+  const [activeSearchQuery] = useAtom(activeSearchQueryAtom)
+  const [searchResults] = useAtom(searchResultsAtom)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadConversations({ reset: true })
     initializeSync()
   }, [loadConversations, initializeSync])
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      performSearch(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery, performSearch])
 
   // Keyboard shortcut: Cmd/Ctrl + K to focus search
   useEffect(() => {
@@ -61,12 +77,6 @@ export default function App() {
     }
     if (showFavoritesOnly && !conv.isFavorite) {
       return false
-    }
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      return (
-        conv.title.toLowerCase().includes(query) || conv.preview.toLowerCase().includes(query)
-      )
     }
     return true
   })
@@ -184,13 +194,18 @@ export default function App() {
           <EmptyState searchQuery={searchQuery} onClearSearch={clearSearch} />
         ) : (
           <div className="p-2 space-y-1">
-            {sortedConversations.map((conv, index) => (
-              <ConversationItem
-                key={conv.id}
-                conversation={conv}
-                style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
-              />
-            ))}
+            {sortedConversations.map((conv, index) => {
+              const matchInfo = searchResults.find((r) => r.conversation.id === conv.id)
+              return (
+                <ConversationItem
+                  key={conv.id}
+                  conversation={conv}
+                  searchQuery={activeSearchQuery}
+                  matchInfo={matchInfo}
+                  style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
+                />
+              )
+            })}
             {pagination.hasMore && (
               <div className="pt-2 pb-1">
                 <button
@@ -294,13 +309,21 @@ function PlatformTab({
 
 function ConversationItem({
   conversation,
+  searchQuery,
+  matchInfo,
   style,
 }: {
   conversation: Conversation
+  searchQuery?: string
+  matchInfo?: SearchResultWithMatches
   style?: React.CSSProperties
 }) {
   const platformConfig = PLATFORM_CONFIG[conversation.platform as Platform]
   const [, toggleFavorite] = useAtom(toggleFavoriteAtom)
+
+  // Get message match snippet
+  const messageMatch = matchInfo?.matches.find((m) => m.type === 'message')
+  const hasMessageMatch = !!messageMatch
 
   const handleClick = () => {
     if (conversation.url) {
@@ -335,16 +358,33 @@ function ConversationItem({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-medium text-sm text-foreground truncate">
-              {conversation.title}
+              {searchQuery ? (
+                <HighlightText text={conversation.title} query={searchQuery} />
+              ) : (
+                conversation.title
+              )}
             </h3>
             <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" aria-hidden="true" />
           </div>
 
-          {conversation.preview && (
+          {/* Show message match snippet if available, otherwise show preview */}
+          {hasMessageMatch && searchQuery ? (
+            <div className="text-xs text-muted-foreground bg-muted/50 rounded-md px-2 py-1 line-clamp-2 leading-relaxed mb-2">
+              <HighlightText
+                text={messageMatch.text}
+                query={searchQuery}
+                maxLength={80}
+              />
+            </div>
+          ) : conversation.preview ? (
             <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-2">
-              {conversation.preview}
+              {searchQuery ? (
+                <HighlightText text={conversation.preview} query={searchQuery} maxLength={100} />
+              ) : (
+                conversation.preview
+              )}
             </p>
-          )}
+          ) : null}
 
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <span

@@ -105,6 +105,19 @@ export interface SyncState {
 // Search Types
 // ============================================================================
 
+export type SearchMatchType = 'title' | 'preview' | 'message'
+
+export interface SearchMatch {
+  type: SearchMatchType
+  text: string
+  messageId?: string
+}
+
+export interface SearchResultItem {
+  conversation: Conversation
+  matches: SearchMatch[]
+}
+
 export interface SearchResult {
   conversation: Conversation
   matches: {

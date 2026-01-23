@@ -8,7 +8,8 @@ import {
   getFavoriteConversationCount,
   upsertMessages,
   deleteMessagesByConversationId,
-  searchConversationsAndMessages,
+  searchConversationsWithMatches,
+  type SearchResultWithMatches,
 } from '@/utils/db'
 
 // ============================================================================
@@ -48,6 +49,24 @@ export const filtersAtom = atom<SearchFilters>({
  * Search query
  */
 export const searchQueryAtom = atom('')
+
+/**
+ * Active search query (the query that was actually searched)
+ */
+export const activeSearchQueryAtom = atom('')
+
+/**
+ * Search results with match information
+ */
+export const searchResultsAtom = atom<SearchResultWithMatches[]>([])
+
+/**
+ * Get match info for a conversation by ID
+ */
+export const getMatchInfoAtom = atom((get) => {
+  const results = get(searchResultsAtom)
+  return (conversationId: string) => results.find((r) => r.conversation.id === conversationId)
+})
 
 /**
  * Pagination state
@@ -90,6 +109,11 @@ export const selectedMessagesAtom = atom<Message[]>([])
  * Whether conversation details are loading
  */
 export const isLoadingDetailAtom = atom(false)
+
+/**
+ * Message ID to scroll to in detail view (for search results)
+ */
+export const scrollToMessageIdAtom = atom<string | null>(null)
 
 // ============================================================================
 // Sync State
@@ -233,6 +257,8 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
 export const performSearchAtom = atom(null, async (_get, set, query: string) => {
   if (!query.trim()) {
     // Reset to normal view
+    set(activeSearchQueryAtom, '')
+    set(searchResultsAtom, [])
     await set(loadConversationsAtom, { reset: true })
     return
   }
@@ -240,27 +266,34 @@ export const performSearchAtom = atom(null, async (_get, set, query: string) => 
   set(isLoadingConversationsAtom, true)
 
   try {
-    const results = await searchConversationsAndMessages(query)
-    
-    set(conversationsAtom, results)
-    
-    // Disable pagination for search results for now
+    const results = await searchConversationsWithMatches(query)
+
+    // Store search state
+    set(activeSearchQueryAtom, query)
+    set(searchResultsAtom, results)
+    set(conversationsAtom, results.map((r) => r.conversation))
+
+    // Disable pagination for search results
     set(paginationAtom, {
       offset: 0,
       limit: results.length,
       hasMore: false,
     })
 
-    // Update total count in stats to reflect search result count (optional, but helps UI)
-    // Actually, keeping the original counts is probably better for context, 
-    // but the UI might show "Showing X of Y". 
-    // For now, let's leave the global counts alone as they represent the DB state.
-
   } catch (e) {
     console.error('[ChatCentral] Failed to search:', e)
   } finally {
     set(isLoadingConversationsAtom, false)
   }
+})
+
+/**
+ * Clear search
+ */
+export const clearSearchAtom = atom(null, async (_get, set) => {
+  set(activeSearchQueryAtom, '')
+  set(searchResultsAtom, [])
+  await set(loadConversationsAtom, { reset: true })
 })
 
 /**
@@ -322,54 +355,62 @@ export const loadFavoritesAtom = atom(null, async (get, set, options?: { reset?:
 /**
  * Load conversation details
  */
-export const loadConversationDetailAtom = atom(null, async (get, set, conversationId: string) => {
-  set(isLoadingDetailAtom, true)
-  set(selectedConversationIdAtom, conversationId)
+export const loadConversationDetailAtom = atom(
+  null,
+  async (get, set, conversationId: string, scrollToMessageId?: string) => {
+    set(isLoadingDetailAtom, true)
+    set(selectedConversationIdAtom, conversationId)
+    set(scrollToMessageIdAtom, scrollToMessageId ?? null)
 
-  try {
-    const conversations = get(conversationsAtom)
-    const conversation = conversations.find((c) => c.id === conversationId)
+    try {
+      const conversations = get(conversationsAtom)
+      const conversation = conversations.find((c) => c.id === conversationId)
 
-    if (conversation) {
-      set(selectedConversationAtom, conversation)
+      if (conversation) {
+        set(selectedConversationAtom, conversation)
+      }
+
+      const messages = conversation
+        ? await loadMessagesWithFallback(conversation)
+        : await getMessagesByConversationId(conversationId)
+      set(selectedMessagesAtom, messages)
+    } catch (e) {
+      console.error('[ChatCentral] Failed to load conversation detail:', e)
+    } finally {
+      set(isLoadingDetailAtom, false)
     }
-
-    const messages = conversation
-      ? await loadMessagesWithFallback(conversation)
-      : await getMessagesByConversationId(conversationId)
-    set(selectedMessagesAtom, messages)
-  } catch (e) {
-    console.error('[ChatCentral] Failed to load conversation detail:', e)
-  } finally {
-    set(isLoadingDetailAtom, false)
   }
-})
+)
 
 /**
  * Load favorite conversation detail
  */
-export const loadFavoriteDetailAtom = atom(null, async (get, set, conversationId: string) => {
-  set(isLoadingDetailAtom, true)
-  set(selectedConversationIdAtom, conversationId)
+export const loadFavoriteDetailAtom = atom(
+  null,
+  async (get, set, conversationId: string, scrollToMessageId?: string) => {
+    set(isLoadingDetailAtom, true)
+    set(selectedConversationIdAtom, conversationId)
+    set(scrollToMessageIdAtom, scrollToMessageId ?? null)
 
-  try {
-    const conversations = get(favoritesConversationsAtom)
-    const conversation = conversations.find((c) => c.id === conversationId)
+    try {
+      const conversations = get(favoritesConversationsAtom)
+      const conversation = conversations.find((c) => c.id === conversationId)
 
-    if (conversation) {
-      set(selectedConversationAtom, conversation)
+      if (conversation) {
+        set(selectedConversationAtom, conversation)
+      }
+
+      const messages = conversation
+        ? await loadMessagesWithFallback(conversation)
+        : await getMessagesByConversationId(conversationId)
+      set(selectedMessagesAtom, messages)
+    } catch (e) {
+      console.error('[ChatCentral] Failed to load favorite conversation detail:', e)
+    } finally {
+      set(isLoadingDetailAtom, false)
     }
-
-    const messages = conversation
-      ? await loadMessagesWithFallback(conversation)
-      : await getMessagesByConversationId(conversationId)
-    set(selectedMessagesAtom, messages)
-  } catch (e) {
-    console.error('[ChatCentral] Failed to load favorite conversation detail:', e)
-  } finally {
-    set(isLoadingDetailAtom, false)
   }
-})
+)
 
 /**
  * Clear selection
