@@ -1,4 +1,5 @@
 import type { Platform } from '@/types'
+import { endOfDay, formatDateString, parseDateString } from '@/utils/date'
 
 export interface ParsedSearchQuery {
   freeText: string
@@ -60,10 +61,10 @@ export function parseSearchQuery(query: string): ParsedSearchQuery {
   // Extract before:YYYY-MM-DD
   const beforeMatch = processedQuery.match(/before:(\d{4}-\d{2}-\d{2})/i)
   if (beforeMatch && beforeMatch[1]) {
-    const ts = Date.parse(beforeMatch[1])
-    if (!isNaN(ts)) {
+    const ts = parseDateString(beforeMatch[1])
+    if (ts !== null) {
       // End of day (23:59:59.999)
-      result.operators.before = ts + 24 * 60 * 60 * 1000 - 1
+      result.operators.before = endOfDay(ts)
     }
     processedQuery = processedQuery.replace(beforeMatch[0], '')
   }
@@ -71,8 +72,8 @@ export function parseSearchQuery(query: string): ParsedSearchQuery {
   // Extract after:YYYY-MM-DD
   const afterMatch = processedQuery.match(/after:(\d{4}-\d{2}-\d{2})/i)
   if (afterMatch && afterMatch[1]) {
-    const ts = Date.parse(afterMatch[1])
-    if (!isNaN(ts)) {
+    const ts = parseDateString(afterMatch[1])
+    if (ts !== null) {
       result.operators.after = ts
     }
     processedQuery = processedQuery.replace(afterMatch[0], '')
@@ -112,12 +113,10 @@ export function formatParsedQuery(parsed: ParsedSearchQuery): string {
     }
   }
   if (parsed.operators.after) {
-    parts.push(`after:${new Date(parsed.operators.after).toISOString().split('T')[0]}`)
+    parts.push(`after:${formatDateString(parsed.operators.after)}`)
   }
   if (parsed.operators.before) {
-    // Subtract 1 day to show the original date (we add end-of-day offset when parsing)
-    const originalDate = new Date(parsed.operators.before - 24 * 60 * 60 * 1000 + 1)
-    parts.push(`before:${originalDate.toISOString().split('T')[0]}`)
+    parts.push(`before:${formatDateString(parsed.operators.before)}`)
   }
   if (parsed.operators.isFavorite) {
     parts.push('is:favorite')

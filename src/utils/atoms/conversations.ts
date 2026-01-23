@@ -364,12 +364,14 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
   }
 
   // Only update filters if operators were used
-  if (
+  const hasOperators =
     parsed.operators.platform ||
     parsed.operators.tags ||
     parsed.operators.before ||
-    parsed.operators.after
-  ) {
+    parsed.operators.after ||
+    parsed.operators.isFavorite
+
+  if (hasOperators) {
     set(filtersAtom, newFilters)
   }
 
@@ -386,7 +388,12 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
 
   try {
     // Search using the free text part only
-    const results = await searchConversationsWithMatches(parsed.freeText)
+    let results = await searchConversationsWithMatches(parsed.freeText)
+
+    // Filter by favorite if is:favorite operator is used
+    if (parsed.operators.isFavorite) {
+      results = results.filter((r) => r.conversation.isFavorite)
+    }
 
     // Store search state (store original query for display)
     set(activeSearchQueryAtom, parsed.freeText)

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parseSearchQuery, hasOperators, formatParsedQuery } from './search-parser'
+import { endOfDay, parseDateString } from './date'
 
 describe('parseSearchQuery', () => {
   it('should parse plain text query', () => {
@@ -36,13 +37,14 @@ describe('parseSearchQuery', () => {
     const result = parseSearchQuery('before:2024-01-15 hello')
     expect(result.freeText).toBe('hello')
     // Should be end of day (23:59:59.999)
-    expect(result.operators.before).toBe(Date.parse('2024-01-15') + 24 * 60 * 60 * 1000 - 1)
+    const expectedTs = parseDateString('2024-01-15')!
+    expect(result.operators.before).toBe(endOfDay(expectedTs))
   })
 
   it('should parse after operator', () => {
     const result = parseSearchQuery('after:2024-01-01 hello')
     expect(result.freeText).toBe('hello')
-    expect(result.operators.after).toBe(Date.parse('2024-01-01'))
+    expect(result.operators.after).toBe(parseDateString('2024-01-01'))
   })
 
   it('should parse is:favorite operator', () => {

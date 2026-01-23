@@ -1,4 +1,5 @@
 import { cn } from '@/utils/cn'
+import { daysAgo, formatDateString, MS_PER_DAY, parseDateString, startOfDay } from '@/utils/date'
 
 interface DateRangePickerProps {
   startDate: number | null
@@ -17,7 +18,7 @@ const PRESETS = [
 export function DateRangePicker({ startDate, endDate, onChange, className }: DateRangePickerProps) {
   const handlePreset = (days: number) => {
     const end = Date.now()
-    const start = days === 0 ? new Date().setHours(0, 0, 0, 0) : end - days * 24 * 60 * 60 * 1000
+    const start = days === 0 ? startOfDay(end) : daysAgo(days)
     onChange({ start, end })
   }
 
@@ -25,15 +26,29 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
     onChange({ start: null, end: null })
   }
 
-  const formatDate = (ts: number | null) => {
-    if (!ts) return ''
-    return new Date(ts).toISOString().split('T')[0]
+  /**
+   * Check if current range matches a preset
+   */
+  const getActivePreset = (): number | null => {
+    if (!startDate || !endDate) return null
+
+    const now = Date.now()
+    // Allow 1 minute tolerance for "now" comparison
+    const isEndNow = Math.abs(endDate - now) < 60 * 1000
+
+    if (!isEndNow) return null
+
+    for (const preset of PRESETS) {
+      const expectedStart = preset.days === 0 ? startOfDay(now) : daysAgo(preset.days)
+      // Allow 1 day tolerance for preset matching
+      if (Math.abs(startDate - expectedStart) < MS_PER_DAY) {
+        return preset.days
+      }
+    }
+    return null
   }
 
-  const parseDate = (dateStr: string): number | null => {
-    if (!dateStr) return null
-    return new Date(dateStr).getTime()
-  }
+  const activePreset = getActivePreset()
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -43,7 +58,10 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
           <button
             key={preset.label}
             type="button"
-            className="cursor-pointer rounded-lg px-2 py-1 text-xs transition-colors hover:bg-muted"
+            className={cn(
+              'cursor-pointer rounded-lg px-2 py-1 text-xs transition-colors hover:bg-muted',
+              activePreset === preset.days && 'bg-primary/10 font-medium text-primary'
+            )}
             onClick={() => handlePreset(preset.days)}
           >
             {preset.label}
@@ -55,16 +73,16 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
       <div className="flex items-center gap-2">
         <input
           type="date"
-          value={formatDate(startDate)}
-          onChange={(e) => onChange({ start: parseDate(e.target.value), end: endDate })}
+          value={startDate ? formatDateString(startDate) : ''}
+          onChange={(e) => onChange({ start: parseDateString(e.target.value), end: endDate })}
           className="flex-1 rounded-lg border border-border bg-muted/50 px-2 py-1.5 text-xs"
           aria-label="Start date"
         />
         <span className="text-xs text-muted-foreground">to</span>
         <input
           type="date"
-          value={formatDate(endDate)}
-          onChange={(e) => onChange({ start: startDate, end: parseDate(e.target.value) })}
+          value={endDate ? formatDateString(endDate) : ''}
+          onChange={(e) => onChange({ start: startDate, end: parseDateString(e.target.value) })}
           className="flex-1 rounded-lg border border-border bg-muted/50 px-2 py-1.5 text-xs"
           aria-label="End date"
         />
