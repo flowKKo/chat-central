@@ -1,19 +1,11 @@
-import { useEffect, useState, useRef } from 'react'
-import { browser } from 'wxt/browser'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { useAtom } from 'jotai'
 import {
   Search,
-  Download,
   RefreshCw,
-  ExternalLink,
-  Star,
   Filter,
   MessageSquare,
-  User,
-  Bot,
-  AlertCircle,
   ChevronDown,
-  Clock,
   X,
 } from 'lucide-react'
 import {
@@ -35,12 +27,15 @@ import {
   performSearchAtom,
   activeSearchQueryAtom,
   searchResultsAtom,
-  scrollToMessageIdAtom,
 } from '@/utils/atoms'
-import { PLATFORM_CONFIG, type Platform, type Conversation, type Message } from '@/types'
+import { PLATFORM_CONFIG, type Platform } from '@/types'
 import { cn } from '@/utils/cn'
-import { HighlightText } from './HighlightText'
-import type { SearchResultWithMatches } from '@/utils/db'
+import { filterAndSortConversations } from '@/utils/filters'
+import {
+  ConversationListItem,
+  ConversationDetail,
+  ConversationListSkeleton,
+} from './conversations'
 
 export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 'favorites' }) {
   const isFavorites = mode === 'favorites'
@@ -105,23 +100,20 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
     }
   }, [isFilterOpen])
 
-  const filteredConversations = conversations.filter((conv) => {
-    if (selectedPlatform !== 'all' && conv.platform !== selectedPlatform) {
-      return false
-    }
-    if (isFavorites && searchQuery) {
-      const query = searchQuery.toLowerCase()
-      return conv.title.toLowerCase().includes(query) || conv.preview.toLowerCase().includes(query)
-    }
-    return true
-  })
-
-  const sortedConversations = [...filteredConversations].sort((a, b) => {
-    const primaryA = isFavorites ? a.favoriteAt ?? 0 : a.updatedAt ?? 0
-    const primaryB = isFavorites ? b.favoriteAt ?? 0 : b.updatedAt ?? 0
-    if (primaryA !== primaryB) return primaryB - primaryA
-    return (b.updatedAt ?? 0) - (a.updatedAt ?? 0)
-  })
+  // Use shared filtering and sorting utilities
+  const sortedConversations = useMemo(
+    () => filterAndSortConversations(
+      conversations,
+      {
+        platform: selectedPlatform,
+        // Only apply local search filter in favorites mode (full search handled by atoms)
+        searchQuery: isFavorites ? searchQuery : undefined,
+      },
+      { byFavoriteTime: isFavorites }
+    ),
+    [conversations, selectedPlatform, isFavorites, searchQuery]
+  )
+  const filteredConversations = sortedConversations
 
   const emptyLabel = isFavorites ? 'No favorites yet' : 'No conversations found'
   const pageTitle = isFavorites ? 'Favorites' : 'Conversations'
@@ -327,366 +319,4 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
       </div>
     </div>
   )
-}
-
-function ConversationListSkeleton() {
-  return (
-    <div className="divide-y divide-border/50" aria-busy="true" aria-label="Loading">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="p-3.5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 skeleton rounded-lg" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 w-3/4 skeleton rounded" />
-              <div className="h-3 w-1/2 skeleton rounded" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function ConversationListItem({
-  conversation,
-  isSelected,
-  onClick,
-  onToggleFavorite,
-  searchQuery,
-  matchInfo,
-  style,
-}: {
-  conversation: Conversation
-  isSelected: boolean
-  onClick: () => void
-  onToggleFavorite: () => void
-  searchQuery?: string
-  matchInfo?: SearchResultWithMatches
-  style?: React.CSSProperties
-}) {
-  const platformConfig = PLATFORM_CONFIG[conversation.platform]
-
-  // Get match snippet to display
-  const messageMatch = matchInfo?.matches.find((m) => m.type === 'message')
-  const hasMessageMatch = !!messageMatch
-
-  return (
-    <div
-      role="listitem"
-      tabIndex={0}
-      className={cn(
-        'group relative p-3.5 cursor-pointer transition-all animate-fade-in kbd-focus',
-        isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'
-      )}
-      style={style}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onClick()
-        }
-      }}
-    >
-      {/* Selected indicator */}
-      {isSelected && (
-        <div className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-primary" />
-      )}
-
-      <div className="flex items-center gap-3">
-        {/* Platform indicator */}
-        <div
-          className={cn(
-            'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all',
-            isSelected ? 'scale-105' : 'group-hover:scale-105'
-          )}
-          style={{ backgroundColor: `${platformConfig.color}15` }}
-        >
-          <span
-            className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: platformConfig.color }}
-          />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-sm truncate">
-            {searchQuery ? (
-              <HighlightText text={conversation.title} query={searchQuery} />
-            ) : (
-              conversation.title
-            )}
-          </h3>
-          <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-            <span className="font-medium" style={{ color: platformConfig.color }}>{platformConfig.name}</span>
-            <span className="opacity-40" aria-hidden="true">·</span>
-            <span className="tabular-nums">{new Date(conversation.updatedAt).toLocaleDateString()}</span>
-          </div>
-
-          {/* Show message match snippet if searching by message content */}
-          {hasMessageMatch && searchQuery && (
-            <div className="mt-1.5 text-xs text-muted-foreground bg-muted/50 rounded-md px-2 py-1 line-clamp-2">
-              <HighlightText
-                text={messageMatch.text}
-                query={searchQuery}
-                maxLength={100}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {/* External link button */}
-          <button
-            className="p-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer kbd-focus opacity-0 group-hover:opacity-100"
-            onClick={(event) => {
-              event.stopPropagation()
-              if (conversation.url) {
-                browser.tabs.create({ url: conversation.url })
-              }
-            }}
-            aria-label="Open in platform"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-          </button>
-
-          {/* Favorite button */}
-          <button
-            className={cn(
-              'p-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer kbd-focus',
-              conversation.isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-            )}
-            onClick={(event) => {
-              event.stopPropagation()
-              onToggleFavorite()
-            }}
-            aria-label={conversation.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-            aria-pressed={conversation.isFavorite}
-          >
-            <Star
-              className={cn(
-                'w-4 h-4 transition-colors',
-                conversation.isFavorite
-                  ? 'fill-amber-400 text-amber-400'
-                  : 'text-muted-foreground'
-              )}
-            />
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function ConversationDetail({
-  conversation,
-  messages,
-  searchQuery,
-}: {
-  conversation: Conversation
-  messages: Message[]
-  searchQuery?: string
-}) {
-  const platformConfig = PLATFORM_CONFIG[conversation.platform]
-  const needsSync = conversation.detailStatus !== 'full' || messages.length === 0
-  const [scrollToMessageId, setScrollToMessageId] = useAtom(scrollToMessageIdAtom)
-  const messagesContainerRef = useRef<HTMLDivElement>(null)
-
-  // Scroll to target message when loaded
-  useEffect(() => {
-    if (scrollToMessageId && messages.length > 0 && messagesContainerRef.current) {
-      const targetElement = messagesContainerRef.current.querySelector(
-        `[data-message-id="${scrollToMessageId}"]`
-      )
-      if (targetElement) {
-        // Small delay to ensure DOM is ready
-        setTimeout(() => {
-          targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          // Add highlight effect
-          targetElement.classList.add('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background')
-          setTimeout(() => {
-            targetElement.classList.remove('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background')
-          }, 2000)
-        }, 100)
-        // Clear the scroll target
-        setScrollToMessageId(null)
-      }
-    }
-  }, [scrollToMessageId, messages, setScrollToMessageId])
-
-  const handleExport = () => {
-    const content = messages
-      .map((m) => `## ${m.role === 'user' ? 'You' : 'Assistant'}\n\n${m.content}`)
-      .join('\n\n---\n\n')
-
-    const blob = new Blob([`# ${conversation.title}\n\n${content}`], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${conversation.title.slice(0, 50)}.md`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  return (
-    <div className="h-full flex flex-col border border-border rounded-2xl overflow-hidden bg-card/30">
-      {/* Header */}
-      <div className="p-5 border-b border-border/50 bg-card/50">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <div
-                className="w-9 h-9 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: `${platformConfig.color}15` }}
-              >
-                <span
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: platformConfig.color }}
-                />
-              </div>
-              <span
-                className="text-sm font-medium"
-                style={{ color: platformConfig.color }}
-              >
-                {platformConfig.name}
-              </span>
-            </div>
-            <h2 className="text-lg font-heading font-semibold truncate">{conversation.title}</h2>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-              <span className="tabular-nums">{messages.length} messages</span>
-              <span className="opacity-40" aria-hidden="true">·</span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                <span className="tabular-nums">{new Date(conversation.updatedAt).toLocaleString()}</span>
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              className="p-2.5 hover:bg-muted rounded-xl transition-colors cursor-pointer kbd-focus"
-              onClick={() => conversation.url && browser.tabs.create({ url: conversation.url })}
-              aria-label="Open in platform"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </button>
-            <button
-              className="p-2.5 hover:bg-muted rounded-xl transition-colors cursor-pointer kbd-focus"
-              onClick={handleExport}
-              aria-label="Export as Markdown"
-            >
-              <Download className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {needsSync && (
-          <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 px-4 py-3">
-            <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-200">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span>Open the original conversation to sync full content</span>
-            </div>
-            <button
-              className="px-3 py-1.5 text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 rounded-lg transition-colors cursor-pointer text-amber-700 dark:text-amber-200"
-              onClick={() => conversation.url && browser.tabs.create({ url: conversation.url })}
-            >
-              Open
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Messages */}
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto scrollbar-thin p-5">
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
-              <MessageSquare className="w-5 h-5 text-muted-foreground/50" />
-            </div>
-            <p className="text-sm text-muted-foreground">No synced messages yet</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map((message, index) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                platformColor={platformConfig.color}
-                searchQuery={searchQuery}
-                style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function MessageBubble({
-  message,
-  platformColor,
-  searchQuery,
-  style,
-}: {
-  message: Message
-  platformColor: string
-  searchQuery?: string
-  style?: React.CSSProperties
-}) {
-  const isUser = message.role === 'user'
-
-  return (
-    <div
-      data-message-id={message.id}
-      className={cn('flex gap-3 animate-slide-in transition-all rounded-xl', isUser && 'flex-row-reverse')}
-      style={style}
-    >
-      {/* Avatar */}
-      <div
-        className={cn(
-          'w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0',
-          isUser ? 'bg-primary/20' : 'bg-muted'
-        )}
-        style={!isUser ? { backgroundColor: `${platformColor}12` } : undefined}
-      >
-        {isUser ? (
-          <User className="w-4 h-4 text-primary" />
-        ) : (
-          <Bot className="w-4 h-4" style={{ color: platformColor }} />
-        )}
-      </div>
-
-      {/* Bubble */}
-      <div
-        className={cn(
-          'flex-1 max-w-[85%] rounded-2xl px-4 py-3',
-          isUser
-            ? 'bg-primary/15 text-foreground ml-auto'
-            : 'bg-muted/50 border border-border/50'
-        )}
-      >
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          <span className="text-xs font-medium text-muted-foreground">
-            {isUser ? 'You' : 'Assistant'}
-          </span>
-          {message.createdAt && (
-            <span className="text-[10px] text-muted-foreground/50 tabular-nums">
-              {formatMessageTime(message.createdAt)}
-            </span>
-          )}
-        </div>
-        <div className="text-sm whitespace-pre-wrap leading-relaxed">
-          {searchQuery ? (
-            <HighlightText text={message.content} query={searchQuery} />
-          ) : (
-            message.content
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function formatMessageTime(timestamp: number): string {
-  const date = new Date(timestamp)
-  return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }

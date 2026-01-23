@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { browser } from 'wxt/browser'
 import { useAtom } from 'jotai'
 import {
@@ -29,6 +29,7 @@ import { cn } from '@/utils/cn'
 import { SyncStatusBar, SyncSettingsModal, ConflictResolverModal } from '@/components/sync'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { HighlightText } from '@/components/HighlightText'
+import { filterAndSortConversations } from '@/utils/filters'
 import type { SearchResultWithMatches } from '@/utils/db'
 
 export default function App() {
@@ -71,22 +72,16 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const filteredConversations = conversations.filter((conv) => {
-    if (selectedPlatform !== 'all' && conv.platform !== selectedPlatform) {
-      return false
-    }
-    if (showFavoritesOnly && !conv.isFavorite) {
-      return false
-    }
-    return true
-  })
-
-  const sortedConversations = [...filteredConversations].sort((a, b) => {
-    const primaryA = showFavoritesOnly ? a.favoriteAt ?? 0 : a.updatedAt ?? 0
-    const primaryB = showFavoritesOnly ? b.favoriteAt ?? 0 : b.updatedAt ?? 0
-    if (primaryA !== primaryB) return primaryB - primaryA
-    return (b.updatedAt ?? 0) - (a.updatedAt ?? 0)
-  })
+  // Use shared filtering and sorting utilities
+  const sortedConversations = useMemo(
+    () => filterAndSortConversations(
+      conversations,
+      { platform: selectedPlatform, favoritesOnly: showFavoritesOnly },
+      { byFavoriteTime: showFavoritesOnly }
+    ),
+    [conversations, selectedPlatform, showFavoritesOnly]
+  )
+  const filteredConversations = sortedConversations
 
   const clearSearch = useCallback(() => {
     setSearchQuery('')

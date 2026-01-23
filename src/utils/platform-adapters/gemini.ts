@@ -1,5 +1,14 @@
 import type { Conversation, Message } from '@/types'
 import type { PlatformAdapter } from './types'
+import {
+  stripXssiPrefix,
+  parseJsonSafe,
+  parseJsonCandidates,
+  toEpochMillis,
+  readTimestampFromObject,
+  findMaxTimestampInArray,
+  extractMessageContent,
+} from './common'
 
 const API_PATTERNS = {
   batch: /\/_\/BardChatUi\/data\/batchexecute/,
@@ -15,47 +24,6 @@ type WalkHandlers = {
   array?: (value: unknown[]) => boolean | void
   object?: (value: Record<string, unknown>) => boolean | void
   string?: (value: string) => boolean | void
-}
-
-function stripXssiPrefix(text: string): string {
-  const trimmed = text.trim()
-  if (!trimmed.startsWith("))}'")) return trimmed
-  const newlineIndex = trimmed.indexOf('\n')
-  if (newlineIndex === -1) return ''
-  return trimmed.slice(newlineIndex + 1).trimStart()
-}
-
-function parseJsonSafe(text: string): unknown | null {
-  try {
-    return JSON.parse(text)
-  } catch {
-    return null
-  }
-}
-
-function parseJsonCandidates(text: string): unknown[] {
-  const results: unknown[] = []
-  const direct = parseJsonSafe(text)
-  if (direct) return [direct]
-
-  const lines = text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-
-  for (const line of lines) {
-    const parsed = parseJsonSafe(line)
-    if (parsed) results.push(parsed)
-  }
-
-  const start = text.indexOf('[')
-  const end = text.lastIndexOf(']')
-  if (start !== -1 && end > start) {
-    const parsed = parseJsonSafe(text.slice(start, end + 1))
-    if (parsed) results.push(parsed)
-  }
-
-  return results
 }
 
 function normalizePayloads(data: unknown): unknown[] {
@@ -120,81 +88,11 @@ function isResponseId(value: unknown): value is string {
   )
 }
 
-function findTimestampInArray(value: unknown[]): number | null {
-  let max: number | null = null
-  for (const item of value) {
-    const ts = toEpochMillis(item)
-    if (!ts) continue
-    max = max === null ? ts : Math.max(max, ts)
-  }
-  return max
-}
+// Re-use findMaxTimestampInArray from common as findTimestampInArray
+const findTimestampInArray = findMaxTimestampInArray
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string')
-}
-
-function toEpochMillis(value: unknown): number | null {
-  if (Array.isArray(value) && value.length === 2) {
-    const [seconds, nanos] = value
-    if (typeof seconds !== 'number' || typeof nanos !== 'number') return null
-    if (seconds < 1e9 || seconds > 1e11) return null
-    return seconds * 1000 + Math.floor(nanos / 1e6)
-  }
-
-  if (typeof value === 'number') {
-    if (value > 1e12) return value
-    if (value > 1e9) return value * 1000
-    return null
-  }
-  if (typeof value === 'string') {
-    const parsed = Date.parse(value)
-    return Number.isNaN(parsed) ? null : parsed
-  }
-
-  return null
-}
-
-function readTimestampFromObject(obj: Record<string, unknown>): number | null {
-  return toEpochMillis(
-    obj.timestamp ?? obj.createTime ?? obj.create_time ?? obj.time ?? obj.ct ?? obj.createdAt
-  )
-}
-
-function extractMessageContent(item: unknown): string {
-  if (!item || typeof item !== 'object') return ''
-  const record = item as Record<string, unknown>
-
-  if (typeof record.text === 'string') return record.text
-  if (typeof record.content === 'string') return record.content
-
-  const content = record.content
-  if (content && typeof content === 'object') {
-    const contentRecord = content as Record<string, unknown>
-    if (typeof contentRecord.text === 'string') return contentRecord.text
-    if (Array.isArray(contentRecord.parts)) {
-      return contentRecord.parts
-        .filter((part): part is string => typeof part === 'string')
-        .join('\n')
-    }
-  }
-
-  if (Array.isArray(content)) {
-    return content
-      .map((part) => {
-        if (typeof part === 'string') return part
-        if (part && typeof part === 'object') {
-          const partRecord = part as Record<string, unknown>
-          if (typeof partRecord.text === 'string') return partRecord.text
-          if (partRecord.type === 'text' && typeof partRecord.text === 'string') {
-            return partRecord.text
-          }
-        }
-        return ''
-      })
-      .join('\n')
-  }
-  return ''
 }
 
 function walk(value: unknown, handlers: WalkHandlers): void {
