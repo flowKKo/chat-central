@@ -89,10 +89,13 @@ Strictly adhere to these protocols to prevent errors and ensure data integrity.
 |---------------|----------------|------------|-------|
 | `utils/platform-adapters/` | **Core Logic** for parsing AI responses. | 🌶️ High | Handles different API schemas (Claude/GPT/Gemini). Critical for sync. |
 | `entrypoints/interceptor.content` | Network request interception. | 🌶️ High | Injects into page context (MAIN world). Fragile to site updates. |
-| `utils/db/` | **Single Source of Truth** (IndexedDB). | 🟡 Medium | Wrapper around Dexie.js. Handles persistence. |
-| `entrypoints/background` | Central coordinator. | 🟡 Medium | Handles messages, triggers DB updates. |
-| `utils/atoms/` | Global State (Jotai). | 🟢 Low | React state management. |
-| `entrypoints/popup` | Extension Popup UI. | 🟢 Low | Main user interface. |
+| `utils/sync/` | Sync engine, merge logic, import/export. | 🌶️ High | Handles data synchronization and conflict resolution. |
+| `utils/db/` | **Single Source of Truth** (IndexedDB). | 🟡 Medium | Wrapper around Dexie.js. Handles persistence and search. |
+| `entrypoints/background` | Central coordinator. | 🟡 Medium | Handles messages, triggers DB updates, dev reload. |
+| `utils/atoms/` | Global State (Jotai). | 🟢 Low | React state management (conversations, theme, config, sync). |
+| `entrypoints/popup` | Extension Popup UI. | 🟢 Low | Main user interface with search. |
+| `entrypoints/manage` | Full-page Conversation Manager. | 🟢 Low | Detailed conversation view with search highlighting. |
+| `components/providers/` | React Context Providers. | 🟢 Low | Theme provider for light/dark/system modes. |
 
 ---
 
@@ -146,11 +149,16 @@ pnpm install
 
 ### Development
 ```bash
-# Start Dev Server
+# Start Dev Server (with HMR)
 pnpm dev
 
 # Start Dev Server (Firefox)
 pnpm dev:firefox
+
+# Manual Build + Auto Reload (for testing with login state)
+# Use this when you need to test in a browser with existing sessions
+pnpm dev:reload
+# Commands: r/Enter (build+reload), b (build only), s (status), q (quit), h (help)
 ```
 
 ### Definition of Done (DoD)
@@ -171,26 +179,41 @@ Before claiming a task is complete, verify:
 chat-central/
 ├── src/
 │   ├── assets/                   # Static assets & global styles
+│   │   └── styles/globals.css    #   - CSS variables for theming (light/dark)
+│   │
 │   ├── components/               # React Components
 │   │   ├── ui/                   #   - Generic UI (Button, Input)
 │   │   ├── shadcn/               #   - Shadcn UI components
-│   │   └── providers/            #   - Context Providers
+│   │   ├── providers/            #   - Context Providers (ThemeProvider)
+│   │   ├── sync/                 #   - Sync-related components
+│   │   ├── ConversationsManager.tsx  # Full conversation manager with search
+│   │   ├── HighlightText.tsx     #   - Search result highlighting
+│   │   ├── SettingsPanel.tsx     #   - Settings UI
+│   │   ├── AboutPanel.tsx        #   - About page
+│   │   ├── DashboardLayout.tsx   #   - Dashboard layout wrapper
+│   │   └── Sidebar.tsx           #   - Navigation sidebar
 │   │
 │   ├── entrypoints/              # 🚪 WXT ENTRY POINTS
-│   │   ├── background/           #   - Service Worker (Coordinator)
+│   │   ├── background/           #   - Service Worker (Coordinator + Dev Reload)
 │   │   ├── interceptor.content/  #   - Network Interceptor (Page Context)
 │   │   ├── observer.content/     #   - DOM Observer (Content Script)
-│   │   ├── popup/                #   - Main Extension UI
+│   │   ├── popup/                #   - Main Extension UI (compact view)
+│   │   ├── manage/               #   - Full-page Conversation Manager
 │   │   └── options/              #   - Settings Page
 │   │
 │   ├── utils/                    # 🧠 CORE LOGIC
 │   │   ├── platform-adapters/    #   - Platform-specific parsing logic (Crucial)
-│   │   ├── db/                   #   - IndexedDB (Dexie) wrapper
-│   │   ├── atoms/                #   - Jotai State Definitions
-│   │   └── constants/            #   - Global constants
+│   │   ├── db/                   #   - IndexedDB (Dexie) wrapper + search
+│   │   ├── atoms/                #   - Jotai State (conversations, theme, config, sync)
+│   │   ├── sync/                 #   - Sync engine, merge, import/export
+│   │   ├── constants/            #   - Global constants
+│   │   └── message-dedupe.ts     #   - Message deduplication logic
 │   │
 │   ├── types/                    # 📦 Global Type Definitions
 │   └── hooks/                    # Custom React Hooks
+│
+├── scripts/                      # 🔧 Development Scripts
+│   └── dev-reload.ts             #   - Manual build + auto-reload server
 │
 ├── .output/                      # Build artifacts (do not edit)
 ├── wxt.config.ts                 # WXT Configuration
@@ -208,25 +231,40 @@ chat-central/
 | **Update UI state** | `src/utils/atoms/` |
 | **Change network interception** | `src/entrypoints/interceptor.content/index.ts` |
 | **Update extension permissions** | `wxt.config.ts` |
-| **Adjust UI styles** | `src/assets/styles/globals.css` or `tailwind.config.js` |
+| **Adjust UI styles / theming** | `src/assets/styles/globals.css` or `tailwind.config.js` |
+| **Modify theme behavior** | `src/utils/atoms/theme.ts`, `src/components/providers/ThemeProvider.tsx` |
+| **Update search functionality** | `src/utils/db/index.ts` (search), `src/utils/atoms/conversations.ts` |
+| **Modify sync behavior** | `src/utils/sync/` |
+| **Update conversation manager UI** | `src/components/ConversationsManager.tsx` |
+| **Change popup UI** | `src/entrypoints/popup/App.tsx` |
+| **Change manage page UI** | `src/entrypoints/manage/App.tsx` |
+| **Modify dev workflow** | `scripts/dev-reload.ts`, `src/entrypoints/background/index.ts` |
 
 ---
 
 ## 9. Important Files
 
 - `wxt.config.ts`: WXT and Manifest configuration.
-- `src/types/index.ts`: Centralized types (Conversation, Message, Platform).
+- `src/types/index.ts`: Centralized types (Conversation, Message, Platform, Search types).
 - `src/utils/platform-adapters/types.ts`: Interface for all platform adapters.
-- `src/utils/db/index.ts`: Database definition.
-- `src/entrypoints/background/index.ts`: Main background logic.
+- `src/utils/db/index.ts`: Database definition and search functionality.
+- `src/entrypoints/background/index.ts`: Main background logic and dev reload connection.
+- `src/utils/atoms/conversations.ts`: Conversation state, search atoms, and actions.
+- `src/utils/atoms/theme.ts`: Theme state management (light/dark/system).
+- `src/components/providers/ThemeProvider.tsx`: Theme context provider.
+- `src/assets/styles/globals.css`: CSS variables for theming.
+- `scripts/dev-reload.ts`: Development reload server.
 
 ---
 
 ## 10. Troubleshooting
 
 - **Build Errors**: Clear `.output` and `.wxt` folders. Run `pnpm install`.
-- **HMR Issues**: Reload the extension in `chrome://extensions`.
+- **HMR Issues**: Reload the extension in `chrome://extensions`, or use `pnpm dev:reload` for manual control.
 - **Type Errors**: Run `pnpm type-check` to identify issues.
 - **Interception Issues**: Check `interceptor.content` logs in the console (Page context).
+- **Theme Not Applying**: Check `ThemeProvider` is wrapping the app, verify CSS variables in `globals.css`.
+- **Search Not Working**: Check `searchConversationsWithMatches` in `db/index.ts`, verify atoms in `conversations.ts`.
+- **Dev Reload Not Connecting**: Ensure `pnpm dev:reload` is running, check WebSocket connection on port 3717.
 
 ---
