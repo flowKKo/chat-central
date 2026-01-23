@@ -1,5 +1,6 @@
 import type { SyncProvider, ProviderConfig, SyncError, CloudSyncStatus } from './types'
 import { syncCycle, pullOnly, pushOnly, type SyncCycleResult } from './engine'
+import { syncLogger } from './utils'
 import {
   getSyncState,
   updateSyncState,
@@ -206,7 +207,7 @@ class SyncManagerImpl {
         try {
           await this.sync()
         } catch (error) {
-          console.error('[SyncManager] Auto sync failed:', error)
+          syncLogger.error('Auto sync failed', error)
         }
       }
     }, syncInterval)
@@ -275,7 +276,7 @@ class SyncManagerImpl {
       try {
         listener(event, data)
       } catch (error) {
-        console.error('[SyncManager] Event listener error:', error)
+        syncLogger.error('Event listener error', error)
       }
     }
   }
@@ -293,7 +294,7 @@ class SyncManagerImpl {
     if (online && this.provider) {
       // Trigger sync when coming back online
       this.sync().catch(error => {
-        console.error('[SyncManager] Sync after reconnect failed:', error)
+        syncLogger.error('Sync after reconnect failed', error)
       })
     }
   }
@@ -337,7 +338,7 @@ class SyncManagerImpl {
         try {
           await this.sync()
         } catch (error) {
-          console.error('[SyncManager] Retry failed:', error)
+          syncLogger.error('Retry failed', error)
         }
       }
     }, delay)

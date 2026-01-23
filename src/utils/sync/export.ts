@@ -7,6 +7,7 @@ import {
   initializeSyncState,
 } from '@/utils/db'
 import type { ExportManifest, ExportOptionsSync } from './types'
+import { sha256, toJsonl, formatDateForFilename, downloadBlob } from './utils'
 
 // ============================================================================
 // Constants
@@ -191,49 +192,7 @@ export async function exportConversations(
  * Download export result as a file
  */
 export function downloadExport(result: ExportResult): void {
-  const url = URL.createObjectURL(result.blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = result.filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * Convert array of objects to JSONL format
- */
-function toJsonl<T>(items: T[]): string {
-  return items.map((item) => JSON.stringify(item)).join('\n')
-}
-
-/**
- * Calculate SHA-256 hash of a string
- */
-async function sha256(text: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(text)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
-}
-
-/**
- * Format date for filename (YYYYMMDD_HHmmss)
- */
-function formatDateForFilename(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${year}${month}${day}_${hours}${minutes}${seconds}`
+  downloadBlob(result.blob, result.filename)
 }
 
 // ============================================================================

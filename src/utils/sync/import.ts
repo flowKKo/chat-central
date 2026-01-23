@@ -10,6 +10,7 @@ import type {
   ConflictRecord,
 } from './types'
 import { mergeConversation, mergeMessage } from './merge'
+import { sha256, parseJsonl } from './utils'
 
 // ============================================================================
 // Constants
@@ -106,8 +107,16 @@ export async function importData(
     }
 
     // Parse JSONL files
-    const conversations = parseJsonl<Conversation>(conversationsRaw, conversationSchema, result)
-    const messages = parseJsonl<Message>(messagesRaw, messageSchema, result)
+    const conversations = parseJsonl<Conversation>(
+      conversationsRaw,
+      conversationSchema,
+      (line, msg) => result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
+    )
+    const messages = parseJsonl<Message>(
+      messagesRaw,
+      messageSchema,
+      (line, msg) => result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
+    )
 
     // Import within a transaction
     await db.transaction('rw', [db.conversations, db.messages, db.conflicts], async () => {
@@ -347,60 +356,6 @@ export async function importFromJson(
   }
 }
 
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * Parse JSONL content into array of typed objects
- */
-function parseJsonl<T>(
-  content: string,
-  schema: { safeParse: (data: unknown) => { success: boolean; data?: T; error?: unknown } },
-  result: ImportResult
-): T[] {
-  const items: T[] = []
-  const lines = content.split('\n').filter((line) => line.trim())
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    if (!line) continue
-
-    try {
-      const parsed = JSON.parse(line)
-      const validated = schema.safeParse(parsed)
-
-      if (validated.success && validated.data) {
-        items.push(validated.data)
-      } else {
-        result.errors.push({
-          type: 'validation_error',
-          message: `Line ${i + 1}: Invalid data format`,
-          line: i + 1,
-        })
-      }
-    } catch {
-      result.errors.push({
-        type: 'parse_error',
-        message: `Line ${i + 1}: Invalid JSON`,
-        line: i + 1,
-      })
-    }
-  }
-
-  return items
-}
-
-/**
- * Calculate SHA-256 hash of a string
- */
-async function sha256(text: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(text)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
-}
 
 // ============================================================================
 // File Validation
