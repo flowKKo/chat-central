@@ -1,9 +1,12 @@
 import type { ExportManifest } from './types'
 import type { Message, Platform } from '@/types'
 import JSZip from 'jszip'
+import { PLATFORM_CONFIG } from '@/types'
 import {
   getAllConversationsForExport,
   getAllMessagesForExport,
+  getConversationById,
+  getMessagesByConversationId,
   getSyncState,
   initializeSyncState,
 } from '@/utils/db'
@@ -200,4 +203,82 @@ export async function exportToJson(
   const filename = `chatcentral_export_${formatDateForFilename(new Date())}.json`
 
   return { blob, filename }
+}
+
+// ============================================================================
+// Markdown Export
+// ============================================================================
+
+export interface MarkdownExportResult {
+  content: string
+  filename: string
+}
+
+/**
+ * Export a single conversation to Markdown format
+ */
+export async function exportToMarkdown(conversationId: string): Promise<MarkdownExportResult> {
+  const conversation = await getConversationById(conversationId)
+  if (!conversation) {
+    throw new Error(`Conversation not found: ${conversationId}`)
+  }
+
+  const messages = await getMessagesByConversationId(conversationId)
+  const platformConfig = PLATFORM_CONFIG[conversation.platform]
+
+  const lines: string[] = []
+
+  // Header
+  lines.push(`# ${conversation.title}`)
+  lines.push('')
+  lines.push(`**Platform**: ${platformConfig.name}`)
+  lines.push(`**Created**: ${new Date(conversation.createdAt).toLocaleDateString()}`)
+  lines.push(`**Messages**: ${messages.length}`)
+  lines.push('')
+  lines.push('---')
+  lines.push('')
+
+  // Messages
+  for (const message of messages) {
+    const role = message.role === 'user' ? 'User' : 'Assistant'
+    lines.push(`## ${role}`)
+    lines.push('')
+    lines.push(message.content)
+    lines.push('')
+  }
+
+  const content = lines.join('\n')
+  const safeTitle = conversation.title.replace(/[^\w\s-]/g, '').slice(0, 50)
+  const filename = `${safeTitle || 'conversation'}.md`
+
+  return { content, filename }
+}
+
+/**
+ * Export a conversation to JSON format (single conversation)
+ */
+export async function exportConversationToJson(
+  conversationId: string
+): Promise<{ content: string; filename: string }> {
+  const conversation = await getConversationById(conversationId)
+  if (!conversation) {
+    throw new Error(`Conversation not found: ${conversationId}`)
+  }
+
+  const messages = await getMessagesByConversationId(conversationId)
+
+  const data = {
+    exportedAt: new Date().toISOString(),
+    version: EXPORT_VERSION,
+    conversation: {
+      ...conversation,
+      messages,
+    },
+  }
+
+  const content = JSON.stringify(data, null, 2)
+  const safeTitle = conversation.title.replace(/[^\w\s-]/g, '').slice(0, 50)
+  const filename = `${safeTitle || 'conversation'}.json`
+
+  return { content, filename }
 }

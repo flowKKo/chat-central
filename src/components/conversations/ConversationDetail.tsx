@@ -1,9 +1,21 @@
 import { useAtom } from 'jotai'
-import { Download, ExternalLink, MessageSquare, AlertCircle, Clock } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import {
+  AlertCircle,
+  ChevronDown,
+  Clock,
+  Download,
+  ExternalLink,
+  FileJson,
+  FileText,
+  MessageSquare,
+} from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { browser } from 'wxt/browser'
 import { PLATFORM_CONFIG } from '@/types'
 import { scrollToMessageIdAtom } from '@/utils/atoms'
+import { cn } from '@/utils/cn'
+import { exportConversationToJson, exportToMarkdown } from '@/utils/sync/export'
+import { downloadBlob } from '@/utils/sync/utils'
 import { MessageBubble } from './MessageBubble'
 import type { Conversation, Message } from '@/types'
 
@@ -22,6 +34,8 @@ export function ConversationDetail({
   const needsSync = conversation.detailStatus !== 'full' || messages.length === 0
   const [scrollToMessageId, setScrollToMessageId] = useAtom(scrollToMessageIdAtom)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
 
   // Scroll to target message when loaded
   useEffect(() => {
@@ -55,18 +69,31 @@ export function ConversationDetail({
     }
   }, [scrollToMessageId, messages, setScrollToMessageId])
 
-  const handleExport = () => {
-    const content = messages
-      .map((m) => `## ${m.role === 'user' ? 'You' : 'Assistant'}\n\n${m.content}`)
-      .join('\n\n---\n\n')
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false)
+      }
+    }
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showExportMenu])
 
-    const blob = new Blob([`# ${conversation.title}\n\n${content}`], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${conversation.title.slice(0, 50)}.md`
-    a.click()
-    URL.revokeObjectURL(url)
+  const handleExportMarkdown = async () => {
+    setShowExportMenu(false)
+    const result = await exportToMarkdown(conversation.id)
+    const blob = new Blob([result.content], { type: 'text/markdown' })
+    downloadBlob(blob, result.filename)
+  }
+
+  const handleExportJson = async () => {
+    setShowExportMenu(false)
+    const result = await exportConversationToJson(conversation.id)
+    const blob = new Blob([result.content], { type: 'application/json' })
+    downloadBlob(blob, result.filename)
   }
 
   return (
@@ -112,13 +139,42 @@ export function ConversationDetail({
             >
               <ExternalLink className="h-4 w-4" />
             </button>
-            <button
-              className="kbd-focus cursor-pointer rounded-xl p-2.5 transition-colors hover:bg-muted"
-              onClick={handleExport}
-              aria-label="Export as Markdown"
-            >
-              <Download className="h-4 w-4" />
-            </button>
+
+            {/* Export Dropdown */}
+            <div ref={exportMenuRef} className="relative">
+              <button
+                className={cn(
+                  'kbd-focus flex cursor-pointer items-center gap-1 rounded-xl p-2.5 transition-colors hover:bg-muted',
+                  showExportMenu && 'bg-muted'
+                )}
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                aria-label="Export options"
+                aria-expanded={showExportMenu}
+                aria-haspopup="true"
+              >
+                <Download className="h-4 w-4" />
+                <ChevronDown className="h-3 w-3" />
+              </button>
+
+              {showExportMenu && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-border bg-card p-1 shadow-lg">
+                  <button
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
+                    onClick={handleExportMarkdown}
+                  >
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    Export as Markdown
+                  </button>
+                  <button
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
+                    onClick={handleExportJson}
+                  >
+                    <FileJson className="h-4 w-4 text-muted-foreground" />
+                    Export as JSON
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

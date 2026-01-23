@@ -1,22 +1,30 @@
 import { useAtom } from 'jotai'
 import {
   AlertTriangle,
+  CheckCircle2,
   Database,
+  Download,
   Keyboard,
   Lightbulb,
+  Loader2,
   Monitor,
   Moon,
+  Package,
   Palette,
   Shield,
   Sun,
   Trash2,
+  Upload,
   Zap,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { type Platform, PLATFORM_CONFIG } from '@/types'
 import { type ThemePreference, themePreferenceAtom } from '@/utils/atoms/theme'
 import { cn } from '@/utils/cn'
 import { clearAllData, clearPlatformData } from '@/utils/db'
+import { downloadExport, exportData } from '@/utils/sync/export'
+import { importData, importFromJson, validateImportFile } from '@/utils/sync/import'
+import type { ImportResult } from '@/utils/sync/types'
 
 const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', icon: Sun },
@@ -45,6 +53,11 @@ const tips = [
 export function SettingsPanel() {
   const [isClearing, setIsClearing] = useState(false)
   const [themePreference, setThemePreference] = useAtom(themePreferenceAtom)
+  const [isExporting, setIsExporting] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const [importResult, setImportResult] = useState<ImportResult | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleClearAll = async () => {
     if (
@@ -71,6 +84,58 @@ export function SettingsPanel() {
       window.location.reload()
     } finally {
       setIsClearing(false)
+    }
+  }
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const result = await exportData({ type: 'full' })
+      downloadExport(result)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+      setImportResult(null)
+    }
+  }
+
+  const handleImport = async () => {
+    if (!selectedFile) return
+
+    setIsImporting(true)
+    setImportResult(null)
+    try {
+      const validation = await validateImportFile(selectedFile)
+      if (!validation.valid) {
+        setImportResult({
+          success: false,
+          imported: { conversations: 0, messages: 0 },
+          skipped: { conversations: 0, messages: 0 },
+          conflicts: [],
+          errors: validation.errors,
+        })
+        return
+      }
+
+      const result = selectedFile.name.endsWith('.json')
+        ? await importFromJson(selectedFile, { conflictStrategy: 'merge' })
+        : await importData(selectedFile, { conflictStrategy: 'merge' })
+
+      setImportResult(result)
+      if (result.success) {
+        setSelectedFile(null)
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+      }
+    } finally {
+      setIsImporting(false)
     }
   }
 
@@ -126,6 +191,156 @@ export function SettingsPanel() {
                     </button>
                   )
                 })}
+              </div>
+            </div>
+          </section>
+
+          {/* Data Transfer Section */}
+          <section>
+            <div className="mb-4 flex items-center gap-2">
+              <Package className="h-5 w-5 text-primary" />
+              <h3 className="font-heading text-lg font-semibold">Data Transfer</h3>
+            </div>
+
+            <div className="space-y-4">
+              {/* Export */}
+              <div className="rounded-xl border border-border bg-card/50 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="mb-1 flex items-center gap-2">
+                      <Download className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">Export</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Download all conversations as a ZIP archive
+                    </p>
+                  </div>
+                  <button
+                    className={cn(
+                      'flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all',
+                      'bg-primary/10 text-primary hover:bg-primary/20',
+                      isExporting && 'cursor-not-allowed opacity-50'
+                    )}
+                    onClick={handleExport}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Exporting...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4" />
+                        Export All
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Import */}
+              <div className="rounded-xl border border-border bg-card/50 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Upload className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Import</span>
+                </div>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  Restore from a previous export (.zip or .json)
+                </p>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".zip,.json"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="import-file"
+                  />
+                  <label
+                    htmlFor="import-file"
+                    className={cn(
+                      'flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border px-4 py-2.5 text-sm transition-all hover:border-muted-foreground/50 hover:bg-muted/30',
+                      selectedFile && 'border-primary bg-primary/5'
+                    )}
+                  >
+                    {selectedFile ? (
+                      <span className="max-w-48 truncate text-primary">{selectedFile.name}</span>
+                    ) : (
+                      <span className="text-muted-foreground">Choose file...</span>
+                    )}
+                  </label>
+                  <button
+                    className={cn(
+                      'flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all',
+                      'bg-primary/10 text-primary hover:bg-primary/20',
+                      (!selectedFile || isImporting) && 'cursor-not-allowed opacity-50'
+                    )}
+                    onClick={handleImport}
+                    disabled={!selectedFile || isImporting}
+                  >
+                    {isImporting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Importing...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4" />
+                        Import
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Import Result */}
+                {importResult && (
+                  <div
+                    className={cn(
+                      'mt-4 rounded-lg p-3',
+                      importResult.success
+                        ? 'border border-emerald-500/20 bg-emerald-500/10'
+                        : 'border border-red-500/20 bg-red-500/10'
+                    )}
+                  >
+                    <div className="flex items-start gap-2">
+                      {importResult.success ? (
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+                      ) : (
+                        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400" />
+                      )}
+                      <div className="flex-1 text-sm">
+                        {importResult.success ? (
+                          <div>
+                            <p className="font-medium text-emerald-400">Import successful</p>
+                            <p className="mt-1 text-muted-foreground">
+                              Imported {importResult.imported.conversations} conversations,{' '}
+                              {importResult.imported.messages} messages
+                              {(importResult.skipped.conversations > 0 ||
+                                importResult.skipped.messages > 0) && (
+                                <>
+                                  {' '}
+                                  (skipped {importResult.skipped.conversations} conversations,{' '}
+                                  {importResult.skipped.messages} messages)
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="font-medium text-red-400">Import failed</p>
+                            {importResult.errors.map((error, i) => (
+                              <p key={i} className="mt-1 text-muted-foreground">
+                                {error.message}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>
