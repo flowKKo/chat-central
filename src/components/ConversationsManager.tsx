@@ -132,13 +132,15 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
     }
   }, [isExportMenuOpen])
 
+  // Memoize array conversion to avoid repeated Set->Array conversions
+  const selectedIdsArray = useMemo(() => Array.from(batchSelectedIds), [batchSelectedIds])
+
   // Batch export handlers
   const handleExportZip = async () => {
-    if (batchSelectedIds.size === 0) return
+    if (selectedIdsArray.length === 0) return
     setIsExporting(true)
     try {
-      const ids = Array.from(batchSelectedIds)
-      const result = await exportConversations(ids)
+      const result = await exportConversations(selectedIdsArray)
       downloadExport(result)
       clearBatchSelection()
     } catch (error) {
@@ -150,11 +152,10 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
   }
 
   const handleExportMarkdown = async () => {
-    if (batchSelectedIds.size === 0) return
+    if (selectedIdsArray.length === 0) return
     setIsExporting(true)
     try {
-      const ids = Array.from(batchSelectedIds)
-      const result = await exportBatchMarkdown(ids)
+      const result = await exportBatchMarkdown(selectedIdsArray)
       downloadBlob(result.blob, result.filename)
       clearBatchSelection()
     } catch (error) {
@@ -182,9 +183,17 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
   )
   const filteredConversations = sortedConversations
 
-  const handleSelectAll = () => {
-    const ids = sortedConversations.map((c) => c.id)
-    selectAllVisible(ids)
+  // Check if all visible conversations are selected
+  const isAllSelected =
+    sortedConversations.length > 0 && sortedConversations.every((c) => batchSelectedIds.has(c.id))
+
+  const handleToggleSelectAll = () => {
+    if (isAllSelected) {
+      clearBatchSelection()
+    } else {
+      const ids = sortedConversations.map((c) => c.id)
+      selectAllVisible(ids)
+    }
   }
 
   const emptyLabel = isFavorites ? 'No favorites yet' : 'No conversations found'
@@ -350,16 +359,16 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                 <button
                   type="button"
                   className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted"
-                  onClick={handleSelectAll}
+                  onClick={handleToggleSelectAll}
                 >
-                  Select all
+                  {isAllSelected ? 'Deselect all' : 'Select all'}
                 </button>
                 <button
                   type="button"
                   className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted"
                   onClick={() => clearBatchSelection()}
                 >
-                  Cancel
+                  Clear selection
                 </button>
 
                 {/* Export dropdown */}

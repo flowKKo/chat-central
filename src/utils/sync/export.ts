@@ -225,6 +225,7 @@ export async function exportToJson(
 export interface MarkdownExportResult {
   content: string
   filename: string
+  messageCount: number
 }
 
 /**
@@ -263,7 +264,7 @@ export async function exportToMarkdown(conversationId: string): Promise<Markdown
   const content = lines.join('\n')
   const filename = generateSafeFilename(conversation.title, '.md')
 
-  return { content, filename }
+  return { content, filename, messageCount: messages.length }
 }
 
 /**
@@ -334,10 +335,7 @@ export async function exportBatchMarkdown(
       usedFilenames.add(filename)
 
       zip.file(filename, result.content)
-
-      // Count messages from content (count ## User and ## Assistant headers)
-      const messageCount = (result.content.match(/^## (User|Assistant)$/gm) || []).length
-      totalMessages += messageCount
+      totalMessages += result.messageCount
     } catch (error) {
       syncLogger.warn(`Failed to export conversation ${id}: ${String(error)}`)
     }
