@@ -256,33 +256,45 @@ interface MergeRecordResult {
   conflict: ConflictRecord | null
 }
 
+interface EntityTable<T> {
+  get(id: string): Promise<T | undefined>
+  add(item: T): Promise<unknown>
+  put(item: T): Promise<unknown>
+  update(id: string, changes: Partial<T>): Promise<unknown>
+}
+
+interface MergeEntityResult<T> {
+  merged: T
+  needsUserResolution: boolean
+}
+
 /**
- * Merge a single remote conversation
+ * Generic merge function for remote entities (conversations or messages)
  */
-async function mergeRemoteConversation(
+async function mergeRemoteEntity<T extends { dirty?: boolean }>(
   record: SyncRecord,
+  entityType: EntityType,
+  table: EntityTable<T>,
+  mergeFn: (local: T, remote: T) => MergeEntityResult<T>,
   autoResolve: boolean
 ): Promise<MergeRecordResult> {
-  const remote = record.data as unknown as Conversation
-  const local = await db.conversations.get(record.id)
+  const remote = record.data as unknown as T
+  const local = await table.get(record.id)
 
   // Handle deletion
   if (record.deleted) {
     if (local && !local.dirty) {
-      // Safe to delete - local has no pending changes
-      await db.conversations.update(record.id, {
+      await table.update(record.id, {
         deleted: true,
         deletedAt: Date.now(),
         dirty: false,
-      })
+      } as unknown as Partial<T>)
       return { applied: true, conflict: null }
     } else if (local?.dirty) {
-      // Conflict: remote deleted but local has changes
       if (!autoResolve) {
-        const conflict = await createConflict('conversation', record.id, local, { ...remote, deleted: true })
+        const conflict = await createConflict(entityType, record.id, local as Record<string, unknown>, { ...(remote as Record<string, unknown>), deleted: true })
         return { applied: false, conflict }
       }
-      // Auto-resolve: keep local changes, ignore remote delete
       return { applied: false, conflict: null }
     }
     return { applied: true, conflict: null }
@@ -290,106 +302,67 @@ async function mergeRemoteConversation(
 
   // New record
   if (!local) {
-    await db.conversations.add({
-      ...remote,
+    await table.add({
+      ...(remote as object),
       dirty: false,
       syncedAt: Date.now(),
-    })
+    } as unknown as T)
     return { applied: true, conflict: null }
   }
 
   // Local not dirty - safe to overwrite
   if (!local.dirty) {
-    await db.conversations.put({
-      ...remote,
+    await table.put({
+      ...(remote as object),
       dirty: false,
       syncedAt: Date.now(),
-    })
+    } as unknown as T)
     return { applied: true, conflict: null }
   }
 
   // Both have changes - need to merge
-  const mergeResult = mergeConversation(local, remote)
+  const mergeResult = mergeFn(local, remote)
 
   if (mergeResult.needsUserResolution && !autoResolve) {
-    const conflict = await createConflict('conversation', record.id, local, remote)
+    const conflict = await createConflict(entityType, record.id, local as Record<string, unknown>, remote as Record<string, unknown>)
     return { applied: false, conflict }
   }
 
-  // Auto-merged or no conflicts
-  await db.conversations.put({
-    ...mergeResult.conversation,
+  await table.put({
+    ...(mergeResult.merged as object),
     dirty: false,
     syncedAt: Date.now(),
-  })
+  } as unknown as T)
 
   return { applied: true, conflict: null }
 }
 
-/**
- * Merge a single remote message
- */
-async function mergeRemoteMessage(
-  record: SyncRecord,
-  autoResolve: boolean
-): Promise<MergeRecordResult> {
-  const remote = record.data as unknown as Message
-  const local = await db.messages.get(record.id)
+/** Merge a single remote conversation */
+async function mergeRemoteConversation(record: SyncRecord, autoResolve: boolean): Promise<MergeRecordResult> {
+  return mergeRemoteEntity(
+    record,
+    'conversation',
+    db.conversations as EntityTable<Conversation>,
+    (local, remote) => {
+      const result = mergeConversation(local, remote)
+      return { merged: result.conversation, needsUserResolution: result.needsUserResolution }
+    },
+    autoResolve
+  )
+}
 
-  // Handle deletion
-  if (record.deleted) {
-    if (local && !local.dirty) {
-      await db.messages.update(record.id, {
-        deleted: true,
-        deletedAt: Date.now(),
-        dirty: false,
-      })
-      return { applied: true, conflict: null }
-    } else if (local?.dirty) {
-      if (!autoResolve) {
-        const conflict = await createConflict('message', record.id, local, { ...remote, deleted: true })
-        return { applied: false, conflict }
-      }
-      return { applied: false, conflict: null }
-    }
-    return { applied: true, conflict: null }
-  }
-
-  // New record
-  if (!local) {
-    await db.messages.add({
-      ...remote,
-      dirty: false,
-      syncedAt: Date.now(),
-    })
-    return { applied: true, conflict: null }
-  }
-
-  // Local not dirty - safe to overwrite
-  if (!local.dirty) {
-    await db.messages.put({
-      ...remote,
-      dirty: false,
-      syncedAt: Date.now(),
-    })
-    return { applied: true, conflict: null }
-  }
-
-  // Both have changes - need to merge
-  const mergeResult = mergeMessage(local, remote)
-
-  if (mergeResult.needsUserResolution && !autoResolve) {
-    const conflict = await createConflict('message', record.id, local, remote)
-    return { applied: false, conflict }
-  }
-
-  await db.messages.put({
-    ...mergeResult.message,
-    dirty: false,
-    syncedAt: Date.now(),
-  })
-
-  return { applied: true, conflict: null }
+/** Merge a single remote message */
+async function mergeRemoteMessage(record: SyncRecord, autoResolve: boolean): Promise<MergeRecordResult> {
+  return mergeRemoteEntity(
+    record,
+    'message',
+    db.messages as EntityTable<Message>,
+    (local, remote) => {
+      const result = mergeMessage(local, remote)
+      return { merged: result.message, needsUserResolution: result.needsUserResolution }
+    },
+    autoResolve
+  )
 }
 
 /**
