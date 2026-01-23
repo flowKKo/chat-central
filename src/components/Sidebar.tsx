@@ -1,8 +1,17 @@
 import type { LucideIcon } from 'lucide-react'
 import { useAtom } from 'jotai'
-import { Info, MessageSquare, Settings, Sparkles, Star } from 'lucide-react'
-import { NavLink } from 'react-router-dom'
-import { conversationCountsAtom, favoriteCountsAtom } from '@/utils/atoms'
+import { ChevronDown, Info, MessageSquare, Settings, Sparkles, Star, Tag, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
+import {
+  allTagsAtom,
+  clearTagFiltersAtom,
+  conversationCountsAtom,
+  favoriteCountsAtom,
+  loadAllTagsAtom,
+  selectedFilterTagsAtom,
+  toggleTagFilterAtom,
+} from '@/utils/atoms'
 import { cn } from '@/utils/cn'
 
 interface NavItem {
@@ -27,12 +36,27 @@ const navItems: NavItem[] = [
 export function Sidebar() {
   const [conversationCounts] = useAtom(conversationCountsAtom)
   const [favoriteCounts] = useAtom(favoriteCountsAtom)
+  const [allTags] = useAtom(allTagsAtom)
+  const [selectedTags] = useAtom(selectedFilterTagsAtom)
+  const [, loadAllTags] = useAtom(loadAllTagsAtom)
+  const [, toggleTagFilter] = useAtom(toggleTagFilterAtom)
+  const [, clearTagFilters] = useAtom(clearTagFiltersAtom)
+  const [isTagsExpanded, setIsTagsExpanded] = useState(true)
+  const location = useLocation()
+
+  // Load tags on mount
+  useEffect(() => {
+    loadAllTags()
+  }, [loadAllTags])
 
   const getBadgeCount = (badgeAtom?: 'conversations' | 'favorites') => {
     if (badgeAtom === 'conversations') return conversationCounts.total
     if (badgeAtom === 'favorites') return favoriteCounts.total
     return undefined
   }
+
+  // Only show tags section on conversations page
+  const showTagsSection = location.pathname === '/conversations' || location.pathname === '/'
 
   return (
     <aside className="gradient-mesh flex h-screen w-60 flex-col border-r border-border bg-card/50">
@@ -50,7 +74,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3" aria-label="Main navigation">
+      <nav className="flex-1 overflow-hidden p-3" aria-label="Main navigation">
         <ul className="space-y-1">
           {navItems.map((item) => {
             const badgeCount = getBadgeCount(item.badgeAtom)
@@ -95,6 +119,71 @@ export function Sidebar() {
             )
           })}
         </ul>
+
+        {/* Tags Section */}
+        {showTagsSection && allTags.length > 0 && (
+          <div className="mt-4 border-t border-border/50 pt-4">
+            <button
+              className="flex w-full cursor-pointer items-center justify-between px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+              onClick={() => setIsTagsExpanded(!isTagsExpanded)}
+              aria-expanded={isTagsExpanded}
+            >
+              <span className="flex items-center gap-2">
+                <Tag className="h-3 w-3" />
+                Tags
+                {selectedTags.length > 0 && (
+                  <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                    {selectedTags.length}
+                  </span>
+                )}
+              </span>
+              <ChevronDown
+                className={cn(
+                  'h-3 w-3 transition-transform duration-200',
+                  isTagsExpanded && 'rotate-180'
+                )}
+              />
+            </button>
+
+            {isTagsExpanded && (
+              <div className="mt-2 space-y-1">
+                {selectedTags.length > 0 && (
+                  <button
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => clearTagFilters()}
+                  >
+                    <X className="h-3 w-3" />
+                    Clear filters
+                  </button>
+                )}
+                <div className="scrollbar-thin max-h-40 space-y-0.5 overflow-y-auto">
+                  {allTags.map((tag) => {
+                    const isSelected = selectedTags.includes(tag)
+                    return (
+                      <button
+                        key={tag}
+                        className={cn(
+                          'flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition-colors',
+                          isSelected
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        )}
+                        onClick={() => toggleTagFilter(tag)}
+                        aria-pressed={isSelected}
+                      >
+                        <Tag className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{tag}</span>
+                        {isSelected && (
+                          <X className="ml-auto h-3 w-3 flex-shrink-0 opacity-60 hover:opacity-100" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* Footer */}

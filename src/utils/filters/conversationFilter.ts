@@ -7,6 +7,7 @@ export interface ConversationFilterOptions {
   platform?: Platform | 'all'
   favoritesOnly?: boolean
   searchQuery?: string
+  tags?: string[]
 }
 
 /**
@@ -18,13 +19,13 @@ export interface ConversationSortOptions {
 }
 
 /**
- * Filter conversations based on platform, favorites, and search query
+ * Filter conversations based on platform, favorites, search query, and tags
  */
 export function filterConversations(
   conversations: Conversation[],
   options: ConversationFilterOptions = {}
 ): Conversation[] {
-  const { platform = 'all', favoritesOnly = false, searchQuery } = options
+  const { platform = 'all', favoritesOnly = false, searchQuery, tags = [] } = options
 
   return conversations.filter((conv) => {
     // Platform filter
@@ -35,6 +36,14 @@ export function filterConversations(
     // Favorites filter
     if (favoritesOnly && !conv.isFavorite) {
       return false
+    }
+
+    // Tags filter (AND logic - conversation must have all selected tags)
+    if (tags.length > 0) {
+      const hasAllTags = tags.every((tag) => conv.tags.includes(tag))
+      if (!hasAllTags) {
+        return false
+      }
     }
 
     // Search filter (title and preview only - full message search is done via atoms)

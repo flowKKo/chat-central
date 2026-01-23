@@ -3,6 +3,7 @@ import { browser } from 'wxt/browser'
 import type { Conversation, Message, Platform, SearchFilters, SyncState } from '@/types'
 import {
   deleteMessagesByConversationId,
+  getAllTags,
   getConversationCount,
   getConversations,
   getFavoriteConversationCount,
@@ -43,6 +44,48 @@ export const filtersAtom = atom<SearchFilters>({
   platforms: [],
   dateRange: { start: null, end: null },
   tags: [],
+})
+
+/**
+ * All unique tags from database
+ */
+export const allTagsAtom = atom<string[]>([])
+
+/**
+ * Currently selected filter tags (derived from filtersAtom)
+ */
+export const selectedFilterTagsAtom = atom((get) => get(filtersAtom).tags)
+
+/**
+ * Load all tags from database
+ */
+export const loadAllTagsAtom = atom(null, async (_get, set) => {
+  try {
+    const tags = await getAllTags()
+    set(allTagsAtom, tags)
+  } catch (e) {
+    console.error('[ChatCentral] Failed to load tags:', e)
+  }
+})
+
+/**
+ * Toggle a tag in the filter
+ */
+export const toggleTagFilterAtom = atom(null, (get, set, tag: string) => {
+  const filters = get(filtersAtom)
+  const currentTags = filters.tags
+  const newTags = currentTags.includes(tag)
+    ? currentTags.filter((t) => t !== tag)
+    : [...currentTags, tag]
+  set(filtersAtom, { ...filters, tags: newTags })
+})
+
+/**
+ * Clear all tag filters
+ */
+export const clearTagFiltersAtom = atom(null, (get, set) => {
+  const filters = get(filtersAtom)
+  set(filtersAtom, { ...filters, tags: [] })
 })
 
 /**
@@ -482,6 +525,22 @@ export const toggleFavoriteAtom = atom(
     }
   }
 )
+
+/**
+ * Update a conversation in all relevant atoms
+ */
+export const updateConversationAtom = atom(null, (get, set, updated: Conversation) => {
+  const applyUpdate = (list: Conversation[]) =>
+    list.map((item) => (item.id === updated.id ? updated : item))
+
+  set(conversationsAtom, applyUpdate(get(conversationsAtom)))
+  set(favoritesConversationsAtom, applyUpdate(get(favoritesConversationsAtom)))
+
+  const selected = get(selectedConversationAtom)
+  if (selected?.id === updated.id) {
+    set(selectedConversationAtom, updated)
+  }
+})
 
 async function loadMessagesWithFallback(conversation: Conversation): Promise<Message[]> {
   const primary = await getMessagesByConversationId(conversation.id)

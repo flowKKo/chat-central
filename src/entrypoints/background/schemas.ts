@@ -66,6 +66,22 @@ export const ToggleFavoriteSchema = z.object({
 })
 
 /**
+ * Update tags message
+ */
+export const UpdateTagsSchema = z.object({
+  action: z.literal('UPDATE_TAGS'),
+  conversationId: z.string().min(1),
+  tags: z.array(z.string()),
+})
+
+/**
+ * Get all tags message
+ */
+export const GetAllTagsSchema = z.object({
+  action: z.literal('GET_ALL_TAGS'),
+})
+
+/**
  * Union of all valid message schemas
  */
 export const MessageSchema = z.discriminatedUnion('action', [
@@ -75,6 +91,8 @@ export const MessageSchema = z.discriminatedUnion('action', [
   GetStatsSchema,
   SearchSchema,
   ToggleFavoriteSchema,
+  UpdateTagsSchema,
+  GetAllTagsSchema,
 ])
 
 export type CaptureApiResponseMessage = z.infer<typeof CaptureApiResponseSchema>
@@ -83,4 +101,6 @@ export type GetMessagesMessage = z.infer<typeof GetMessagesSchema>
 export type GetStatsMessage = z.infer<typeof GetStatsSchema>
 export type SearchMessage = z.infer<typeof SearchSchema>
 export type ToggleFavoriteMessage = z.infer<typeof ToggleFavoriteSchema>
+export type UpdateTagsMessage = z.infer<typeof UpdateTagsSchema>
+export type GetAllTagsMessage = z.infer<typeof GetAllTagsSchema>
 export type Message = z.infer<typeof MessageSchema>

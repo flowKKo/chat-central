@@ -4,11 +4,13 @@ import { handleContextMenuClick, handleContextMenuShown, registerContextMenus } 
 import { connectDevReloadServer } from './devReload'
 import {
   handleCapturedResponse,
+  handleGetAllTags,
   handleGetConversations,
   handleGetMessages,
   handleGetStats,
   handleSearch,
   handleToggleFavorite,
+  handleUpdateTags,
 } from './handlers'
 
 export default defineBackground({
@@ -81,6 +83,12 @@ async function handleMessage(message: any): Promise<any> {
 
     case 'TOGGLE_FAVORITE':
       return handleToggleFavorite(message)
+
+    case 'UPDATE_TAGS':
+      return handleUpdateTags(message)
+
+    case 'GET_ALL_TAGS':
+      return handleGetAllTags()
 
     default:
       console.warn('[ChatCentral] Unknown action:', action)

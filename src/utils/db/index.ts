@@ -16,6 +16,7 @@ export { clearAllData, clearPlatformData } from './bulk'
 export {
   deleteConversation,
   getAllConversationsForExport,
+  getAllTags,
   getConversationById,
   getConversationByOriginalId,
   getConversationCount,
@@ -25,6 +26,7 @@ export {
   permanentlyDeleteConversation,
   softDeleteConversation,
   updateConversationFavorite,
+  updateConversationTags,
   upsertConversation,
   upsertConversations,
 } from './repositories/conversations'

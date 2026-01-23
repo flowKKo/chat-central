@@ -3,14 +3,17 @@ import {
   GetMessagesSchema,
   SearchSchema,
   ToggleFavoriteSchema,
+  UpdateTagsSchema,
 } from '../schemas'
 import type { Conversation, Message } from '@/types'
 import {
+  getAllTags,
   getConversations,
   getMessagesByConversationId,
   getDBStats,
   getConversationById,
   updateConversationFavorite,
+  updateConversationTags,
 } from '@/utils/db'
 
 /**
@@ -99,4 +102,29 @@ export async function handleToggleFavorite(
   const next = typeof value === 'boolean' ? value : !existing.isFavorite
   const updated = await updateConversationFavorite(conversationId, next)
   return { success: !!updated, conversation: updated }
+}
+
+/**
+ * Update conversation tags
+ */
+export async function handleUpdateTags(
+  rawMessage: unknown
+): Promise<{ success: boolean; conversation?: Conversation | null; error?: string }> {
+  const parseResult = UpdateTagsSchema.safeParse(rawMessage)
+  if (!parseResult.success) {
+    console.warn('[ChatCentral] Invalid update tags message:', parseResult.error.message)
+    return { success: false, error: 'Invalid message format' }
+  }
+
+  const { conversationId, tags } = parseResult.data
+  const updated = await updateConversationTags(conversationId, tags)
+  return { success: !!updated, conversation: updated }
+}
+
+/**
+ * Get all unique tags
+ */
+export async function handleGetAllTags(): Promise<{ tags: string[] }> {
+  const tags = await getAllTags()
+  return { tags }
 }

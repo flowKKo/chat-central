@@ -222,3 +222,40 @@ export async function getAllConversationsForExport(options?: {
 
   return results
 }
+
+/**
+ * Get all unique tags from all conversations
+ */
+export async function getAllTags(): Promise<string[]> {
+  const conversations = await db.conversations.toArray()
+  const tagSet = new Set<string>()
+  for (const conv of conversations) {
+    if (conv.tags && Array.isArray(conv.tags)) {
+      for (const tag of conv.tags) {
+        tagSet.add(tag)
+      }
+    }
+  }
+  return Array.from(tagSet).sort()
+}
+
+/**
+ * Update tags for a conversation
+ */
+export async function updateConversationTags(
+  id: string,
+  tags: string[]
+): Promise<Conversation | null> {
+  const existing = await db.conversations.get(id)
+  if (!existing) return null
+
+  const now = Date.now()
+  const updated = {
+    ...existing,
+    tags,
+    modifiedAt: now,
+    dirty: true,
+  }
+  await db.conversations.put(updated)
+  return updated
+}
