@@ -235,52 +235,24 @@ export const initializeSyncAtom = atom(null, async (get, set) => {
       syncManager.startAutoSync()
     }
 
-    // Subscribe to sync events
+    // Subscribe to sync events with handler map
     syncManager.subscribe((event, data) => {
-      switch (event) {
-        case 'status_changed':
-          set(syncUIStateAtom, (prev) => ({
-            ...prev,
-            status: data as CloudSyncStatus,
-          }))
-          break
-        case 'sync_started':
-          set(syncUIStateAtom, (prev) => ({
-            ...prev,
-            isSyncing: true,
-          }))
-          break
-        case 'sync_completed':
-          set(syncUIStateAtom, (prev) => ({
-            ...prev,
-            isSyncing: false,
-            lastSyncAt: Date.now(),
-            lastError: null,
-          }))
-          break
-        case 'sync_failed':
-          set(syncUIStateAtom, (prev) => ({
-            ...prev,
-            isSyncing: false,
-            lastError: (data as { message?: string })?.message ?? 'Sync failed',
-          }))
-          break
-        case 'conflict_detected':
-          set(syncConflictsAtom, (data as ConflictRecord[]).map(toSyncConflict))
-          break
-        case 'online_changed':
-          set(syncUIStateAtom, (prev) => ({
-            ...prev,
-            isOnline: data as boolean,
-          }))
-          break
+      const uiUpdates: Record<string, Partial<SyncUIState>> = {
+        status_changed: { status: data as CloudSyncStatus },
+        sync_started: { isSyncing: true },
+        sync_completed: { isSyncing: false, lastSyncAt: Date.now(), lastError: null },
+        sync_failed: { isSyncing: false, lastError: (data as { message?: string })?.message ?? 'Sync failed' },
+        online_changed: { isOnline: data as boolean },
+      }
+
+      if (event === 'conflict_detected') {
+        set(syncConflictsAtom, (data as ConflictRecord[]).map(toSyncConflict))
+      } else if (event in uiUpdates) {
+        set(syncUIStateAtom, (prev) => ({ ...prev, ...uiUpdates[event] }))
       }
     })
 
-    set(syncUIStateAtom, (prev) => ({
-      ...prev,
-      status: 'idle',
-    }))
+    set(syncUIStateAtom, (prev) => ({ ...prev, status: 'idle' }))
   } catch (error) {
     set(syncUIStateAtom, (prev) => ({
       ...prev,
