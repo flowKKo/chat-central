@@ -10,8 +10,10 @@ import {
   isLoadingConversationsAtom,
   toggleFavoriteAtom,
 } from '@/utils/atoms'
+import { initializeSyncAtom } from '@/utils/atoms/sync'
 import { PLATFORM_CONFIG, type Platform, type Conversation } from '@/types'
 import { cn } from '@/utils/cn'
+import { SyncStatusBar, SyncSettingsModal, ConflictResolverModal } from '@/components/sync'
 
 export default function App() {
   const [conversations] = useAtom(conversationsAtom)
@@ -22,10 +24,13 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all')
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [, initializeSync] = useAtom(initializeSyncAtom)
 
   useEffect(() => {
     loadConversations({ reset: true })
-  }, [loadConversations])
+    // Initialize cloud sync if configured
+    initializeSync()
+  }, [loadConversations, initializeSync])
 
   // Filter conversations
   const filteredConversations = conversations.filter((conv) => {
@@ -137,8 +142,9 @@ export default function App() {
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Database className="w-3 h-3" />
-            <span>{counts.total} conversations synced</span>
+            <span>{counts.total} conversations</span>
           </div>
+          <SyncStatusBar />
           <button
             className="text-primary hover:underline"
             onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/manage.html') })}
@@ -147,6 +153,10 @@ export default function App() {
           </button>
         </div>
       </footer>
+
+      {/* Modals */}
+      <SyncSettingsModal />
+      <ConflictResolverModal />
     </div>
   )
 }
