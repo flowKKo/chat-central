@@ -58,7 +58,11 @@ export function ConflictResolverModal() {
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
             <h2 className="text-lg font-semibold">Resolve Conflicts ({conflicts.length})</h2>
           </div>
-          <button className="rounded-md p-1 transition-colors hover:bg-muted" onClick={handleClose}>
+          <button
+            type="button"
+            className="rounded-md p-1 transition-colors hover:bg-muted"
+            onClick={handleClose}
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -83,6 +87,7 @@ export function ConflictResolverModal() {
             Choose which version to keep for each conflict
           </p>
           <button
+            type="button"
             className="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted"
             onClick={handleClose}
           >
@@ -127,6 +132,7 @@ function ConflictItem({
     <div className="overflow-hidden rounded-lg border border-border">
       {/* Header */}
       <button
+        type="button"
         className="flex w-full items-center justify-between p-3 transition-colors hover:bg-muted/50"
         onClick={onToggle}
       >
@@ -179,6 +185,7 @@ function ConflictItem({
           {/* Actions */}
           <div className="flex items-center justify-end gap-2 border-t border-border pt-2">
             <button
+              type="button"
               className={cn(
                 'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm transition-colors',
                 'border border-blue-300 text-blue-700 hover:bg-blue-50',
@@ -195,6 +202,7 @@ function ConflictItem({
               Keep Local
             </button>
             <button
+              type="button"
               className={cn(
                 'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm transition-colors',
                 'border border-green-300 text-green-700 hover:bg-green-50',
@@ -211,6 +219,7 @@ function ConflictItem({
               Keep Remote
             </button>
             <button
+              type="button"
               className={cn(
                 'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm transition-colors',
                 'border border-purple-300 text-purple-700 hover:bg-purple-50',

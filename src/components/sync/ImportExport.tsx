@@ -109,6 +109,7 @@ export function ImportExportActions({ className }: ImportExportProps) {
       <div className="flex items-center gap-3">
         {/* Export Button */}
         <button
+          type="button"
           className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
           onClick={handleExport}
           disabled={isExporting}
@@ -123,6 +124,7 @@ export function ImportExportActions({ className }: ImportExportProps) {
 
         {/* Import Button */}
         <button
+          type="button"
           className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
           onClick={handleImportClick}
           disabled={isImporting}
@@ -254,6 +256,7 @@ export function ImportExportButtons() {
   return (
     <div className="flex items-center gap-1">
       <button
+        type="button"
         className="rounded-md p-1.5 transition-colors hover:bg-muted"
         onClick={handleExport}
         disabled={isExporting}
@@ -266,6 +269,7 @@ export function ImportExportButtons() {
         )}
       </button>
       <button
+        type="button"
         className="rounded-md p-1.5 transition-colors hover:bg-muted"
         onClick={() => fileInputRef.current?.click()}
         title="Import data"

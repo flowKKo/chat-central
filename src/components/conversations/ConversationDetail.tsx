@@ -16,7 +16,8 @@ import { scrollToMessageIdAtom } from '@/utils/atoms'
 import { cn } from '@/utils/cn'
 import { exportConversationToJson, exportToMarkdown } from '@/utils/sync/export'
 import { downloadBlob } from '@/utils/sync/utils'
-import { TagManager, useAllTags } from '../TagManager'
+import { useAllTags } from '@/hooks'
+import { TagManager } from '../TagManager'
 import { MessageBubble } from './MessageBubble'
 import type { Conversation, Message } from '@/types'
 
@@ -63,13 +64,16 @@ export function ConversationDetail({
 
   // Scroll to target message when loaded
   useEffect(() => {
+    let scrollTimer: ReturnType<typeof setTimeout> | undefined
+    let highlightTimer: ReturnType<typeof setTimeout> | undefined
+
     if (scrollToMessageId && messages.length > 0 && messagesContainerRef.current) {
       const targetElement = messagesContainerRef.current.querySelector(
         `[data-message-id="${scrollToMessageId}"]`
       )
       if (targetElement) {
         // Small delay to ensure DOM is ready
-        setTimeout(() => {
+        scrollTimer = setTimeout(() => {
           targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
           // Add highlight effect
           targetElement.classList.add(
@@ -78,7 +82,7 @@ export function ConversationDetail({
             'ring-offset-2',
             'ring-offset-background'
           )
-          setTimeout(() => {
+          highlightTimer = setTimeout(() => {
             targetElement.classList.remove(
               'ring-2',
               'ring-primary',
@@ -90,6 +94,11 @@ export function ConversationDetail({
         // Clear the scroll target
         setScrollToMessageId(null)
       }
+    }
+
+    return () => {
+      if (scrollTimer) clearTimeout(scrollTimer)
+      if (highlightTimer) clearTimeout(highlightTimer)
     }
   }, [scrollToMessageId, messages, setScrollToMessageId])
 
@@ -164,6 +173,7 @@ export function ConversationDetail({
 
           <div className="flex flex-shrink-0 items-center gap-2">
             <button
+              type="button"
               className="kbd-focus cursor-pointer rounded-xl p-2.5 transition-colors hover:bg-muted"
               onClick={() => conversation.url && browser.tabs.create({ url: conversation.url })}
               aria-label="Open in platform"
@@ -174,6 +184,7 @@ export function ConversationDetail({
             {/* Export Dropdown */}
             <div ref={exportMenuRef} className="relative">
               <button
+                type="button"
                 className={cn(
                   'kbd-focus flex cursor-pointer items-center gap-1 rounded-xl p-2.5 transition-colors hover:bg-muted',
                   showExportMenu && 'bg-muted'
@@ -190,6 +201,7 @@ export function ConversationDetail({
               {showExportMenu && (
                 <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-border bg-card p-1 shadow-lg">
                   <button
+                    type="button"
                     className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
                     onClick={handleExportMarkdown}
                   >
@@ -197,6 +209,7 @@ export function ConversationDetail({
                     Export as Markdown
                   </button>
                   <button
+                    type="button"
                     className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
                     onClick={handleExportJson}
                   >
@@ -216,6 +229,7 @@ export function ConversationDetail({
               <span>Open the original conversation to sync full content</span>
             </div>
             <button
+              type="button"
               className="cursor-pointer rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/30 dark:text-amber-200"
               onClick={() => conversation.url && browser.tabs.create({ url: conversation.url })}
             >

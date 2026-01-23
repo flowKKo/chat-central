@@ -61,7 +61,7 @@ function setupMessageListener() {
         data,
         timestamp,
       })
-      .catch((e: any) => {
+      .catch((e: unknown) => {
         console.error('[ChatCentral] Failed to send to background:', e)
       })
   })

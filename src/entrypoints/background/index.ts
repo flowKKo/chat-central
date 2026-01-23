@@ -25,44 +25,71 @@ export default defineBackground({
     safeAddListener(menus?.onShown, handleContextMenuShown)
 
     // Handle messages from content script
-    safeAddListener(browser.runtime?.onMessage, (message: any, _sender: any, sendResponse: any) => {
-      handleMessage(message)
-        .then(sendResponse)
-        .catch((e) => {
-          console.error('[ChatCentral] Message handler error:', e)
-          sendResponse({ error: e.message })
-        })
-      return true // Keep message channel open to support asynchronous response
-    })
+    safeAddListener(
+      browser.runtime?.onMessage,
+      (message: unknown, _sender: unknown, sendResponse: (response?: unknown) => void) => {
+        handleMessage(message)
+          .then(sendResponse)
+          .catch((e: unknown) => {
+            console.error('[ChatCentral] Message handler error:', e)
+            const errorMessage = e instanceof Error ? e.message : 'Unknown error'
+            sendResponse({ error: errorMessage })
+          })
+        return true // Keep message channel open to support asynchronous response
+      }
+    )
 
     // Handle extension install/update
-    safeAddListener(browser.runtime?.onInstalled, (details: any) => {
-      if (details.reason === 'install') {
-        console.log('[ChatCentral] Extension installed')
-        // Open welcome page here
-      } else if (details.reason === 'update') {
-        console.log('[ChatCentral] Extension updated')
-      }
+    safeAddListener(
+      browser.runtime?.onInstalled,
+      (details: { reason: string; previousVersion?: string }) => {
+        if (details.reason === 'install') {
+          console.log('[ChatCentral] Extension installed')
+          // Open welcome page here
+        } else if (details.reason === 'update') {
+          console.log('[ChatCentral] Extension updated')
+        }
 
-      registerContextMenus()
-    })
+        registerContextMenus()
+      }
+    )
 
     // Dev reload: Connect to local WebSocket server for auto-reload
     connectDevReloadServer()
   },
 })
 
+interface EventTargetLike {
+  // eslint-disable-next-line ts/no-explicit-any
+  addListener?: (handler: (...args: any[]) => unknown) => void
+}
+
 // eslint-disable-next-line ts/no-explicit-any
-function safeAddListener(target: any, handler: (...args: any[]) => void) {
+function safeAddListener(
+  target: EventTargetLike | undefined,
+  handler: (...args: any[]) => unknown
+) {
   if (!target?.addListener) return
   target.addListener(handler)
+}
+
+interface MessagePayload {
+  action: string
+  [key: string]: unknown
+}
+
+function isMessagePayload(value: unknown): value is MessagePayload {
+  return typeof value === 'object' && value !== null && 'action' in value
 }
 
 /**
  * Message handler router
  */
-// eslint-disable-next-line ts/no-explicit-any
-async function handleMessage(message: any): Promise<any> {
+async function handleMessage(message: unknown): Promise<unknown> {
+  if (!isMessagePayload(message)) {
+    return { error: 'Invalid message format' }
+  }
+
   const { action } = message
 
   switch (action) {

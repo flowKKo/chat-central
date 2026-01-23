@@ -143,6 +143,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
               />
               {searchQuery && (
                 <button
+                  type="button"
                   className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1 transition-colors hover:bg-muted"
                   onClick={() => setSearchQuery('')}
                   aria-label="Clear search"
@@ -156,6 +157,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
               {/* Platform Filter Dropdown */}
               <div className="relative flex-1" ref={filterRef}>
                 <button
+                  type="button"
                   className="kbd-focus flex w-full cursor-pointer items-center justify-between rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm transition-colors hover:bg-muted/80"
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                   aria-haspopup="listbox"
@@ -184,6 +186,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                     className="absolute left-0 right-0 top-full z-10 mt-1 animate-scale-in overflow-hidden rounded-xl border border-border bg-card shadow-lg"
                   >
                     <button
+                      type="button"
                       role="option"
                       aria-selected={selectedPlatform === 'all'}
                       className={cn(
@@ -199,6 +202,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                     </button>
                     {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
                       <button
+                        type="button"
                         key={platform}
                         role="option"
                         aria-selected={selectedPlatform === platform}
@@ -223,6 +227,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
               </div>
 
               <button
+                type="button"
                 className={cn(
                   'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
                   isLoading && 'animate-pulse'
@@ -278,6 +283,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
           {pagination.hasMore && (
             <div className="mt-3">
               <button
+                type="button"
                 className="kbd-focus w-full cursor-pointer rounded-xl border border-dashed border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
                 onClick={() => loadConversations()}
                 disabled={isLoading}

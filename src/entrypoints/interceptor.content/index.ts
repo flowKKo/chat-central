@@ -118,7 +118,7 @@ function injectFetchInterceptor() {
 /**
  * Try to parse responses in various formats
  */
-function tryParseResponse(text: string): any {
+function tryParseResponse(text: string): unknown {
   if (!text) return null
 
   // 1. Try standard JSON
@@ -149,7 +149,13 @@ function injectXHRInterceptor() {
   const originalOpen = XMLHttpRequest.prototype.open
   const originalSend = XMLHttpRequest.prototype.send
 
+  // Extend XMLHttpRequest to store URL for interception
+  interface ExtendedXHR extends XMLHttpRequest {
+    _chatCentralUrl?: string
+  }
+
   XMLHttpRequest.prototype.open = function (
+    this: ExtendedXHR,
     method: string,
     url: string | URL,
     async?: boolean,
@@ -158,12 +164,15 @@ function injectXHRInterceptor() {
   ) {
     // Store URL for use in onload
     const rawUrl = url.toString()
-    ;(this as any)._chatCentralUrl = toAbsoluteUrl(rawUrl)
+    this._chatCentralUrl = toAbsoluteUrl(rawUrl)
     return originalOpen.call(this, method, url, async ?? true, username, password)
   }
 
-  XMLHttpRequest.prototype.send = function (body?: Document | XMLHttpRequestBodyInit | null) {
-    const url = (this as any)._chatCentralUrl as string
+  XMLHttpRequest.prototype.send = function (
+    this: ExtendedXHR,
+    body?: Document | XMLHttpRequestBodyInit | null
+  ) {
+    const url = this._chatCentralUrl
 
     if (url && shouldCapture(url)) {
       this.addEventListener('load', function () {

@@ -479,7 +479,7 @@ export const toggleFavoriteAtom = atom(
         value,
       })) as { conversation?: Conversation | null } | undefined
 
-      const updated: Conversation | null = (response as any)?.conversation ?? null
+      const updated: Conversation | null = response?.conversation ?? null
       if (!updated) return
 
       const applyUpdate = (list: Conversation[]) =>

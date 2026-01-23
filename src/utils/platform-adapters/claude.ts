@@ -21,19 +21,24 @@ const API_PATTERNS = {
   stream: /\/api\/organizations\/[^/]+\/chat_conversations\/([a-f0-9-]+)\/completion(?:\?.*)?$/,
 }
 
-function extractClaudeContent(payload: any): string {
-  if (!payload) return ''
-  if (typeof payload.completion === 'string') return payload.completion
-  if (typeof payload.delta?.text === 'string') return payload.delta.text
+function extractClaudeContent(payload: unknown): string {
+  if (!payload || typeof payload !== 'object') return ''
+  const obj = payload as Record<string, unknown>
+  if (typeof obj.completion === 'string') return obj.completion
+  const delta = obj.delta as Record<string, unknown> | undefined
+  if (typeof delta?.text === 'string') return delta.text
 
-  const message = payload.message ?? payload
+  const message = (obj.message ?? obj) as Record<string, unknown>
   if (typeof message.text === 'string') return message.text
   if (typeof message.content === 'string') return message.content
   if (Array.isArray(message.content)) {
     return message.content
-      .map((part: any) => {
+      .map((part: unknown) => {
         if (typeof part === 'string') return part
-        if (part.type === 'text') return part.text
+        if (part && typeof part === 'object') {
+          const partObj = part as Record<string, unknown>
+          if (partObj.type === 'text') return partObj.text as string
+        }
         return ''
       })
       .join('\n')
@@ -42,27 +47,40 @@ function extractClaudeContent(payload: any): string {
   return ''
 }
 
-function extractClaudeMessageContent(message: any): string {
-  if (!message) return ''
-  if (typeof message.text === 'string' && message.text.trim()) return message.text
-  if (typeof message.content === 'string' && message.content.trim()) return message.content
-  if (message.content && typeof message.content.text === 'string' && message.content.text.trim()) {
-    return message.content.text
+function extractClaudeMessageContent(message: unknown): string {
+  if (!message || typeof message !== 'object') return ''
+  const msg = message as Record<string, unknown>
+  if (typeof msg.text === 'string' && msg.text.trim()) return msg.text
+  if (typeof msg.content === 'string' && msg.content.trim()) return msg.content
+  const contentObj = msg.content as Record<string, unknown> | unknown[] | undefined
+  if (contentObj && typeof contentObj === 'object' && !Array.isArray(contentObj)) {
+    if (typeof contentObj.text === 'string' && contentObj.text.trim()) {
+      return contentObj.text
+    }
   }
-  if (Array.isArray(message.content)) {
-    const joined = message.content
-      .map((part: any) => {
+  if (Array.isArray(msg.content)) {
+    const joined = msg.content
+      .map((part: unknown) => {
         if (typeof part === 'string') return part
-        if (typeof part?.text === 'string') return part.text
-        if (part?.type === 'text') return part.text
+        if (part && typeof part === 'object') {
+          const partObj = part as Record<string, unknown>
+          if (typeof partObj.text === 'string') return partObj.text
+          if (partObj.type === 'text' && typeof partObj.text === 'string') return partObj.text
+        }
         return ''
       })
       .join('\n')
     if (joined.trim()) return joined
   }
-  if (Array.isArray(message.blocks)) {
-    const joined = message.blocks
-      .map((part: any) => (part?.type === 'text' ? part.text : ''))
+  if (Array.isArray(msg.blocks)) {
+    const joined = msg.blocks
+      .map((part: unknown) => {
+        if (part && typeof part === 'object') {
+          const partObj = part as Record<string, unknown>
+          return partObj.type === 'text' ? (partObj.text as string) : ''
+        }
+        return ''
+      })
       .filter(Boolean)
       .join('\n')
     if (joined.trim()) return joined
@@ -70,19 +88,22 @@ function extractClaudeMessageContent(message: any): string {
   return ''
 }
 
-function normalizeListPayload(payload: any): any[] | null {
+function normalizeListPayload(payload: unknown): unknown[] | null {
   if (Array.isArray(payload)) return payload
   if (!payload || typeof payload !== 'object') return null
 
+  const obj = payload as Record<string, unknown>
+  const data = obj.data as Record<string, unknown> | undefined
+
   const candidates = [
-    payload.chat_conversations,
-    payload.conversations,
-    payload.items,
-    payload.data?.chat_conversations,
-    payload.data?.conversations,
-    payload.data?.items,
-    payload.data,
-    payload.results,
+    obj.chat_conversations,
+    obj.conversations,
+    obj.items,
+    data?.chat_conversations,
+    data?.conversations,
+    data?.items,
+    data,
+    obj.results,
   ]
 
   for (const candidate of candidates) {
@@ -92,16 +113,17 @@ function normalizeListPayload(payload: any): any[] | null {
   return null
 }
 
-function normalizeMessageList(payload: any): any[] | null {
+function normalizeMessageList(payload: unknown): unknown[] | null {
   if (Array.isArray(payload)) return payload
   if (!payload || typeof payload !== 'object') return null
 
-  const candidates = [payload.items, payload.messages, payload.data, payload.results]
+  const obj = payload as Record<string, unknown>
+  const candidates = [obj.items, obj.messages, obj.data, obj.results]
   for (const candidate of candidates) {
     if (Array.isArray(candidate)) return candidate
   }
 
-  const values = Object.values(payload)
+  const values = Object.values(obj)
   if (values.length > 0 && values.every((value) => value && typeof value === 'object')) {
     return values
   }
@@ -109,20 +131,24 @@ function normalizeMessageList(payload: any): any[] | null {
   return null
 }
 
-function extractClaudeRole(message: any): 'user' | 'assistant' | null {
-  const sender = message?.sender || message?.author || message?.role
-  if (!sender) return null
+function extractClaudeRole(message: unknown): 'user' | 'assistant' | null {
+  if (!message || typeof message !== 'object') return null
+  const msg = message as Record<string, unknown>
+  const sender = msg.sender || msg.author || msg.role
+  if (!sender || typeof sender !== 'string') return null
   if (sender === 'human' || sender === 'user') return 'user'
   if (sender === 'assistant' || sender === 'model') return 'assistant'
   return null
 }
 
-function extractConversationIdFromMessage(message: any): string | null {
+function extractConversationIdFromMessage(message: unknown): string | null {
+  if (!message || typeof message !== 'object') return null
+  const msg = message as Record<string, unknown>
   return (
-    message?.conversation_id ||
-    message?.conversationId ||
-    message?.chat_conversation_uuid ||
-    message?.chatConversationUuid ||
+    (msg.conversation_id as string | undefined) ||
+    (msg.conversationId as string | undefined) ||
+    (msg.chat_conversation_uuid as string | undefined) ||
+    (msg.chatConversationUuid as string | undefined) ||
     null
   )
 }
@@ -154,20 +180,22 @@ export const claudeAdapter: PlatformAdapter = {
     const now = Date.now()
 
     return items
-      .map((item: any) => {
+      .map((item: unknown) => {
         try {
-          const originalId = item.uuid || item.id
+          if (!item || typeof item !== 'object') return null
+          const obj = item as Record<string, unknown>
+          const originalId = (obj.uuid as string) || (obj.id as string)
           if (!originalId) return null
 
           const conversation: Conversation = {
             id: `claude_${originalId}`,
             platform: 'claude',
             originalId,
-            title: item.name || 'Untitled',
-            createdAt: item.created_at ? new Date(item.created_at).getTime() : now,
-            updatedAt: item.updated_at ? new Date(item.updated_at).getTime() : now,
-            messageCount: item.message_count ?? 0,
-            preview: item.preview || '',
+            title: (obj.name as string) || 'Untitled',
+            createdAt: obj.created_at ? new Date(obj.created_at as string).getTime() : now,
+            updatedAt: obj.updated_at ? new Date(obj.updated_at as string).getTime() : now,
+            messageCount: (obj.message_count as number) ?? 0,
+            preview: (obj.preview as string) || '',
             tags: [],
             syncedAt: now,
             detailStatus: 'none',
@@ -197,15 +225,16 @@ export const claudeAdapter: PlatformAdapter = {
       return null
     }
 
-    const item = parsed as any
-    const base = item.conversation || item.chat_conversation || item
+    const item = parsed as Record<string, unknown>
+    const base = (item.conversation || item.chat_conversation || item) as Record<string, unknown>
+    const itemData = item.data as Record<string, unknown> | undefined
     const rawMessages =
       item.chat_messages ||
       item.messages ||
       item.items ||
       item.message_history ||
-      item.data?.messages ||
-      item.data?.items ||
+      itemData?.messages ||
+      itemData?.items ||
       (Array.isArray(item) ? item : null)
 
     const messageList = normalizeMessageList(rawMessages)
@@ -229,7 +258,10 @@ export const claudeAdapter: PlatformAdapter = {
 
     for (const msg of messageList) {
       try {
-        const messageId = msg?.uuid || msg?.id || msg?.message_id
+        if (!msg || typeof msg !== 'object') continue
+        const msgObj = msg as Record<string, unknown>
+        const messageId =
+          (msgObj.uuid as string) || (msgObj.id as string) || (msgObj.message_id as string)
         const role = extractClaudeRole(msg)
         const content = extractClaudeMessageContent(msg)
         if (!role || !content) continue
@@ -239,12 +271,12 @@ export const claudeAdapter: PlatformAdapter = {
           if (candidate) originalId = candidate
         }
 
-        const createdAt = msg?.created_at
-          ? new Date(msg.created_at).getTime()
-          : msg?.createdAt
-            ? new Date(msg.createdAt).getTime()
-            : msg?.timestamp
-              ? new Date(msg.timestamp).getTime()
+        const createdAt = msgObj.created_at
+          ? new Date(msgObj.created_at as string).getTime()
+          : msgObj.createdAt
+            ? new Date(msgObj.createdAt as string).getTime()
+            : msgObj.timestamp
+              ? new Date(msgObj.timestamp as string).getTime()
               : now
 
         minCreatedAt = Math.min(minCreatedAt, createdAt)
@@ -265,26 +297,26 @@ export const claudeAdapter: PlatformAdapter = {
 
     if (!originalId || messages.length === 0) return null
 
-    const titleSource = base?.name || base?.title
+    const titleSource = (base?.name as string | undefined) || (base?.title as string | undefined)
     const firstUserMessage = messages.find((m) => m.role === 'user')
     const title = titleSource || firstUserMessage?.content.slice(0, 80) || 'Untitled'
 
     const createdAt = base?.created_at
-      ? new Date(base.created_at).getTime()
+      ? new Date(base.created_at as string).getTime()
       : base?.createdAt
-        ? new Date(base.createdAt).getTime()
+        ? new Date(base.createdAt as string).getTime()
         : minCreatedAt || now
 
     const updatedAt = base?.updated_at
-      ? new Date(base.updated_at).getTime()
+      ? new Date(base.updated_at as string).getTime()
       : base?.updatedAt
-        ? new Date(base.updatedAt).getTime()
+        ? new Date(base.updatedAt as string).getTime()
         : maxCreatedAt || createdAt
 
     const conversation: Conversation = {
       id: `claude_${originalId}`,
       platform: 'claude',
-      originalId,
+      originalId: originalId as string,
       title,
       createdAt,
       updatedAt,
@@ -296,7 +328,7 @@ export const claudeAdapter: PlatformAdapter = {
       detailSyncedAt: now,
       isFavorite: false,
       favoriteAt: null,
-      url: this.buildConversationUrl(originalId),
+      url: this.buildConversationUrl(originalId as string),
     }
 
     for (const message of messages) {
@@ -318,8 +350,13 @@ export const claudeAdapter: PlatformAdapter = {
     let raw = ''
     if (typeof data === 'string') {
       raw = data
-    } else if (data && typeof data === 'object' && Array.isArray((data as any).events)) {
-      raw = (data as any).events.map((event: any) => JSON.stringify(event)).join('\n\n')
+    } else if (data && typeof data === 'object') {
+      const dataObj = data as Record<string, unknown>
+      if (Array.isArray(dataObj.events)) {
+        raw = dataObj.events.map((event: unknown) => JSON.stringify(event)).join('\n\n')
+      } else {
+        return null
+      }
     } else {
       return null
     }
@@ -337,34 +374,32 @@ export const claudeAdapter: PlatformAdapter = {
     for (const payload of payloads) {
       if (payload === '[DONE]') continue
 
-      let eventData: any = null
+      let eventData: Record<string, unknown> | null = null
       try {
-        eventData = JSON.parse(payload)
+        eventData = JSON.parse(payload) as Record<string, unknown>
       } catch {
         continue
       }
 
       if (eventData?.conversation_id) {
-        conversationId = eventData.conversation_id
+        conversationId = eventData.conversation_id as string
       }
 
-      const msg = eventData?.message
+      const msg = eventData?.message as Record<string, unknown> | undefined
       if (msg) {
-        messageId = msg.uuid || msg.id || messageId
+        messageId = (msg.uuid as string) || (msg.id as string) || messageId
         if (msg.created_at) {
-          createdAt = new Date(msg.created_at).getTime()
+          createdAt = new Date(msg.created_at as string).getTime()
         }
         if (msg.name) {
-          title = msg.name
+          title = msg.name as string
         }
       }
 
       const chunk = extractClaudeContent(eventData)
       if (chunk) {
-        if (
-          typeof eventData?.completion === 'string' ||
-          typeof eventData?.delta?.text === 'string'
-        ) {
+        const delta = eventData?.delta as Record<string, unknown> | undefined
+        if (typeof eventData?.completion === 'string' || typeof delta?.text === 'string') {
           content += chunk
         } else if (chunk.length > content.length) {
           content = chunk

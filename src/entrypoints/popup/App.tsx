@@ -108,6 +108,7 @@ export default function App() {
             </div>
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
                 onClick={() =>
                   browser.tabs.create({ url: 'https://github.com/flowKKo/chat-central' })
@@ -117,6 +118,7 @@ export default function App() {
                 <Github className="h-4 w-4 text-muted-foreground" />
               </button>
               <button
+                type="button"
                 className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
                 onClick={() =>
                   browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/settings') })
@@ -145,6 +147,7 @@ export default function App() {
             />
             {searchQuery && (
               <button
+                type="button"
                 className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1 transition-colors hover:bg-accent"
                 onClick={clearSearch}
                 aria-label="Clear search"
@@ -179,6 +182,7 @@ export default function App() {
             ))}
             <div className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
             <button
+              type="button"
               className={cn(
                 'kbd-focus flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
                 showFavoritesOnly
@@ -221,6 +225,7 @@ export default function App() {
               {pagination.hasMore && (
                 <div className="pb-1 pt-2">
                   <button
+                    type="button"
                     className="kbd-focus w-full cursor-pointer rounded-xl border border-dashed border-border px-3 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
                     onClick={() => loadConversations()}
                     disabled={isLoading}
@@ -252,6 +257,7 @@ export default function App() {
               <SyncStatusBar />
             </div>
             <button
+              type="button"
               className="kbd-focus group flex cursor-pointer items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
               onClick={() =>
                 browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/conversations') })
@@ -289,6 +295,7 @@ function PlatformTab({
 
   return (
     <button
+      type="button"
       role="tab"
       aria-selected={isActive}
       className={cn(
@@ -419,6 +426,7 @@ function ConversationItem({
         </div>
 
         <button
+          type="button"
           className={cn(
             'kbd-focus flex-shrink-0 cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-accent',
             conversation.isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
@@ -477,6 +485,7 @@ function EmptyState({
           <h3 className="mb-1 font-heading font-medium text-foreground">No results found</h3>
           <p className="mb-4 text-sm text-muted-foreground">Try a different search term</p>
           <button
+            type="button"
             className="kbd-focus cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
             onClick={onClearSearch}
           >
@@ -492,6 +501,7 @@ function EmptyState({
           <div className="flex items-center gap-2">
             {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
               <button
+                type="button"
                 key={platform}
                 className="kbd-focus flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
                 style={{ color: PLATFORM_CONFIG[platform].color }}

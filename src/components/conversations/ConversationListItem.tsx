@@ -119,6 +119,7 @@ export function ConversationListItem({
         <div className="flex flex-shrink-0 items-center gap-1">
           {/* External link button */}
           <button
+            type="button"
             className="kbd-focus cursor-pointer rounded-lg p-1.5 opacity-0 transition-colors hover:bg-muted group-hover:opacity-100"
             onClick={(event) => {
               event.stopPropagation()
@@ -133,6 +134,7 @@ export function ConversationListItem({
 
           {/* Favorite button */}
           <button
+            type="button"
             className={cn(
               'kbd-focus cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-muted',
               conversation.isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'

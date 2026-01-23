@@ -6,22 +6,19 @@ import {
   filterAndSortConversations,
 } from '@/utils/filters'
 
+const DEFAULT_FILTER_OPTIONS: ConversationFilterOptions = {}
+const DEFAULT_SORT_OPTIONS: ConversationSortOptions = {}
+
 /**
  * Hook to filter and sort conversations with memoization
  */
 export function useConversationFilter(
   conversations: Conversation[],
-  filterOptions: ConversationFilterOptions = {},
-  sortOptions: ConversationSortOptions = {}
+  filterOptions: ConversationFilterOptions = DEFAULT_FILTER_OPTIONS,
+  sortOptions: ConversationSortOptions = DEFAULT_SORT_OPTIONS
 ): Conversation[] {
   return useMemo(
     () => filterAndSortConversations(conversations, filterOptions, sortOptions),
-    [
-      conversations,
-      filterOptions.platform,
-      filterOptions.favoritesOnly,
-      filterOptions.searchQuery,
-      sortOptions.byFavoriteTime,
-    ]
+    [conversations, filterOptions, sortOptions]
   )
 }

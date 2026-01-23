@@ -188,6 +188,7 @@ export function SettingsPanel() {
                   const isSelected = themePreference === option.value
                   return (
                     <button
+                      type="button"
                       key={option.value}
                       role="radio"
                       aria-checked={isSelected}
@@ -231,6 +232,7 @@ export function SettingsPanel() {
                     </p>
                   </div>
                   <button
+                    type="button"
                     className={cn(
                       'flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all',
                       'bg-primary/10 text-primary hover:bg-primary/20',
@@ -287,6 +289,7 @@ export function SettingsPanel() {
                     )}
                   </label>
                   <button
+                    type="button"
                     className={cn(
                       'flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all',
                       'bg-primary/10 text-primary hover:bg-primary/20',
@@ -397,6 +400,7 @@ export function SettingsPanel() {
                     </div>
                   </div>
                   <button
+                    type="button"
                     className={cn(
                       'cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition-all',
                       'text-red-400 hover:bg-red-500/10 hover:text-red-300',
@@ -429,6 +433,7 @@ export function SettingsPanel() {
                   </p>
                 </div>
                 <button
+                  type="button"
                   className={cn(
                     'flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all',
                     'bg-red-500/20 text-red-400 hover:bg-red-500/30',

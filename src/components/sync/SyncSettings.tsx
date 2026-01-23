@@ -88,7 +88,11 @@ export function SyncSettingsModal() {
             <Cloud className="h-5 w-5" />
             <h2 className="text-lg font-semibold">Cloud Sync Settings</h2>
           </div>
-          <button className="rounded-md p-1 transition-colors hover:bg-muted" onClick={handleClose}>
+          <button
+            type="button"
+            className="rounded-md p-1 transition-colors hover:bg-muted"
+            onClick={handleClose}
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -102,6 +106,7 @@ export function SyncSettingsModal() {
               <p className="text-sm text-muted-foreground">Sync conversations across devices</p>
             </div>
             <button
+              type="button"
               className={cn(
                 'relative h-6 w-11 rounded-full transition-colors',
                 formData.enabled ? 'bg-primary' : 'bg-muted'
@@ -146,6 +151,7 @@ export function SyncSettingsModal() {
               {/* Test Connection */}
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
                   onClick={handleTest}
                   disabled={testStatus === 'testing' || !formData.endpoint}
@@ -180,6 +186,7 @@ export function SyncSettingsModal() {
                   <p className="text-sm text-muted-foreground">Automatically sync in background</p>
                 </div>
                 <button
+                  type="button"
                   className={cn(
                     'relative h-6 w-11 rounded-full transition-colors',
                     formData.autoSync ? 'bg-primary' : 'bg-muted'
@@ -221,6 +228,7 @@ export function SyncSettingsModal() {
                   </p>
                 </div>
                 <button
+                  type="button"
                   className={cn(
                     'relative h-6 w-11 rounded-full transition-colors',
                     formData.autoResolveConflicts ? 'bg-primary' : 'bg-muted'
@@ -244,12 +252,14 @@ export function SyncSettingsModal() {
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 border-t border-border p-4">
           <button
+            type="button"
             className="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted"
             onClick={handleClose}
           >
             Cancel
           </button>
           <button
+            type="button"
             className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             onClick={handleSave}
             disabled={isSaving}

@@ -18,7 +18,7 @@ const API_PATTERNS = {
   stream: /\/backend-api\/conversation\/?(?:\?.*)?$/,
 }
 
-function parseChatGptTimestamp(value: any, fallback: number): number {
+function parseChatGptTimestamp(value: unknown, fallback: number): number {
   if (typeof value === 'number') {
     return value > 1e12 ? value : value * 1000
   }
@@ -29,21 +29,27 @@ function parseChatGptTimestamp(value: any, fallback: number): number {
   return fallback
 }
 
-function normalizeConversationItems(payload: any): any[] | null {
+function normalizeConversationItems(payload: unknown): unknown[] | null {
   if (!payload || typeof payload !== 'object') return null
-  if (Array.isArray(payload.items)) return payload.items
-  if (Array.isArray(payload.conversations)) return payload.conversations
-  if (Array.isArray(payload.data?.items)) return payload.data.items
+  const obj = payload as Record<string, unknown>
+  if (Array.isArray(obj.items)) return obj.items
+  if (Array.isArray(obj.conversations)) return obj.conversations
+  const data = obj.data as Record<string, unknown> | undefined
+  if (Array.isArray(data?.items)) return data.items
   return null
 }
 
-function extractContent(msg: any): string {
-  if (!msg) return ''
-  if (Array.isArray(msg.content?.parts)) {
-    return msg.content.parts.filter((p: any) => typeof p === 'string').join('\n')
+function extractContent(msg: unknown): string {
+  if (!msg || typeof msg !== 'object') return ''
+  const obj = msg as Record<string, unknown>
+  const content = obj.content as Record<string, unknown> | string | undefined
+  if (content && typeof content === 'object' && Array.isArray(content.parts)) {
+    return content.parts.filter((p: unknown) => typeof p === 'string').join('\n')
   }
-  if (typeof msg.content?.text === 'string') return msg.content.text
-  if (typeof msg.content === 'string') return msg.content
+  if (content && typeof content === 'object' && typeof content.text === 'string') {
+    return content.text
+  }
+  if (typeof content === 'string') return content
   return ''
 }
 
@@ -74,20 +80,22 @@ export const chatgptAdapter: PlatformAdapter = {
     const now = Date.now()
 
     return items
-      .map((item: any) => {
+      .map((item: unknown) => {
         try {
-          const originalId = item.id
+          if (!item || typeof item !== 'object') return null
+          const obj = item as Record<string, unknown>
+          const originalId = obj.id as string | undefined
           if (!originalId) return null
 
-          const createdAt = parseChatGptTimestamp(item.create_time, now)
-          const updatedAt = parseChatGptTimestamp(item.update_time, createdAt)
-          const previewSource = item.snippet || item.title || ''
+          const createdAt = parseChatGptTimestamp(obj.create_time, now)
+          const updatedAt = parseChatGptTimestamp(obj.update_time, createdAt)
+          const previewSource = (obj.snippet as string) || (obj.title as string) || ''
 
           const conversation: Conversation = {
             id: `chatgpt_${originalId}`,
             platform: 'chatgpt',
             originalId,
-            title: item.title || 'New chat',
+            title: (obj.title as string) || 'New chat',
             createdAt,
             updatedAt,
             messageCount: 0, // No message count in the list
@@ -121,16 +129,18 @@ export const chatgptAdapter: PlatformAdapter = {
       return null
     }
 
-    let item = parsed as any
+    let item = parsed as Record<string, unknown>
 
     // Handle streaming data
     if (item.isStream && Array.isArray(item.events)) {
       // Find full state containing mapping in events
       // Usually the last event containing mapping
-      const eventWithMapping = [...item.events].reverse().find((e: any) => e && e.mapping)
+      const eventWithMapping = [...item.events]
+        .reverse()
+        .find((e: unknown) => e && typeof e === 'object' && 'mapping' in (e as object))
 
       if (eventWithMapping) {
-        item = eventWithMapping
+        item = eventWithMapping as Record<string, unknown>
       } else {
         // If mapping not found, it might be incremental update, currently unable to process
         // Unless we can build full message from increment
@@ -139,7 +149,7 @@ export const chatgptAdapter: PlatformAdapter = {
       }
     }
 
-    const originalId = item.conversation_id || item.id
+    const originalId = (item.conversation_id as string) || (item.id as string)
     if (!originalId) return null
 
     const now = Date.now()
@@ -151,7 +161,7 @@ export const chatgptAdapter: PlatformAdapter = {
       id: `chatgpt_${originalId}`,
       platform: 'chatgpt',
       originalId,
-      title: item.title || 'New chat',
+      title: (item.title as string) || 'New chat',
       createdAt,
       updatedAt,
       messageCount: 0,
@@ -171,18 +181,22 @@ export const chatgptAdapter: PlatformAdapter = {
     if (mapping && typeof mapping === 'object') {
       // ChatGPT uses tree structure to store messages
       // Need to traverse mapping and sort by time
-      const nodes = Object.values(mapping) as any[]
+      const nodes = Object.values(mapping) as unknown[]
 
       for (const node of nodes) {
         try {
-          const msg = node.message
+          if (!node || typeof node !== 'object') continue
+          const nodeObj = node as Record<string, unknown>
+          const msg = nodeObj.message as Record<string, unknown> | undefined
           if (!msg) continue
 
-          const messageId = msg.id
+          const messageId = msg.id as string | undefined
           if (!messageId) continue
 
           // Skip system messages
-          const author = msg.author?.role
+          const author = (msg.author as Record<string, unknown> | undefined)?.role as
+            | string
+            | undefined
           if (!author || author === 'system') continue
 
           const role = author === 'user' ? 'user' : 'assistant'
@@ -227,8 +241,13 @@ export const chatgptAdapter: PlatformAdapter = {
     let raw = ''
     if (typeof data === 'string') {
       raw = data
-    } else if (data && typeof data === 'object' && Array.isArray((data as any).events)) {
-      raw = (data as any).events.map((event: any) => JSON.stringify(event)).join('\n\n')
+    } else if (data && typeof data === 'object') {
+      const dataObj = data as Record<string, unknown>
+      if (Array.isArray(dataObj.events)) {
+        raw = dataObj.events.map((event: unknown) => JSON.stringify(event)).join('\n\n')
+      } else {
+        return null
+      }
     } else {
       return null
     }
@@ -243,28 +262,28 @@ export const chatgptAdapter: PlatformAdapter = {
     for (const payload of payloads) {
       if (payload === '[DONE]') continue
 
-      let eventData: any = null
+      let eventData: Record<string, unknown> | null = null
       try {
-        eventData = JSON.parse(payload)
+        eventData = JSON.parse(payload) as Record<string, unknown>
       } catch {
         continue
       }
 
       if (eventData?.conversation_id) {
-        conversationId = eventData.conversation_id
+        conversationId = eventData.conversation_id as string
       }
 
-      const msg = eventData?.message
+      const msg = eventData?.message as Record<string, unknown> | undefined
       if (!msg) continue
 
       if (msg.conversation_id) {
-        conversationId = msg.conversation_id
+        conversationId = msg.conversation_id as string
       }
 
-      const messageId = msg.id
+      const messageId = msg.id as string | undefined
       if (!messageId) continue
 
-      const author = msg.author?.role
+      const author = (msg.author as Record<string, unknown> | undefined)?.role as string | undefined
       if (!author || author === 'system') continue
 
       const role = author === 'user' ? 'user' : 'assistant'

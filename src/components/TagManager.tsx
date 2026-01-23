@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Plus, Tag, X } from 'lucide-react'
-import { browser } from 'wxt/browser'
 import { cn } from '@/utils/cn'
+
+const EMPTY_TAGS: string[] = []
 
 interface TagManagerProps {
   /** Current tags */
@@ -233,7 +234,7 @@ function TagInput({
 export function TagManager({
   tags,
   onTagsChange,
-  allTags = [],
+  allTags = EMPTY_TAGS,
   readOnly = false,
   maxDisplay,
   className,
@@ -313,31 +314,4 @@ export function TagManager({
       )}
     </div>
   )
-}
-
-/**
- * Hook to fetch and manage all tags
- */
-export function useAllTags() {
-  const [allTags, setAllTags] = useState<string[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-
-  const fetchTags = useCallback(async () => {
-    try {
-      const response = (await browser.runtime.sendMessage({
-        action: 'GET_ALL_TAGS',
-      })) as { tags?: string[] }
-      setAllTags(response.tags ?? [])
-    } catch (e) {
-      console.error('[ChatCentral] Failed to fetch tags:', e)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    fetchTags()
-  }, [fetchTags])
-
-  return { allTags, isLoading, refetch: fetchTags }
 }

@@ -124,6 +124,7 @@ export function Sidebar() {
         {showTagsSection && allTags.length > 0 && (
           <div className="mt-4 border-t border-border/50 pt-4">
             <button
+              type="button"
               className="flex w-full cursor-pointer items-center justify-between px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
               onClick={() => setIsTagsExpanded(!isTagsExpanded)}
               aria-expanded={isTagsExpanded}
@@ -149,6 +150,7 @@ export function Sidebar() {
               <div className="mt-2 space-y-1">
                 {selectedTags.length > 0 && (
                   <button
+                    type="button"
                     className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     onClick={() => clearTagFilters()}
                   >
@@ -161,6 +163,7 @@ export function Sidebar() {
                     const isSelected = selectedTags.includes(tag)
                     return (
                       <button
+                        type="button"
                         key={tag}
                         className={cn(
                           'flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition-colors',
