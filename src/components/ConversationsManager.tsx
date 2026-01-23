@@ -22,7 +22,6 @@ import {
   performSearchAtom,
   activeSearchQueryAtom,
   searchResultsAtom,
-  updateConversationAtom,
   selectedFilterTagsAtom,
 } from '@/utils/atoms'
 import { cn } from '@/utils/cn'
@@ -42,7 +41,6 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
   const [, searchConversations] = useAtom(performSearchAtom)
   const [activeSearchQuery] = useAtom(activeSearchQueryAtom)
   const [searchResults] = useAtom(searchResultsAtom)
-  const [, updateConversation] = useAtom(updateConversationAtom)
   const [selectedFilterTags] = useAtom(selectedFilterTagsAtom)
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -308,7 +306,6 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
               conversation={selectedConversation}
               messages={selectedMessages}
               searchQuery={activeSearchQuery}
-              onConversationUpdate={updateConversation}
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/10 text-muted-foreground">

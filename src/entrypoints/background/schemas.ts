@@ -67,11 +67,17 @@ export const ToggleFavoriteSchema = z.object({
 
 /**
  * Update tags message
+ * Tags are validated to be non-empty after trimming
  */
 export const UpdateTagsSchema = z.object({
   action: z.literal('UPDATE_TAGS'),
   conversationId: z.string().min(1),
-  tags: z.array(z.string()),
+  tags: z.array(
+    z
+      .string()
+      .transform((s) => s.trim())
+      .refine((s) => s.length > 0, { message: 'Tag cannot be empty' })
+  ),
 })
 
 /**

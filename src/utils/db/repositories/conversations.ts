@@ -225,18 +225,19 @@ export async function getAllConversationsForExport(options?: {
 
 /**
  * Get all unique tags from all conversations
+ * Uses Dexie's multiEntry index for efficient retrieval
  */
 export async function getAllTags(): Promise<string[]> {
-  const conversations = await db.conversations.toArray()
-  const tagSet = new Set<string>()
-  for (const conv of conversations) {
-    if (conv.tags && Array.isArray(conv.tags)) {
-      for (const tag of conv.tags) {
-        tagSet.add(tag)
-      }
-    }
-  }
-  return Array.from(tagSet).sort()
+  // Use the *tags multiEntry index to get unique tag values efficiently
+  // This avoids loading all conversations into memory
+  const uniqueTags = await db.conversations.orderBy('tags').uniqueKeys()
+
+  // Filter out empty strings and ensure all values are strings
+  const validTags = uniqueTags.filter(
+    (tag): tag is string => typeof tag === 'string' && tag.length > 0
+  )
+
+  return validTags.sort()
 }
 
 /**

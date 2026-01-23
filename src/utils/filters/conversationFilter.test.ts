@@ -112,6 +112,60 @@ describe('sortConversations', () => {
   })
 })
 
+describe('filterConversations - tag filtering', () => {
+  const conversationsWithTags: Conversation[] = [
+    createConversation({ id: '1', tags: ['work', 'important'] }),
+    createConversation({ id: '2', tags: ['personal'] }),
+    createConversation({ id: '3', tags: ['work'] }),
+    createConversation({ id: '4', tags: [] }),
+    createConversation({ id: '5', tags: ['work', 'personal', 'important'] }),
+  ]
+
+  it('returns all conversations when tags filter is empty', () => {
+    const result = filterConversations(conversationsWithTags, { tags: [] })
+    expect(result).toHaveLength(5)
+  })
+
+  it('filters by single tag', () => {
+    const result = filterConversations(conversationsWithTags, { tags: ['work'] })
+    expect(result).toHaveLength(3)
+    expect(result.map((c) => c.id)).toEqual(['1', '3', '5'])
+  })
+
+  it('filters by multiple tags with AND logic', () => {
+    const result = filterConversations(conversationsWithTags, { tags: ['work', 'important'] })
+    expect(result).toHaveLength(2)
+    expect(result.map((c) => c.id)).toEqual(['1', '5'])
+  })
+
+  it('returns empty when no conversations match all tags', () => {
+    const result = filterConversations(conversationsWithTags, { tags: ['nonexistent'] })
+    expect(result).toHaveLength(0)
+  })
+
+  it('handles conversations with empty tags array', () => {
+    const result = filterConversations(conversationsWithTags, { tags: ['personal'] })
+    expect(result).toHaveLength(2)
+    expect(result.map((c) => c.id)).toEqual(['2', '5'])
+    // id: '4' should not be included because it has no tags
+  })
+
+  it('combines tag filter with other filters', () => {
+    const conversations = [
+      createConversation({ id: '1', platform: 'claude', tags: ['work'], isFavorite: true }),
+      createConversation({ id: '2', platform: 'chatgpt', tags: ['work'], isFavorite: false }),
+      createConversation({ id: '3', platform: 'claude', tags: ['personal'], isFavorite: true }),
+    ]
+    const result = filterConversations(conversations, {
+      platform: 'claude',
+      tags: ['work'],
+      favoritesOnly: true,
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0]?.id).toBe('1')
+  })
+})
+
 describe('filterAndSortConversations', () => {
   const conversations: Conversation[] = [
     createConversation({ id: '1', platform: 'claude', updatedAt: 1000, isFavorite: true }),

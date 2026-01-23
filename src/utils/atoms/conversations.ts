@@ -223,9 +223,11 @@ export const filteredConversationsAtom = atom((get) => {
     result = result.filter((c) => c.updatedAt <= filters.dateRange.end!)
   }
 
-  // Tag filtering
+  // Tag filtering (OR logic - conversation must have at least one selected tag)
+  // Use Set for O(1) lookup instead of O(n) includes()
   if (filters.tags.length > 0) {
-    result = result.filter((c) => filters.tags.some((tag) => c.tags.includes(tag)))
+    const filterTagSet = new Set(filters.tags)
+    result = result.filter((c) => c.tags.some((tag) => filterTagSet.has(tag)))
   }
 
   // Search filtering
@@ -541,6 +543,46 @@ export const updateConversationAtom = atom(null, (get, set, updated: Conversatio
     set(selectedConversationAtom, updated)
   }
 })
+
+/**
+ * Update tags for a conversation
+ * Follows the same pattern as toggleFavoriteAtom
+ */
+export const updateTagsAtom = atom(
+  null,
+  async (get, set, { conversationId, tags }: { conversationId: string; tags: string[] }) => {
+    try {
+      const response = (await browser.runtime.sendMessage({
+        action: 'UPDATE_TAGS',
+        conversationId,
+        tags,
+      })) as { conversation?: Conversation | null } | undefined
+
+      const updated: Conversation | null = response?.conversation ?? null
+      if (!updated) return null
+
+      // Update all relevant atoms (same pattern as toggleFavoriteAtom)
+      const applyUpdate = (list: Conversation[]) =>
+        list.map((item) => (item.id === updated.id ? updated : item))
+
+      set(conversationsAtom, applyUpdate(get(conversationsAtom)))
+      set(favoritesConversationsAtom, applyUpdate(get(favoritesConversationsAtom)))
+
+      const selected = get(selectedConversationAtom)
+      if (selected?.id === updated.id) {
+        set(selectedConversationAtom, updated)
+      }
+
+      // Refresh all tags cache
+      await set(loadAllTagsAtom)
+
+      return updated
+    } catch (e) {
+      console.error('[ChatCentral] Failed to update tags:', e)
+      return null
+    }
+  }
+)
 
 async function loadMessagesWithFallback(conversation: Conversation): Promise<Message[]> {
   const primary = await getMessagesByConversationId(conversation.id)

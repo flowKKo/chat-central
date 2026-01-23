@@ -1,10 +1,11 @@
-import { ExternalLink, Star, Tag } from 'lucide-react'
+import { ExternalLink, Star } from 'lucide-react'
 import type { Conversation } from '@/types'
 import type { SearchResultWithMatches } from '@/utils/db'
 import { browser } from 'wxt/browser'
 import { PLATFORM_CONFIG } from '@/types'
 import { cn } from '@/utils/cn'
 import { HighlightText } from '../HighlightText'
+import { TagPill } from '../ui/TagPill'
 
 interface ConversationListItemProps {
   conversation: Conversation
@@ -92,13 +93,7 @@ export function ConversationListItem({
           {conversation.tags.length > 0 && (
             <div className="mt-1.5 flex flex-wrap items-center gap-1">
               {conversation.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary"
-                >
-                  <Tag className="h-2 w-2" />
-                  <span className="max-w-[60px] truncate">{tag}</span>
-                </span>
+                <TagPill key={tag} tag={tag} compact readOnly />
               ))}
               {conversation.tags.length > 3 && (
                 <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">

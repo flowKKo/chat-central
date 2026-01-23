@@ -39,8 +39,10 @@ export function filterConversations(
     }
 
     // Tags filter (AND logic - conversation must have all selected tags)
+    // Use Set for O(1) lookup instead of O(n) includes()
     if (tags.length > 0) {
-      const hasAllTags = tags.every((tag) => conv.tags.includes(tag))
+      const convTagSet = new Set(conv.tags)
+      const hasAllTags = tags.every((tag) => convTagSet.has(tag))
       if (!hasAllTags) {
         return false
       }

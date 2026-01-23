@@ -12,11 +12,10 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { browser } from 'wxt/browser'
 import { PLATFORM_CONFIG } from '@/types'
-import { scrollToMessageIdAtom } from '@/utils/atoms'
+import { allTagsAtom, loadAllTagsAtom, scrollToMessageIdAtom, updateTagsAtom } from '@/utils/atoms'
 import { cn } from '@/utils/cn'
 import { exportConversationToJson, exportToMarkdown } from '@/utils/sync/export'
 import { downloadBlob } from '@/utils/sync/utils'
-import { useAllTags } from '@/hooks'
 import { TagManager } from '../TagManager'
 import { MessageBubble } from './MessageBubble'
 import type { Conversation, Message } from '@/types'
@@ -25,14 +24,12 @@ interface ConversationDetailProps {
   conversation: Conversation
   messages: Message[]
   searchQuery?: string
-  onConversationUpdate?: (conversation: Conversation) => void
 }
 
 export function ConversationDetail({
   conversation,
   messages,
   searchQuery,
-  onConversationUpdate,
 }: ConversationDetailProps) {
   const platformConfig = PLATFORM_CONFIG[conversation.platform]
   const needsSync = conversation.detailStatus !== 'full' || messages.length === 0
@@ -40,26 +37,20 @@ export function ConversationDetail({
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const [showExportMenu, setShowExportMenu] = useState(false)
   const exportMenuRef = useRef<HTMLDivElement>(null)
-  const { allTags, refetch: refetchTags } = useAllTags()
+  const [allTags] = useAtom(allTagsAtom)
+  const [, loadAllTags] = useAtom(loadAllTagsAtom)
+  const [, updateTags] = useAtom(updateTagsAtom)
+
+  // Load tags on mount
+  useEffect(() => {
+    loadAllTags()
+  }, [loadAllTags])
 
   const handleTagsChange = useCallback(
     async (newTags: string[]) => {
-      try {
-        const response = (await browser.runtime.sendMessage({
-          action: 'UPDATE_TAGS',
-          conversationId: conversation.id,
-          tags: newTags,
-        })) as { conversation?: Conversation | null }
-
-        if (response.conversation && onConversationUpdate) {
-          onConversationUpdate(response.conversation)
-          refetchTags()
-        }
-      } catch (e) {
-        console.error('[ChatCentral] Failed to update tags:', e)
-      }
+      await updateTags({ conversationId: conversation.id, tags: newTags })
     },
-    [conversation.id, onConversationUpdate, refetchTags]
+    [conversation.id, updateTags]
   )
 
   // Scroll to target message when loaded
