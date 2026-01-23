@@ -42,6 +42,8 @@ import {
   toggleBatchSelectAtom,
   clearBatchSelectionAtom,
   selectAllVisibleAtom,
+  currentPlatformFilterAtom,
+  setPlatformFilterAtom,
 } from '@/utils/atoms'
 import { DateRangePicker } from './ui/DateRangePicker'
 import { cn } from '@/utils/cn'
@@ -79,7 +81,8 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
   const [hasDateFilter] = useAtom(hasDateFilterAtom)
 
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all')
+  const [selectedPlatform] = useAtom(currentPlatformFilterAtom)
+  const [, setPlatformFilter] = useAtom(setPlatformFilterAtom)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
@@ -194,12 +197,13 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
   }
 
   // Use shared filtering and sorting utilities
+  // Note: platform filtering is now done at DB level, so we don't filter here
   const sortedConversations = useMemo(
     () =>
       filterAndSortConversations(
         conversations,
         {
-          platform: selectedPlatform,
+          // Platform filtering is done at DB level, not here
           // Only apply local search filter in favorites mode (full search handled by atoms)
           searchQuery: isFavorites ? searchQuery : undefined,
           tags: selectedFilterTags,
@@ -207,14 +211,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
         },
         { byFavoriteTime: isFavorites }
       ),
-    [
-      conversations,
-      selectedPlatform,
-      isFavorites,
-      searchQuery,
-      selectedFilterTags,
-      filters.dateRange,
-    ]
+    [conversations, isFavorites, searchQuery, selectedFilterTags, filters.dateRange]
   )
   const filteredConversations = sortedConversations
 
@@ -317,7 +314,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                         selectedPlatform === 'all' && 'bg-primary/10 text-primary'
                       )}
                       onClick={() => {
-                        setSelectedPlatform('all')
+                        setPlatformFilter('all')
                         setIsFilterOpen(false)
                       }}
                     >
@@ -334,7 +331,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                           selectedPlatform === platform && 'bg-primary/10 text-primary'
                         )}
                         onClick={() => {
-                          setSelectedPlatform(platform)
+                          setPlatformFilter(platform)
                           setIsFilterOpen(false)
                         }}
                       >

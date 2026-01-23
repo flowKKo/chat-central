@@ -19,31 +19,7 @@ export async function getConversations(options?: {
     orderBy = 'updatedAt',
   } = options ?? {}
 
-  let query = db.conversations.orderBy(orderBy).reverse()
-
-  if (platform) {
-    query = db.conversations.where('platform').equals(platform).reverse()
-  }
-
-  if (favoritesOnly) {
-    query = query.filter((conv) => conv.isFavorite)
-  }
-
-  const results = await query.offset(offset).limit(limit).toArray()
-  if (results.length > 0) return results
-
-  // Fallback for edge cases where index-based query fails
-  const totalCount = platform
-    ? await db.conversations.where('platform').equals(platform).count()
-    : await db.conversations.count()
-
-  if (totalCount === 0) return results
-
-  const all = await db.conversations.toArray()
-  let filtered = all
-  if (platform) filtered = filtered.filter((conv) => conv.platform === platform)
-  if (favoritesOnly) filtered = filtered.filter((conv) => conv.isFavorite)
-
+  // Sorting function for in-memory sorting
   const score = (conv: Conversation) => {
     switch (orderBy) {
       case 'createdAt':
@@ -57,6 +33,23 @@ export async function getConversations(options?: {
     }
   }
 
+  // No platform filter: use indexed query (efficient)
+  if (!platform) {
+    let query = db.conversations.orderBy(orderBy).reverse()
+    if (favoritesOnly) {
+      query = query.filter((conv) => conv.isFavorite)
+    }
+    return query.offset(offset).limit(limit).toArray()
+  }
+
+  // With platform filter: Dexie can't combine .where().equals() with .orderBy()
+  // so we filter first, then sort in memory
+  let query = db.conversations.where('platform').equals(platform)
+  if (favoritesOnly) {
+    query = query.filter((conv) => conv.isFavorite)
+  }
+
+  const filtered = await query.toArray()
   filtered.sort((a, b) => score(b) - score(a))
   return filtered.slice(offset, offset + limit)
 }

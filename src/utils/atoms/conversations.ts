@@ -120,6 +120,16 @@ export const clearAllFiltersAtom = atom(null, (_get, set) => {
 })
 
 /**
+ * Get current platform filter (single or 'all')
+ */
+export const currentPlatformFilterAtom = atom((get): Platform | 'all' => {
+  const { platforms } = get(filtersAtom)
+  // When platforms has exactly one element, return it; otherwise return 'all'
+  const firstPlatform = platforms[0]
+  return platforms.length === 1 && firstPlatform ? firstPlatform : 'all'
+})
+
+/**
  * Search query
  */
 export const searchQueryAtom = atom('')
@@ -288,7 +298,11 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
     const offset = reset ? 0 : pagination.offset
     const limit = pagination.limit
 
-    const conversations = await getConversations({ limit: limit + 1, offset })
+    // Get platform filter from filters atom
+    const filters = get(filtersAtom)
+    const platform = filters.platforms.length === 1 ? filters.platforms[0] : undefined
+
+    const conversations = await getConversations({ limit: limit + 1, offset, platform })
 
     const hasMore = conversations.length > limit
     const data = hasMore ? conversations.slice(0, limit) : conversations
@@ -325,6 +339,30 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
   } finally {
     set(isLoadingConversationsAtom, false)
   }
+})
+
+/**
+ * Set platform filter and reload conversations
+ */
+export const setPlatformFilterAtom = atom(null, async (get, set, platform: Platform | 'all') => {
+  const filters = get(filtersAtom)
+  const platforms = platform === 'all' ? [] : [platform]
+  set(filtersAtom, { ...filters, platforms })
+
+  // Reset pagination state for both conversations and favorites
+  set(paginationAtom, {
+    offset: 0,
+    limit: get(paginationAtom).limit,
+    hasMore: true,
+  })
+  set(favoritesPaginationAtom, {
+    offset: 0,
+    limit: get(favoritesPaginationAtom).limit,
+    hasMore: true,
+  })
+
+  // Reload conversations with new filter
+  await set(loadConversationsAtom, { reset: true })
 })
 
 /**
@@ -438,9 +476,14 @@ export const loadFavoritesAtom = atom(null, async (get, set, options?: { reset?:
     const offset = reset ? 0 : pagination.offset
     const limit = pagination.limit
 
+    // Get platform filter from filters atom
+    const filters = get(filtersAtom)
+    const platform = filters.platforms.length === 1 ? filters.platforms[0] : undefined
+
     const conversations = await getConversations({
       limit: limit + 1,
       offset,
+      platform,
       favoritesOnly: true,
       orderBy: 'favoriteAt',
     })

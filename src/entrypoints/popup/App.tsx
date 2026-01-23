@@ -27,6 +27,8 @@ import {
   performSearchAtom,
   searchResultsAtom,
   toggleFavoriteAtom,
+  currentPlatformFilterAtom,
+  setPlatformFilterAtom,
 } from '@/utils/atoms'
 import { initializeSyncAtom } from '@/utils/atoms/sync'
 import { cn } from '@/utils/cn'
@@ -39,7 +41,8 @@ export default function App() {
   const [pagination] = useAtom(paginationAtom)
   const [isLoading] = useAtom(isLoadingConversationsAtom)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all')
+  const [selectedPlatform] = useAtom(currentPlatformFilterAtom)
+  const [, setPlatformFilter] = useAtom(setPlatformFilterAtom)
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [, initializeSync] = useAtom(initializeSyncAtom)
   const [, performSearch] = useAtom(performSearchAtom)
@@ -73,14 +76,15 @@ export default function App() {
   }, [])
 
   // Use shared filtering and sorting utilities
+  // Note: platform filtering is now done at DB level, so we don't filter here
   const sortedConversations = useMemo(
     () =>
       filterAndSortConversations(
         conversations,
-        { platform: selectedPlatform, favoritesOnly: showFavoritesOnly },
+        { favoritesOnly: showFavoritesOnly },
         { byFavoriteTime: showFavoritesOnly }
       ),
-    [conversations, selectedPlatform, showFavoritesOnly]
+    [conversations, showFavoritesOnly]
   )
   const filteredConversations = sortedConversations
 
@@ -169,7 +173,7 @@ export default function App() {
               label="All"
               count={counts.total}
               isActive={selectedPlatform === 'all'}
-              onClick={() => setSelectedPlatform('all')}
+              onClick={() => setPlatformFilter('all')}
             />
             {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
               <PlatformTab
@@ -177,7 +181,7 @@ export default function App() {
                 platform={platform}
                 count={counts[platform]}
                 isActive={selectedPlatform === platform}
-                onClick={() => setSelectedPlatform(platform)}
+                onClick={() => setPlatformFilter(platform)}
               />
             ))}
             <div className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
