@@ -1,5 +1,6 @@
 import { useAtom } from 'jotai'
 import {
+  Calendar,
   CheckSquare,
   ChevronDown,
   Download,
@@ -32,6 +33,9 @@ import {
   activeSearchQueryAtom,
   searchResultsAtom,
   selectedFilterTagsAtom,
+  filtersAtom,
+  setDateRangeAtom,
+  hasDateFilterAtom,
   batchSelectedIdsAtom,
   isBatchModeAtom,
   batchSelectedCountAtom,
@@ -39,6 +43,7 @@ import {
   clearBatchSelectionAtom,
   selectAllVisibleAtom,
 } from '@/utils/atoms'
+import { DateRangePicker } from './ui/DateRangePicker'
 import { cn } from '@/utils/cn'
 import { filterAndSortConversations } from '@/utils/filters'
 import { exportConversations, downloadExport, exportBatchMarkdown } from '@/utils/sync/export'
@@ -68,12 +73,19 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
   const [, clearBatchSelection] = useAtom(clearBatchSelectionAtom)
   const [, selectAllVisible] = useAtom(selectAllVisibleAtom)
 
+  // Date filter state
+  const [filters] = useAtom(filtersAtom)
+  const [, setDateRange] = useAtom(setDateRangeAtom)
+  const [hasDateFilter] = useAtom(hasDateFilterAtom)
+
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const filterRef = useRef<HTMLDivElement>(null)
+  const dateFilterRef = useRef<HTMLDivElement>(null)
   const exportMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -108,15 +120,30 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsFilterOpen(false)
+        setIsDateFilterOpen(false)
         setIsExportMenuOpen(false)
       }
     }
 
-    if (isFilterOpen || isExportMenuOpen) {
+    if (isFilterOpen || isDateFilterOpen || isExportMenuOpen) {
       document.addEventListener('keydown', handleEscape)
       return () => document.removeEventListener('keydown', handleEscape)
     }
-  }, [isFilterOpen, isExportMenuOpen])
+  }, [isFilterOpen, isDateFilterOpen, isExportMenuOpen])
+
+  // Close date filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dateFilterRef.current && !dateFilterRef.current.contains(event.target as Node)) {
+        setIsDateFilterOpen(false)
+      }
+    }
+
+    if (isDateFilterOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isDateFilterOpen])
 
   // Close export menu when clicking outside
   useEffect(() => {
@@ -176,10 +203,18 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
           // Only apply local search filter in favorites mode (full search handled by atoms)
           searchQuery: isFavorites ? searchQuery : undefined,
           tags: selectedFilterTags,
+          dateRange: filters.dateRange,
         },
         { byFavoriteTime: isFavorites }
       ),
-    [conversations, selectedPlatform, isFavorites, searchQuery, selectedFilterTags]
+    [
+      conversations,
+      selectedPlatform,
+      isFavorites,
+      searchQuery,
+      selectedFilterTags,
+      filters.dateRange,
+    ]
   )
   const filteredConversations = sortedConversations
 
@@ -310,6 +345,37 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                         {PLATFORM_CONFIG[platform].name} ({counts[platform]})
                       </button>
                     ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Date filter */}
+              <div className="relative" ref={dateFilterRef}>
+                <button
+                  type="button"
+                  className={cn(
+                    'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
+                    hasDateFilter && 'border-primary bg-primary/10 text-primary'
+                  )}
+                  onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
+                  aria-label="Date filter"
+                  aria-haspopup="dialog"
+                  aria-expanded={isDateFilterOpen}
+                >
+                  <Calendar className="h-4 w-4" />
+                </button>
+
+                {isDateFilterOpen && (
+                  <div
+                    role="dialog"
+                    aria-label="Date range filter"
+                    className="absolute left-0 top-full z-10 mt-1 w-64 animate-scale-in rounded-xl border border-border bg-card p-3 shadow-lg"
+                  >
+                    <DateRangePicker
+                      startDate={filters.dateRange.start}
+                      endDate={filters.dateRange.end}
+                      onChange={setDateRange}
+                    />
                   </div>
                 )}
               </div>

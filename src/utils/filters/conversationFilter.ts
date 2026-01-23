@@ -1,6 +1,14 @@
 import type { Conversation, Platform } from '@/types'
 
 /**
+ * Date range filter
+ */
+export interface DateRangeFilter {
+  start: number | null
+  end: number | null
+}
+
+/**
  * Filter options for conversations
  */
 export interface ConversationFilterOptions {
@@ -8,6 +16,7 @@ export interface ConversationFilterOptions {
   favoritesOnly?: boolean
   searchQuery?: string
   tags?: string[]
+  dateRange?: DateRangeFilter
 }
 
 /**
@@ -25,7 +34,7 @@ export function filterConversations(
   conversations: Conversation[],
   options: ConversationFilterOptions = {}
 ): Conversation[] {
-  const { platform = 'all', favoritesOnly = false, searchQuery, tags = [] } = options
+  const { platform = 'all', favoritesOnly = false, searchQuery, tags = [], dateRange } = options
 
   return conversations.filter((conv) => {
     // Platform filter
@@ -36,6 +45,16 @@ export function filterConversations(
     // Favorites filter
     if (favoritesOnly && !conv.isFavorite) {
       return false
+    }
+
+    // Date range filter
+    if (dateRange) {
+      if (dateRange.start !== null && conv.updatedAt < dateRange.start) {
+        return false
+      }
+      if (dateRange.end !== null && conv.updatedAt > dateRange.end) {
+        return false
+      }
     }
 
     // Tags filter (AND logic - conversation must have all selected tags)

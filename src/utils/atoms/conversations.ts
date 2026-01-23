@@ -12,6 +12,7 @@ import {
   type SearchResultWithMatches,
   upsertMessages,
 } from '@/utils/db'
+import { parseSearchQuery } from '@/utils/search-parser'
 
 // ============================================================================
 // Conversation List State
@@ -86,6 +87,36 @@ export const toggleTagFilterAtom = atom(null, (get, set, tag: string) => {
 export const clearTagFiltersAtom = atom(null, (get, set) => {
   const filters = get(filtersAtom)
   set(filtersAtom, { ...filters, tags: [] })
+})
+
+/**
+ * Set date range filter
+ */
+export const setDateRangeAtom = atom(
+  null,
+  (get, set, range: { start: number | null; end: number | null }) => {
+    const filters = get(filtersAtom)
+    set(filtersAtom, { ...filters, dateRange: range })
+  }
+)
+
+/**
+ * Check if date filter is active
+ */
+export const hasDateFilterAtom = atom((get) => {
+  const { dateRange } = get(filtersAtom)
+  return dateRange.start !== null || dateRange.end !== null
+})
+
+/**
+ * Clear all filters
+ */
+export const clearAllFiltersAtom = atom(null, (_get, set) => {
+  set(filtersAtom, {
+    platforms: [],
+    dateRange: { start: null, end: null },
+    tags: [],
+  })
 })
 
 /**
@@ -297,11 +328,54 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
 })
 
 /**
- * Perform search
+ * Perform search with advanced syntax support
+ *
+ * Supports operators:
+ * - platform:claude / platform:chatgpt / platform:gemini
+ * - tag:work (multiple allowed)
+ * - before:YYYY-MM-DD
+ * - after:YYYY-MM-DD
+ * - is:favorite
  */
-export const performSearchAtom = atom(null, async (_get, set, query: string) => {
-  if (!query.trim()) {
-    // Reset to normal view
+export const performSearchAtom = atom(null, async (get, set, query: string) => {
+  // Parse query for operators
+  const parsed = parseSearchQuery(query)
+
+  // Apply operator filters to the filter state
+  const currentFilters = get(filtersAtom)
+  const newFilters = { ...currentFilters }
+
+  // Apply platform filter from query
+  if (parsed.operators.platform) {
+    newFilters.platforms = [parsed.operators.platform]
+  }
+
+  // Apply tag filters from query
+  if (parsed.operators.tags) {
+    newFilters.tags = parsed.operators.tags
+  }
+
+  // Apply date filters from query
+  if (parsed.operators.before || parsed.operators.after) {
+    newFilters.dateRange = {
+      start: parsed.operators.after ?? currentFilters.dateRange.start,
+      end: parsed.operators.before ?? currentFilters.dateRange.end,
+    }
+  }
+
+  // Only update filters if operators were used
+  if (
+    parsed.operators.platform ||
+    parsed.operators.tags ||
+    parsed.operators.before ||
+    parsed.operators.after
+  ) {
+    set(filtersAtom, newFilters)
+  }
+
+  // Handle case where only operators, no text search
+  if (!parsed.freeText.trim()) {
+    // Reset search state but keep filters applied
     set(activeSearchQueryAtom, '')
     set(searchResultsAtom, [])
     await set(loadConversationsAtom, { reset: true })
@@ -311,10 +385,11 @@ export const performSearchAtom = atom(null, async (_get, set, query: string) => 
   set(isLoadingConversationsAtom, true)
 
   try {
-    const results = await searchConversationsWithMatches(query)
+    // Search using the free text part only
+    const results = await searchConversationsWithMatches(parsed.freeText)
 
-    // Store search state
-    set(activeSearchQueryAtom, query)
+    // Store search state (store original query for display)
+    set(activeSearchQueryAtom, parsed.freeText)
     set(searchResultsAtom, results)
     set(
       conversationsAtom,
