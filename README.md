@@ -4,77 +4,64 @@ Unified AI conversation manager - Track, search, and export your Claude, ChatGPT
 
 ## Features
 
-- **Auto Sync**: Automatically captures conversations as you chat on Claude, ChatGPT, and Gemini
-- **Smart Search**: Full-text search across all your conversations
-- **Local Storage**: All data stays on your device using IndexedDB
-- **Export**: Export conversations to Markdown or JSON
+- **Auto Sync** - Automatically captures conversations as you chat
+- **Multi-Platform** - Supports Claude, ChatGPT, and Gemini
+- **Smart Search** - Full-text search across all conversations with highlighting
+- **Local Storage** - All data stays on your device (IndexedDB)
+- **Theme Support** - Light, dark, and system modes
+- **Export** - Export to Markdown or JSON
+- **Favorites** - Mark important conversations for quick access
 
-## Development
+## Installation
 
-### Prerequisites
+### Chrome Web Store
+Coming soon.
 
-- Node.js 18+
-- pnpm 9+
+### Manual Installation
+1. Download the latest release from [Releases](https://github.com/flowKKo/chat-central/releases)
+2. Unzip the file
+3. Open `chrome://extensions/` in Chrome
+4. Enable "Developer mode"
+5. Click "Load unpacked" and select the unzipped folder
 
-### Setup
+## Usage
 
-```bash
-# Install dependencies
-pnpm install
-
-# Start development server (Chrome)
-pnpm dev
-
-# Start development server (Firefox)
-pnpm dev:firefox
-```
-
-### Build
-
-```bash
-# Build for Chrome
-pnpm build
-
-# Build for Firefox
-pnpm build:firefox
-
-# Create ZIP for distribution
-pnpm zip
-pnpm zip:firefox
-```
-
-## Project Structure
-
-```
-src/
-├── entrypoints/           # Browser extension entry points
-│   ├── background/        # Service worker
-│   ├── popup/            # Popup UI
-│   ├── options/          # Options page
-│   ├── interceptor.content/  # API interceptor (runs in page context)
-│   └── observer.content/     # Message relay (runs in extension context)
-│
-├── components/           # React components
-├── hooks/               # Custom React hooks
-├── utils/
-│   ├── atoms/           # Jotai state atoms
-│   ├── db/              # IndexedDB operations
-│   ├── platform-adapters/  # Platform-specific parsers
-│   └── constants/       # App constants
-│
-├── types/               # TypeScript types
-└── assets/              # Static assets
-```
+1. Install the extension
+2. Visit [Claude](https://claude.ai), [ChatGPT](https://chatgpt.com), or [Gemini](https://gemini.google.com)
+3. Start chatting - conversations are automatically synced
+4. Click the extension icon to search and browse your conversations
 
 ## How It Works
 
-1. **API Interception**: When you use Claude/ChatGPT/Gemini, the extension intercepts API responses containing conversation data
-2. **Data Normalization**: Platform-specific adapters parse the data into a unified format
-3. **Local Storage**: Conversations are stored in IndexedDB
-4. **Search & Browse**: Use the popup or options page to search and browse your conversations
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│  AI Platform    │────▶│  API Interceptor │────▶│  Local Database │
+│ (Claude/GPT/    │     │  (content script)│     │   (IndexedDB)   │
+│  Gemini)        │     └──────────────────┘     └─────────────────┘
+└─────────────────┘                                       │
+                                                          ▼
+                                              ┌─────────────────────┐
+                                              │   Extension Popup   │
+                                              │  (Search & Browse)  │
+                                              └─────────────────────┘
+```
+
+1. **Intercept** - Captures API responses when you view conversations
+2. **Normalize** - Platform adapters convert data to unified format
+3. **Store** - Saves to local IndexedDB
+4. **Access** - Search and browse via extension popup
 
 ## Privacy
 
-- All data is stored locally on your device
-- No data is sent to external servers
-- The extension only reads data from conversations you actively view
+- All data stored locally on your device
+- No external servers or analytics
+- Only reads conversations you actively view
+- Open source - audit the code yourself
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+
+## License
+
+MIT
