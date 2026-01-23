@@ -1,11 +1,20 @@
 import { useState } from 'react'
-import { Trash2, AlertTriangle, Database, Shield } from 'lucide-react'
+import { useAtom } from 'jotai'
+import { Trash2, AlertTriangle, Database, Shield, Palette, Sun, Moon, Monitor } from 'lucide-react'
 import { PLATFORM_CONFIG, type Platform } from '@/types'
 import { clearAllData, clearPlatformData } from '@/utils/db'
+import { themePreferenceAtom, type ThemePreference } from '@/utils/atoms/theme'
 import { cn } from '@/utils/cn'
+
+const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon },
+  { value: 'system', label: 'System', icon: Monitor },
+]
 
 export function SettingsPanel() {
   const [isClearing, setIsClearing] = useState(false)
+  const [themePreference, setThemePreference] = useAtom(themePreferenceAtom)
 
   const handleClearAll = async () => {
     if (
@@ -48,6 +57,49 @@ export function SettingsPanel() {
       </div>
 
       <div className="max-w-2xl space-y-8">
+        {/* Appearance Section */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Palette className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-heading font-semibold">Appearance</h3>
+          </div>
+
+          <div className="p-4 bg-card/50 border border-border rounded-xl">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <span className="font-medium">Theme</span>
+                <p className="text-xs text-muted-foreground">Choose your preferred color scheme</p>
+              </div>
+            </div>
+
+            <div className="flex gap-2" role="radiogroup" aria-label="Theme selection">
+              {themeOptions.map((option) => {
+                const Icon = option.icon
+                const isSelected = themePreference === option.value
+                return (
+                  <button
+                    key={option.value}
+                    role="radio"
+                    aria-checked={isSelected}
+                    className={cn(
+                      'flex-1 flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer',
+                      isSelected
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border hover:border-muted-foreground/30 hover:bg-muted/50 text-muted-foreground'
+                    )}
+                    onClick={() => setThemePreference(option.value)}
+                  >
+                    <Icon className={cn('w-5 h-5', isSelected && 'text-primary')} />
+                    <span className={cn('text-sm font-medium', isSelected && 'text-primary')}>
+                      {option.label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
         {/* Data Management Section */}
         <section>
           <div className="flex items-center gap-2 mb-4">

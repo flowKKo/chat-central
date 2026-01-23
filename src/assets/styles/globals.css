@@ -7,7 +7,7 @@
 
 @layer base {
   :root {
-    /* Light Mode - Modern Slate */
+    /* Light Mode - Clean Modern Slate */
     --background: 210 20% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
@@ -29,33 +29,33 @@
     --ring: 221 83% 53%;
     --radius: 0.625rem;
 
-    /* Platform Colors */
+    /* Platform Colors - Constant across themes */
     --claude: 16 65% 59%;
     --chatgpt: 160 85% 35%;
     --gemini: 217 89% 61%;
   }
 
   .dark {
-    /* Dark Mode - High Contrast Theme */
-    --background: 224 71% 4%;
+    /* Dark Mode - Softer, Warmer Theme */
+    --background: 222 47% 11%;
     --foreground: 210 20% 98%;
-    --card: 224 71% 6%;
+    --card: 222 47% 13%;
     --card-foreground: 210 20% 98%;
-    --popover: 224 71% 6%;
+    --popover: 222 47% 13%;
     --popover-foreground: 210 20% 98%;
-    --primary: 210 100% 66%;
-    --primary-foreground: 224 71% 4%;
-    --secondary: 215 28% 17%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 20%;
     --secondary-foreground: 210 20% 98%;
-    --muted: 215 28% 12%;
-    --muted-foreground: 217 20% 75%;
-    --accent: 215 28% 17%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 20%;
     --accent-foreground: 210 20% 98%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 20% 98%;
-    --border: 215 28% 20%;
-    --input: 215 28% 20%;
-    --ring: 210 100% 66%;
+    --border: 217 33% 24%;
+    --input: 217 33% 24%;
+    --ring: 217 91% 60%;
   }
 }
 

@@ -1,4 +1,5 @@
 import { Sidebar } from './Sidebar'
+import { ThemeProvider } from '@/components/providers/ThemeProvider'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -6,11 +7,13 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="dark flex h-screen bg-background text-foreground">
-      <Sidebar />
-      <main className="flex-1 overflow-auto scrollbar-thin">
-        <div className="p-6">{children}</div>
-      </main>
-    </div>
+    <ThemeProvider>
+      <div className="flex h-screen bg-background text-foreground">
+        <Sidebar />
+        <main className="flex-1 overflow-auto scrollbar-thin">
+          <div className="p-6">{children}</div>
+        </main>
+      </div>
+    </ThemeProvider>
   )
 }

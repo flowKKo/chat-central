@@ -23,6 +23,7 @@ import { initializeSyncAtom } from '@/utils/atoms/sync'
 import { PLATFORM_CONFIG, type Platform, type Conversation } from '@/types'
 import { cn } from '@/utils/cn'
 import { SyncStatusBar, SyncSettingsModal, ConflictResolverModal } from '@/components/sync'
+import { ThemeProvider } from '@/components/providers/ThemeProvider'
 
 export default function App() {
   const [conversations] = useAtom(conversationsAtom)
@@ -82,7 +83,8 @@ export default function App() {
   }, [])
 
   return (
-    <div className="dark w-[400px] min-h-[520px] max-h-[600px] flex flex-col bg-background text-foreground">
+    <ThemeProvider>
+    <div className="w-[400px] min-h-[520px] max-h-[600px] flex flex-col bg-background text-foreground">
       {/* Header */}
       <header className="relative px-4 pt-4 pb-3 bg-card">
         <div className="flex items-center justify-between mb-4">
@@ -226,6 +228,7 @@ export default function App() {
       <SyncSettingsModal />
       <ConflictResolverModal />
     </div>
+    </ThemeProvider>
   )
 }
 
