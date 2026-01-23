@@ -286,39 +286,49 @@ chat-central/
 
 ---
 
-## 11. Future Roadmap
+## 11. Completed Features
+
+Recently implemented features:
+
+| Feature              | Description                                                            | Related Files                                                         |
+| -------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **Batch Export**     | Select multiple conversations and export as ZIP (JSON) or Markdown     | `src/utils/sync/export.ts`, `src/components/ConversationsManager.tsx` |
+| **Import/Export**    | Full import/export with ZIP format, checksums, and conflict resolution | `src/utils/sync/import.ts`, `src/utils/sync/export.ts`                |
+| **Tags**             | Add/remove tags to conversations, filter by tags                       | `src/components/TagManager.tsx`, `src/utils/atoms/conversations.ts`   |
+| **Full-text Search** | Search conversations and messages with highlighting                    | `src/utils/db/search.ts`, `src/components/HighlightText.tsx`          |
+
+---
+
+## 12. Future Roadmap
 
 Potential features and improvements for future development:
 
 ### 🔴 High Priority
 
-| Feature                  | Description                                                | Related Files              |
-| ------------------------ | ---------------------------------------------------------- | -------------------------- |
-| **Export Enhancement**   | Markdown export, batch export multiple conversations       | `src/utils/sync/export.ts` |
-| **Import Functionality** | Import from JSON/Markdown, data migration from other tools | `src/utils/sync/import.ts` |
-| **Chrome Web Store**     | Prepare and publish to Chrome Web Store                    | `wxt.config.ts`, assets    |
+| Feature              | Description                             | Related Files           |
+| -------------------- | --------------------------------------- | ----------------------- |
+| **Chrome Web Store** | Prepare and publish to Chrome Web Store | `wxt.config.ts`, assets |
 
 ### 🟡 Medium Priority
 
-| Feature                       | Description                                 | Related Files                                       |
-| ----------------------------- | ------------------------------------------- | --------------------------------------------------- |
-| **Cloud Sync**                | Google Drive / iCloud / WebDAV sync support | `src/utils/sync/providers/`                         |
-| **Conversation Organization** | Tags, folders, archive functionality        | `src/types/`, `src/utils/db/`                       |
-| **Advanced Search**           | Date range filter, advanced search syntax   | `src/utils/db/`, `src/utils/atoms/conversations.ts` |
+| Feature             | Description                                 | Related Files                                       |
+| ------------------- | ------------------------------------------- | --------------------------------------------------- |
+| **Cloud Sync**      | Google Drive / iCloud / WebDAV sync support | `src/utils/sync/providers/`                         |
+| **Advanced Search** | Date range filter, advanced search syntax   | `src/utils/db/`, `src/utils/atoms/conversations.ts` |
+| **Markdown Import** | Import conversations from .md files         | `src/utils/sync/import.ts`                          |
 
 ### 🟢 Low Priority
 
-| Feature                | Description                                   | Related Files                             |
-| ---------------------- | --------------------------------------------- | ----------------------------------------- |
-| **Firefox Support**    | Full Firefox compatibility                    | `wxt.config.ts`, manifest                 |
-| **Test Coverage**      | Increase unit test and E2E test coverage      | `src/**/*.test.ts`                        |
-| **Keyboard Shortcuts** | Implement all shortcuts mentioned in Settings | `src/components/`, `src/hooks/`           |
-| **Batch Operations**   | Batch delete, batch favorite, batch export    | `src/components/ConversationsManager.tsx` |
+| Feature                   | Description                                   | Related Files                             |
+| ------------------------- | --------------------------------------------- | ----------------------------------------- |
+| **Firefox Support**       | Full Firefox compatibility                    | `wxt.config.ts`, manifest                 |
+| **Test Coverage**         | Increase unit test and E2E test coverage      | `src/**/*.test.ts`                        |
+| **Keyboard Shortcuts**    | Implement all shortcuts mentioned in Settings | `src/components/`, `src/hooks/`           |
+| **Batch Delete/Favorite** | Extend batch operations beyond export         | `src/components/ConversationsManager.tsx` |
 
 ### 📝 Implementation Notes
 
-- **Export/Import**: Core logic exists in `src/utils/sync/`. UI integration needed.
 - **Cloud Sync**: Provider interface defined in `src/utils/sync/providers/`. Implement specific providers.
-- **Organization**: Requires schema changes in Dexie DB. Plan migration carefully.
+- **Advanced Search**: Consider adding date range picker UI and search syntax parser.
 
 ---
