@@ -152,23 +152,39 @@ export async function importData(
   }
 }
 
+// ============================================================================
+// Generic Import Entity
+// ============================================================================
+
+interface ImportTable<T> {
+  get(id: string): Promise<T | undefined>
+  add(item: T): Promise<unknown>
+  put(item: T): Promise<unknown>
+}
+
+interface ImportMergeResult<T> {
+  merged: T
+  conflicts: string[]
+  needsUserResolution: boolean
+}
+
+type EntityType = 'conversation' | 'message'
+
 /**
- * Import a single conversation
+ * Generic import function for entities
  */
-async function importConversation(
-  record: Conversation,
+async function importEntity<T extends { id: string }>(
+  record: T,
+  entityType: EntityType,
+  table: ImportTable<T>,
+  mergeFn: (existing: T, record: T) => ImportMergeResult<T>,
   options: ImportOptions,
   result: ImportResult
 ): Promise<'imported' | 'skipped' | 'conflict'> {
-  const existing = await db.conversations.get(record.id)
+  const existing = await table.get(record.id)
 
   if (!existing) {
-    // New record - import directly
-    await db.conversations.add({
-      ...record,
-      dirty: false,
-      syncedAt: Date.now(),
-    })
+    await table.add({ ...record, dirty: false, syncedAt: Date.now() } as T)
     return 'imported'
   }
 
@@ -177,20 +193,15 @@ async function importConversation(
       return 'skipped'
 
     case 'overwrite':
-      await db.conversations.put({
-        ...record,
-        dirty: false,
-        syncedAt: Date.now(),
-      })
+      await table.put({ ...record, dirty: false, syncedAt: Date.now() } as T)
       return 'imported'
 
     case 'merge': {
-      const mergeResult = mergeConversation(existing, record)
+      const mergeResult = mergeFn(existing, record)
 
       if (mergeResult.needsUserResolution) {
-        // Save conflict for later resolution
         const conflict: Omit<ConflictRecord, 'id' | 'createdAt'> = {
-          entityType: 'conversation',
+          entityType,
           entityId: record.id,
           localVersion: existing as unknown as Record<string, unknown>,
           remoteVersion: record as unknown as Record<string, unknown>,
@@ -199,20 +210,11 @@ async function importConversation(
           resolvedAt: null,
         }
         await addConflict(conflict)
-        result.conflicts.push({
-          ...conflict,
-          id: '', // Will be assigned by addConflict
-          createdAt: Date.now(),
-        })
+        result.conflicts.push({ ...conflict, id: '', createdAt: Date.now() })
         return 'conflict'
       }
 
-      // Auto-merge successful
-      await db.conversations.put({
-        ...mergeResult.conversation,
-        dirty: false,
-        syncedAt: Date.now(),
-      })
+      await table.put({ ...mergeResult.merged, dirty: false, syncedAt: Date.now() } as T)
       return 'imported'
     }
 
@@ -221,73 +223,34 @@ async function importConversation(
   }
 }
 
-/**
- * Import a single message
- */
-async function importMessage(
-  record: Message,
-  options: ImportOptions,
-  result: ImportResult
-): Promise<'imported' | 'skipped' | 'conflict'> {
-  const existing = await db.messages.get(record.id)
+/** Import a single conversation */
+function importConversation(record: Conversation, options: ImportOptions, result: ImportResult) {
+  return importEntity(
+    record,
+    'conversation',
+    db.conversations as ImportTable<Conversation>,
+    (existing, rec) => {
+      const r = mergeConversation(existing, rec)
+      return { merged: r.conversation, conflicts: r.conflicts, needsUserResolution: r.needsUserResolution }
+    },
+    options,
+    result
+  )
+}
 
-  if (!existing) {
-    // New record - import directly
-    await db.messages.add({
-      ...record,
-      dirty: false,
-      syncedAt: Date.now(),
-    })
-    return 'imported'
-  }
-
-  switch (options.conflictStrategy) {
-    case 'skip':
-      return 'skipped'
-
-    case 'overwrite':
-      await db.messages.put({
-        ...record,
-        dirty: false,
-        syncedAt: Date.now(),
-      })
-      return 'imported'
-
-    case 'merge': {
-      const mergeResult = mergeMessage(existing, record)
-
-      if (mergeResult.needsUserResolution) {
-        // Save conflict for later resolution
-        const conflict: Omit<ConflictRecord, 'id' | 'createdAt'> = {
-          entityType: 'message',
-          entityId: record.id,
-          localVersion: existing as unknown as Record<string, unknown>,
-          remoteVersion: record as unknown as Record<string, unknown>,
-          conflictFields: mergeResult.conflicts,
-          resolution: 'pending',
-          resolvedAt: null,
-        }
-        await addConflict(conflict)
-        result.conflicts.push({
-          ...conflict,
-          id: '',
-          createdAt: Date.now(),
-        })
-        return 'conflict'
-      }
-
-      // Auto-merge successful
-      await db.messages.put({
-        ...mergeResult.message,
-        dirty: false,
-        syncedAt: Date.now(),
-      })
-      return 'imported'
-    }
-
-    default:
-      return 'skipped'
-  }
+/** Import a single message */
+function importMessage(record: Message, options: ImportOptions, result: ImportResult) {
+  return importEntity(
+    record,
+    'message',
+    db.messages as ImportTable<Message>,
+    (existing, rec) => {
+      const r = mergeMessage(existing, rec)
+      return { merged: r.message, conflicts: r.conflicts, needsUserResolution: r.needsUserResolution }
+    },
+    options,
+    result
+  )
 }
 
 // ============================================================================
