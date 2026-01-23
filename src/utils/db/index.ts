@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { Conversation, Message, Platform } from '@/types'
+import type { OperationLog, SyncState, ConflictRecord } from '@/utils/sync/types'
 
 // ============================================================================
 // Database Schema
@@ -8,6 +9,9 @@ import type { Conversation, Message, Platform } from '@/types'
 export class ChatCentralDB extends Dexie {
   conversations!: EntityTable<Conversation, 'id'>
   messages!: EntityTable<Message, 'id'>
+  operationLog!: EntityTable<OperationLog, 'id'>
+  syncState!: EntityTable<SyncState, 'id'>
+  conflicts!: EntityTable<ConflictRecord, 'id'>
 
   constructor() {
     super('ChatCentralDB')
@@ -40,6 +44,49 @@ export class ChatCentralDB extends Dexie {
           if (!('detailSyncedAt' in conv)) conv.detailSyncedAt = null
           if (!('isFavorite' in conv)) conv.isFavorite = false
           if (!('favoriteAt' in conv)) conv.favoriteAt = null
+        })
+      })
+
+    // Version 4: Add sync-related fields and tables
+    this.version(4)
+      .stores({
+        conversations: 'id, platform, updatedAt, syncedAt, isFavorite, favoriteAt, dirty, deleted, modifiedAt, *tags',
+        messages: 'id, conversationId, createdAt, dirty, deleted, modifiedAt',
+        operationLog: 'id, entityType, entityId, timestamp, synced',
+        syncState: 'id',
+        conflicts: 'id, entityType, entityId, resolution, createdAt',
+      })
+      .upgrade(async (tx) => {
+        // Add sync fields to conversations
+        await tx.table('conversations').toCollection().modify((conv) => {
+          if (!('syncVersion' in conv)) conv.syncVersion = 1
+          if (!('modifiedAt' in conv)) conv.modifiedAt = conv.updatedAt || Date.now()
+          if (!('dirty' in conv)) conv.dirty = false
+          if (!('deleted' in conv)) conv.deleted = false
+          if (!('deletedAt' in conv)) conv.deletedAt = null
+        })
+
+        // Add sync fields to messages
+        await tx.table('messages').toCollection().modify((msg) => {
+          if (!('syncVersion' in msg)) msg.syncVersion = 1
+          if (!('modifiedAt' in msg)) msg.modifiedAt = msg.createdAt || Date.now()
+          if (!('syncedAt' in msg)) msg.syncedAt = null
+          if (!('dirty' in msg)) msg.dirty = false
+          if (!('deleted' in msg)) msg.deleted = false
+          if (!('deletedAt' in msg)) msg.deletedAt = null
+        })
+
+        // Initialize sync state
+        await tx.table('syncState').add({
+          id: 'global',
+          deviceId: crypto.randomUUID(),
+          lastPullAt: null,
+          lastPushAt: null,
+          remoteCursor: null,
+          pendingConflicts: 0,
+          status: 'disabled',
+          lastError: null,
+          lastErrorAt: null,
         })
       })
   }
@@ -312,4 +359,288 @@ export async function getDBStats(): Promise<DBStats> {
     oldestConversation: oldest?.createdAt ?? null,
     newestConversation: newest?.createdAt ?? null,
   }
+}
+
+// ============================================================================
+// Sync State Operations
+// ============================================================================
+
+export async function getSyncState(): Promise<SyncState | undefined> {
+  return db.syncState.get('global')
+}
+
+export async function updateSyncState(updates: Partial<Omit<SyncState, 'id'>>): Promise<void> {
+  await db.syncState.update('global', updates)
+}
+
+export async function initializeSyncState(): Promise<SyncState> {
+  const existing = await db.syncState.get('global')
+  if (existing) return existing
+
+  const state: SyncState = {
+    id: 'global',
+    deviceId: crypto.randomUUID(),
+    lastPullAt: null,
+    lastPushAt: null,
+    remoteCursor: null,
+    pendingConflicts: 0,
+    status: 'disabled',
+    lastError: null,
+    lastErrorAt: null,
+  }
+  await db.syncState.add(state)
+  return state
+}
+
+// ============================================================================
+// Operation Log Operations
+// ============================================================================
+
+export async function addOperationLog(log: Omit<OperationLog, 'id' | 'synced' | 'syncedAt'>): Promise<string> {
+  const id = crypto.randomUUID()
+  await db.operationLog.add({
+    ...log,
+    id,
+    synced: false,
+    syncedAt: null,
+  })
+  return id
+}
+
+export async function getPendingOperations(): Promise<OperationLog[]> {
+  return db.operationLog.where('synced').equals(0).sortBy('timestamp')
+}
+
+export async function markOperationsSynced(ids: string[]): Promise<void> {
+  const now = Date.now()
+  await db.operationLog.where('id').anyOf(ids).modify({
+    synced: true,
+    syncedAt: now,
+  })
+}
+
+export async function cleanupSyncedOperations(olderThanMs: number = 7 * 24 * 60 * 60 * 1000): Promise<number> {
+  const cutoff = Date.now() - olderThanMs
+  return db.operationLog
+    .where('synced')
+    .equals(1)
+    .filter((log) => (log.syncedAt ?? 0) < cutoff)
+    .delete()
+}
+
+// ============================================================================
+// Conflict Operations
+// ============================================================================
+
+export async function addConflict(conflict: Omit<ConflictRecord, 'id' | 'createdAt'>): Promise<string> {
+  const id = crypto.randomUUID()
+  await db.conflicts.add({
+    ...conflict,
+    id,
+    createdAt: Date.now(),
+  })
+  return id
+}
+
+export async function getPendingConflicts(): Promise<ConflictRecord[]> {
+  return db.conflicts.where('resolution').equals('pending').toArray()
+}
+
+export async function resolveConflict(
+  id: string,
+  resolution: ConflictRecord['resolution']
+): Promise<void> {
+  await db.conflicts.update(id, {
+    resolution,
+    resolvedAt: Date.now(),
+  })
+}
+
+export async function getConflictById(id: string): Promise<ConflictRecord | undefined> {
+  return db.conflicts.get(id)
+}
+
+export async function cleanupResolvedConflicts(olderThanMs: number = 30 * 24 * 60 * 60 * 1000): Promise<number> {
+  const cutoff = Date.now() - olderThanMs
+  return db.conflicts
+    .filter((c) => c.resolution !== 'pending' && (c.resolvedAt ?? 0) < cutoff)
+    .delete()
+}
+
+// ============================================================================
+// Dirty Tracking Operations
+// ============================================================================
+
+export async function getDirtyConversations(): Promise<Conversation[]> {
+  return db.conversations.where('dirty').equals(1).toArray()
+}
+
+export async function getDirtyMessages(): Promise<Message[]> {
+  return db.messages.where('dirty').equals(1).toArray()
+}
+
+export async function markConversationDirty(id: string): Promise<void> {
+  const now = Date.now()
+  await db.conversations.update(id, {
+    dirty: true,
+    modifiedAt: now,
+    syncVersion: (await db.conversations.get(id))?.syncVersion ?? 0 + 1,
+  } as Partial<Conversation>)
+}
+
+export async function markMessageDirty(id: string): Promise<void> {
+  const now = Date.now()
+  await db.messages.update(id, {
+    dirty: true,
+    modifiedAt: now,
+    syncVersion: (await db.messages.get(id))?.syncVersion ?? 0 + 1,
+  } as Partial<Message>)
+}
+
+export async function clearDirtyFlags(conversationIds: string[], messageIds: string[]): Promise<void> {
+  const now = Date.now()
+  await db.transaction('rw', [db.conversations, db.messages], async () => {
+    if (conversationIds.length > 0) {
+      await db.conversations.where('id').anyOf(conversationIds).modify({
+        dirty: false,
+        syncedAt: now,
+      })
+    }
+    if (messageIds.length > 0) {
+      await db.messages.where('id').anyOf(messageIds).modify({
+        dirty: false,
+        syncedAt: now,
+      })
+    }
+  })
+}
+
+// ============================================================================
+// Soft Delete Operations
+// ============================================================================
+
+export async function softDeleteConversation(id: string): Promise<void> {
+  const now = Date.now()
+  await db.transaction('rw', [db.conversations, db.messages, db.operationLog], async () => {
+    // Mark conversation as deleted
+    await db.conversations.update(id, {
+      deleted: true,
+      deletedAt: now,
+      dirty: true,
+      modifiedAt: now,
+    } as Partial<Conversation>)
+
+    // Mark all messages as deleted
+    await db.messages.where('conversationId').equals(id).modify({
+      deleted: true,
+      deletedAt: now,
+      dirty: true,
+      modifiedAt: now,
+    })
+
+    // Log the operation
+    await db.operationLog.add({
+      id: crypto.randomUUID(),
+      entityType: 'conversation',
+      entityId: id,
+      operation: 'delete',
+      changes: { deleted: true, deletedAt: now },
+      timestamp: now,
+      synced: false,
+      syncedAt: null,
+    })
+  })
+}
+
+export async function getDeletedConversations(): Promise<Conversation[]> {
+  return db.conversations.where('deleted').equals(1).toArray()
+}
+
+export async function permanentlyDeleteConversation(id: string): Promise<void> {
+  await db.transaction('rw', [db.conversations, db.messages], async () => {
+    await db.messages.where('conversationId').equals(id).delete()
+    await db.conversations.delete(id)
+  })
+}
+
+export async function cleanupDeletedRecords(olderThanMs: number = 30 * 24 * 60 * 60 * 1000): Promise<{
+  conversations: number
+  messages: number
+}> {
+  const cutoff = Date.now() - olderThanMs
+  let conversationsDeleted = 0
+  let messagesDeleted = 0
+
+  await db.transaction('rw', [db.conversations, db.messages], async () => {
+    // Find old deleted conversations
+    const deletedConvs = await db.conversations
+      .where('deleted')
+      .equals(1)
+      .filter((c) => (c.deletedAt ?? 0) < cutoff)
+      .primaryKeys()
+
+    // Delete their messages first
+    for (const convId of deletedConvs) {
+      messagesDeleted += await db.messages.where('conversationId').equals(convId).delete()
+    }
+
+    // Delete conversations
+    conversationsDeleted = await db.conversations
+      .where('deleted')
+      .equals(1)
+      .filter((c) => (c.deletedAt ?? 0) < cutoff)
+      .delete()
+
+    // Delete orphaned deleted messages
+    messagesDeleted += await db.messages
+      .where('deleted')
+      .equals(1)
+      .filter((m) => (m.deletedAt ?? 0) < cutoff)
+      .delete()
+  })
+
+  return { conversations: conversationsDeleted, messages: messagesDeleted }
+}
+
+// ============================================================================
+// Export Data (for sync export)
+// ============================================================================
+
+export async function getAllConversationsForExport(options?: {
+  since?: number
+  platforms?: Platform[]
+  includeDeleted?: boolean
+}): Promise<Conversation[]> {
+  let query = db.conversations.toCollection()
+
+  if (options?.platforms && options.platforms.length > 0) {
+    query = db.conversations.where('platform').anyOf(options.platforms)
+  }
+
+  let results = await query.toArray()
+
+  if (options?.since) {
+    results = results.filter((c) => (c.modifiedAt ?? c.updatedAt) >= options.since!)
+  }
+
+  if (!options?.includeDeleted) {
+    results = results.filter((c) => !c.deleted)
+  }
+
+  return results
+}
+
+export async function getAllMessagesForExport(
+  conversationIds: string[],
+  options?: { includeDeleted?: boolean }
+): Promise<Message[]> {
+  if (conversationIds.length === 0) return []
+
+  let results = await db.messages.where('conversationId').anyOf(conversationIds).toArray()
+
+  if (!options?.includeDeleted) {
+    results = results.filter((m) => !m.deleted)
+  }
+
+  return results
 }

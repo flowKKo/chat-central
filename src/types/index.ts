@@ -43,6 +43,13 @@ export const messageSchema = z.object({
   createdAt: z.number(),
   // Keep raw data for debugging
   _raw: z.any().optional(),
+  // Sync fields (optional for backward compatibility)
+  syncVersion: z.number().optional(),
+  modifiedAt: z.number().optional(),
+  syncedAt: z.number().nullable().optional(),
+  dirty: z.boolean().optional(),
+  deleted: z.boolean().optional(),
+  deletedAt: z.number().nullable().optional(),
 })
 export type Message = z.infer<typeof messageSchema>
 
@@ -59,7 +66,7 @@ export const conversationSchema = z.object({
   // First message preview
   preview: z.string(),
   tags: z.array(z.string()),
-  // Last synced time
+  // Last synced time (from platform)
   syncedAt: z.number(),
   // Detail sync status
   detailStatus: z.enum(['none', 'partial', 'full']),
@@ -71,6 +78,12 @@ export const conversationSchema = z.object({
   favoriteAt: z.number().nullable(),
   // Original URL
   url: z.string().optional(),
+  // Sync fields (optional for backward compatibility)
+  syncVersion: z.number().optional(),
+  modifiedAt: z.number().optional(),
+  dirty: z.boolean().optional(),
+  deleted: z.boolean().optional(),
+  deletedAt: z.number().nullable().optional(),
 })
 export type Conversation = z.infer<typeof conversationSchema>
 
