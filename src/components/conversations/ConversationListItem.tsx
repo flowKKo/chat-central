@@ -6,6 +6,7 @@ import { PLATFORM_CONFIG } from '@/types'
 import { cn } from '@/utils/cn'
 import { HighlightText } from '../HighlightText'
 import { TagPill } from '../ui/TagPill'
+import { Checkbox } from '../ui/Checkbox'
 
 interface ConversationListItemProps {
   conversation: Conversation
@@ -15,6 +16,12 @@ interface ConversationListItemProps {
   searchQuery?: string
   matchInfo?: SearchResultWithMatches
   style?: React.CSSProperties
+  /** Whether batch selection mode is active */
+  isBatchMode?: boolean
+  /** Whether this item is checked in batch mode */
+  isChecked?: boolean
+  /** Callback to toggle batch selection */
+  onToggleCheck?: () => void
 }
 
 export function ConversationListItem({
@@ -25,6 +32,9 @@ export function ConversationListItem({
   searchQuery,
   matchInfo,
   style,
+  isBatchMode = false,
+  isChecked = false,
+  onToggleCheck,
 }: ConversationListItemProps) {
   const platformConfig = PLATFORM_CONFIG[conversation.platform]
 
@@ -55,6 +65,15 @@ export function ConversationListItem({
       )}
 
       <div className="flex items-center gap-3">
+        {/* Batch selection checkbox */}
+        {isBatchMode && (
+          <Checkbox
+            checked={isChecked}
+            onChange={onToggleCheck}
+            aria-label={`Select ${conversation.title}`}
+          />
+        )}
+
         {/* Platform indicator */}
         <div
           className={cn(

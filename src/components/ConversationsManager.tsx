@@ -1,5 +1,14 @@
 import { useAtom } from 'jotai'
-import { ChevronDown, Filter, MessageSquare, RefreshCw, Search, X } from 'lucide-react'
+import {
+  CheckSquare,
+  ChevronDown,
+  Download,
+  Filter,
+  MessageSquare,
+  RefreshCw,
+  Search,
+  X,
+} from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ConversationDetail, ConversationListItem, ConversationListSkeleton } from './conversations'
 import { PLATFORM_CONFIG, type Platform } from '@/types'
@@ -23,9 +32,17 @@ import {
   activeSearchQueryAtom,
   searchResultsAtom,
   selectedFilterTagsAtom,
+  batchSelectedIdsAtom,
+  isBatchModeAtom,
+  batchSelectedCountAtom,
+  toggleBatchSelectAtom,
+  clearBatchSelectionAtom,
+  selectAllVisibleAtom,
 } from '@/utils/atoms'
 import { cn } from '@/utils/cn'
 import { filterAndSortConversations } from '@/utils/filters'
+import { exportConversations, downloadExport, exportBatchMarkdown } from '@/utils/sync/export'
+import { downloadBlob } from '@/utils/sync/utils'
 
 export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 'favorites' }) {
   const isFavorites = mode === 'favorites'
@@ -43,10 +60,21 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
   const [searchResults] = useAtom(searchResultsAtom)
   const [selectedFilterTags] = useAtom(selectedFilterTagsAtom)
 
+  // Batch selection state
+  const [batchSelectedIds] = useAtom(batchSelectedIdsAtom)
+  const [isBatchMode] = useAtom(isBatchModeAtom)
+  const [batchSelectedCount] = useAtom(batchSelectedCountAtom)
+  const [, toggleBatchSelect] = useAtom(toggleBatchSelectAtom)
+  const [, clearBatchSelection] = useAtom(clearBatchSelectionAtom)
+  const [, selectAllVisible] = useAtom(selectAllVisibleAtom)
+
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const filterRef = useRef<HTMLDivElement>(null)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadConversations({ reset: true })
@@ -80,14 +108,62 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsFilterOpen(false)
+        setIsExportMenuOpen(false)
       }
     }
 
-    if (isFilterOpen) {
+    if (isFilterOpen || isExportMenuOpen) {
       document.addEventListener('keydown', handleEscape)
       return () => document.removeEventListener('keydown', handleEscape)
     }
-  }, [isFilterOpen])
+  }, [isFilterOpen, isExportMenuOpen])
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setIsExportMenuOpen(false)
+      }
+    }
+
+    if (isExportMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isExportMenuOpen])
+
+  // Batch export handlers
+  const handleExportZip = async () => {
+    if (batchSelectedIds.size === 0) return
+    setIsExporting(true)
+    try {
+      const ids = Array.from(batchSelectedIds)
+      const result = await exportConversations(ids)
+      downloadExport(result)
+      clearBatchSelection()
+    } catch (error) {
+      console.error('[ChatCentral] Failed to export ZIP:', error)
+    } finally {
+      setIsExporting(false)
+      setIsExportMenuOpen(false)
+    }
+  }
+
+  const handleExportMarkdown = async () => {
+    if (batchSelectedIds.size === 0) return
+    setIsExporting(true)
+    try {
+      const ids = Array.from(batchSelectedIds)
+      const result = await exportBatchMarkdown(ids)
+      downloadBlob(result.blob, result.filename)
+      clearBatchSelection()
+    } catch (error) {
+      console.error('[ChatCentral] Failed to export Markdown:', error)
+    } finally {
+      setIsExporting(false)
+      setIsExportMenuOpen(false)
+    }
+  }
 
   // Use shared filtering and sorting utilities
   const sortedConversations = useMemo(
@@ -105,6 +181,11 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
     [conversations, selectedPlatform, isFavorites, searchQuery, selectedFilterTags]
   )
   const filteredConversations = sortedConversations
+
+  const handleSelectAll = () => {
+    const ids = sortedConversations.map((c) => c.id)
+    selectAllVisible(ids)
+  }
 
   const emptyLabel = isFavorites ? 'No favorites yet' : 'No conversations found'
   const pageTitle = isFavorites ? 'Favorites' : 'Conversations'
@@ -224,6 +305,29 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                 )}
               </div>
 
+              {/* Batch select toggle */}
+              <button
+                type="button"
+                className={cn(
+                  'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
+                  isBatchMode && 'border-primary bg-primary/10 text-primary'
+                )}
+                onClick={() => {
+                  if (isBatchMode) {
+                    clearBatchSelection()
+                  } else {
+                    const firstConv = sortedConversations[0]
+                    if (firstConv) {
+                      toggleBatchSelect(firstConv.id)
+                    }
+                  }
+                }}
+                aria-label={isBatchMode ? 'Exit selection mode' : 'Enter selection mode'}
+                aria-pressed={isBatchMode}
+              >
+                <CheckSquare className="h-4 w-4" />
+              </button>
+
               <button
                 type="button"
                 className={cn(
@@ -237,6 +341,77 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
               </button>
             </div>
           </div>
+
+          {/* Batch operation bar */}
+          {isBatchMode && (
+            <div className="mb-3 flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5">
+              <span className="text-sm font-medium">{batchSelectedCount} selected</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted"
+                  onClick={handleSelectAll}
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted"
+                  onClick={() => clearBatchSelection()}
+                >
+                  Cancel
+                </button>
+
+                {/* Export dropdown */}
+                <div className="relative" ref={exportMenuRef}>
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50',
+                      isExporting && 'opacity-50'
+                    )}
+                    onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                    disabled={batchSelectedCount === 0 || isExporting}
+                    aria-haspopup="menu"
+                    aria-expanded={isExportMenuOpen}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export
+                    <ChevronDown
+                      className={cn(
+                        'h-3 w-3 transition-transform',
+                        isExportMenuOpen && 'rotate-180'
+                      )}
+                    />
+                  </button>
+
+                  {isExportMenuOpen && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 top-full z-10 mt-1 w-44 animate-scale-in overflow-hidden rounded-xl border border-border bg-card shadow-lg"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="w-full cursor-pointer px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80"
+                        onClick={handleExportZip}
+                      >
+                        Export as ZIP (JSON)
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className="w-full cursor-pointer px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80"
+                        onClick={handleExportMarkdown}
+                      >
+                        Export as Markdown
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Conversation List */}
           <div className="flex-1 overflow-hidden rounded-2xl border border-border bg-card/30">
@@ -264,11 +439,20 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                         key={conv.id}
                         conversation={conv}
                         isSelected={selectedConversation?.id === conv.id}
-                        onClick={() => loadDetail(conv.id, messageMatch?.messageId)}
+                        onClick={() => {
+                          if (isBatchMode) {
+                            toggleBatchSelect(conv.id)
+                          } else {
+                            loadDetail(conv.id, messageMatch?.messageId)
+                          }
+                        }}
                         onToggleFavorite={() => toggleFavorite(conv.id)}
                         searchQuery={activeSearchQuery}
                         matchInfo={matchInfo}
                         style={{ animationDelay: `${Math.min(index * 20, 200)}ms` }}
+                        isBatchMode={isBatchMode}
+                        isChecked={batchSelectedIds.has(conv.id)}
+                        onToggleCheck={() => toggleBatchSelect(conv.id)}
                       />
                     )
                   })}

@@ -293,3 +293,72 @@ export async function exportConversationToJson(
 
   return { content, filename }
 }
+
+// ============================================================================
+// Batch Markdown Export
+// ============================================================================
+
+export interface BatchMarkdownExportResult {
+  blob: Blob
+  filename: string
+  stats: {
+    conversations: number
+    totalMessages: number
+    sizeBytes: number
+  }
+}
+
+/**
+ * Export multiple conversations to Markdown files in a ZIP archive
+ * Each conversation becomes a separate .md file
+ */
+export async function exportBatchMarkdown(
+  conversationIds: string[]
+): Promise<BatchMarkdownExportResult> {
+  const zip = new JSZip()
+  let totalMessages = 0
+  const usedFilenames = new Set<string>()
+
+  for (const id of conversationIds) {
+    try {
+      const result = await exportToMarkdown(id)
+
+      // Ensure unique filename in case of duplicates
+      let filename = result.filename
+      let counter = 1
+      while (usedFilenames.has(filename)) {
+        const baseName = result.filename.replace('.md', '')
+        filename = `${baseName}_${counter}.md`
+        counter++
+      }
+      usedFilenames.add(filename)
+
+      zip.file(filename, result.content)
+
+      // Count messages from content (count ## User and ## Assistant headers)
+      const messageCount = (result.content.match(/^## (User|Assistant)$/gm) || []).length
+      totalMessages += messageCount
+    } catch (error) {
+      syncLogger.warn(`Failed to export conversation ${id}: ${String(error)}`)
+    }
+  }
+
+  const blob = await zip.generateAsync({
+    type: 'blob',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 },
+  })
+
+  const dateStr = formatDateForFilename(new Date())
+  const filename = `chatcentral_${conversationIds.length}conv_markdown_${dateStr}.zip`
+
+  return {
+    blob,
+    filename,
+    stats: {
+      conversations: conversationIds.length,
+      totalMessages,
+      sizeBytes: blob.size,
+    },
+  }
+}
