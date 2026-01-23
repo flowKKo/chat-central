@@ -1,7 +1,7 @@
+import { deepmerge } from 'deepmerge-ts'
 import { atom } from 'jotai'
 import { storage } from 'wxt/storage'
-import { type Config, DEFAULT_CONFIG, configSchema } from '@/types'
-import { deepmerge } from 'deepmerge-ts'
+import { type Config, configSchema, DEFAULT_CONFIG } from '@/types'
 
 const CONFIG_STORAGE_KEY = 'config'
 

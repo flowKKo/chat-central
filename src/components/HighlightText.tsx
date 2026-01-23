@@ -35,7 +35,12 @@ export function HighlightText({
     let displayText = text
     let offset = 0
     if (maxLength && matchIndex >= 0) {
-      const { text: truncated, offset: off } = truncateAroundMatch(text, matchIndex, query.length, maxLength)
+      const { text: truncated, offset: off } = truncateAroundMatch(
+        text,
+        matchIndex,
+        query.length,
+        maxLength
+      )
       displayText = truncated
       offset = off
       matchIndex = matchIndex - offset
@@ -54,7 +59,10 @@ export function HighlightText({
       }
 
       // Add matched text
-      result.push({ text: displayText.slice(matchIndex, matchIndex + query.length), highlight: true })
+      result.push({
+        text: displayText.slice(matchIndex, matchIndex + query.length),
+        highlight: true,
+      })
 
       lastIndex = matchIndex + query.length
       matchIndex = lowerDisplayText.indexOf(lowerQuery, lastIndex)
@@ -85,7 +93,7 @@ export function HighlightText({
 
 function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
-  return text.slice(0, maxLength - 3) + '...'
+  return `${text.slice(0, maxLength - 3)}...`
 }
 
 function truncateAroundMatch(
@@ -114,10 +122,10 @@ function truncateAroundMatch(
 
   // Add ellipsis
   if (start > 0) {
-    result = '...' + result.slice(3)
+    result = `...${result.slice(3)}`
   }
   if (end < text.length) {
-    result = result.slice(0, -3) + '...'
+    result = `${result.slice(0, -3)}...`
   }
 
   return { text: result, offset }

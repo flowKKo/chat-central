@@ -1,12 +1,12 @@
-import { useEffect } from 'react'
 import { useAtom } from 'jotai'
+import { useEffect } from 'react'
 import {
-  themePreferenceAtom,
-  resolvedThemeAtom,
-  initializeTheme,
-  setupSystemThemeListener,
   applyThemeToDocument,
+  initializeTheme,
   type ResolvedTheme,
+  resolvedThemeAtom,
+  setupSystemThemeListener,
+  themePreferenceAtom,
 } from '@/utils/atoms/theme'
 
 interface ThemeProviderProps {

@@ -1,5 +1,5 @@
-import type { Message } from '@/types'
 import { db } from '../schema'
+import type { Message } from '@/types'
 
 /**
  * Get all messages for a conversation

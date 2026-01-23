@@ -1,10 +1,22 @@
-import { useState } from 'react'
 import { useAtom } from 'jotai'
-import { Trash2, AlertTriangle, Database, Shield, Palette, Sun, Moon, Monitor, Lightbulb, Keyboard, Zap } from 'lucide-react'
-import { PLATFORM_CONFIG, type Platform } from '@/types'
-import { clearAllData, clearPlatformData } from '@/utils/db'
-import { themePreferenceAtom, type ThemePreference } from '@/utils/atoms/theme'
+import {
+  AlertTriangle,
+  Database,
+  Keyboard,
+  Lightbulb,
+  Monitor,
+  Moon,
+  Palette,
+  Shield,
+  Sun,
+  Trash2,
+  Zap,
+} from 'lucide-react'
+import { useState } from 'react'
+import { type Platform, PLATFORM_CONFIG } from '@/types'
+import { type ThemePreference, themePreferenceAtom } from '@/utils/atoms/theme'
 import { cn } from '@/utils/cn'
+import { clearAllData, clearPlatformData } from '@/utils/db'
 
 const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', icon: Sun },
@@ -36,9 +48,7 @@ export function SettingsPanel() {
 
   const handleClearAll = async () => {
     if (
-      !confirm(
-        'Are you sure you want to delete all synced conversations? This cannot be undone.'
-      )
+      !confirm('Are you sure you want to delete all synced conversations? This cannot be undone.')
     ) {
       return
     }
@@ -68,166 +78,170 @@ export function SettingsPanel() {
     <div className="h-full">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-heading font-bold tracking-tight mb-1">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage your data and preferences
-        </p>
+        <h1 className="mb-1 font-heading text-2xl font-bold tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground">Manage your data and preferences</p>
       </div>
 
       <div className="flex gap-8">
         {/* Main Settings - Left Column */}
-        <div className="flex-1 min-w-0 max-w-2xl space-y-8">
-        {/* Appearance Section */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Palette className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-heading font-semibold">Appearance</h3>
-          </div>
+        <div className="min-w-0 max-w-2xl flex-1 space-y-8">
+          {/* Appearance Section */}
+          <section>
+            <div className="mb-4 flex items-center gap-2">
+              <Palette className="h-5 w-5 text-primary" />
+              <h3 className="font-heading text-lg font-semibold">Appearance</h3>
+            </div>
 
-          <div className="p-4 bg-card/50 border border-border rounded-xl">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <span className="font-medium">Theme</span>
-                <p className="text-xs text-muted-foreground">Choose your preferred color scheme</p>
+            <div className="rounded-xl border border-border bg-card/50 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <span className="font-medium">Theme</span>
+                  <p className="text-xs text-muted-foreground">
+                    Choose your preferred color scheme
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-2" role="radiogroup" aria-label="Theme selection">
+                {themeOptions.map((option) => {
+                  const Icon = option.icon
+                  const isSelected = themePreference === option.value
+                  return (
+                    <button
+                      key={option.value}
+                      role="radio"
+                      aria-checked={isSelected}
+                      className={cn(
+                        'flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all',
+                        isSelected
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-muted-foreground hover:border-muted-foreground/30 hover:bg-muted/50'
+                      )}
+                      onClick={() => setThemePreference(option.value)}
+                    >
+                      <Icon className={cn('h-5 w-5', isSelected && 'text-primary')} />
+                      <span className={cn('text-sm font-medium', isSelected && 'text-primary')}>
+                        {option.label}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
+          </section>
 
-            <div className="flex gap-2" role="radiogroup" aria-label="Theme selection">
-              {themeOptions.map((option) => {
-                const Icon = option.icon
-                const isSelected = themePreference === option.value
-                return (
-                  <button
-                    key={option.value}
-                    role="radio"
-                    aria-checked={isSelected}
-                    className={cn(
-                      'flex-1 flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer',
-                      isSelected
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-muted-foreground/30 hover:bg-muted/50 text-muted-foreground'
-                    )}
-                    onClick={() => setThemePreference(option.value)}
-                  >
-                    <Icon className={cn('w-5 h-5', isSelected && 'text-primary')} />
-                    <span className={cn('text-sm font-medium', isSelected && 'text-primary')}>
-                      {option.label}
-                    </span>
-                  </button>
-                )
-              })}
+          {/* Data Management Section */}
+          <section>
+            <div className="mb-4 flex items-center gap-2">
+              <Database className="h-5 w-5 text-primary" />
+              <h3 className="font-heading text-lg font-semibold">Data Management</h3>
             </div>
-          </div>
-        </section>
 
-        {/* Data Management Section */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Database className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-heading font-semibold">Data Management</h3>
-          </div>
-
-          <div className="space-y-2">
-            {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
-              <div
-                key={platform}
-                className="group flex items-center justify-between p-4 bg-card/50 border border-border rounded-xl hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105"
-                    style={{ backgroundColor: `${PLATFORM_CONFIG[platform].color}20` }}
-                  >
+            <div className="space-y-2">
+              {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
+                <div
+                  key={platform}
+                  className="group flex items-center justify-between rounded-xl border border-border bg-card/50 p-4 transition-colors hover:bg-muted/30"
+                >
+                  <div className="flex items-center gap-3">
                     <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: PLATFORM_CONFIG[platform].color }}
-                    />
+                      className="flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
+                      style={{ backgroundColor: `${PLATFORM_CONFIG[platform].color}20` }}
+                    >
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: PLATFORM_CONFIG[platform].color }}
+                      />
+                    </div>
+                    <div>
+                      <span className="font-medium">{PLATFORM_CONFIG[platform].name}</span>
+                      <p className="text-xs text-muted-foreground">Clear all synced data</p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-medium">{PLATFORM_CONFIG[platform].name}</span>
-                    <p className="text-xs text-muted-foreground">Clear all synced data</p>
-                  </div>
+                  <button
+                    className={cn(
+                      'cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition-all',
+                      'text-red-400 hover:bg-red-500/10 hover:text-red-300',
+                      isClearing && 'cursor-not-allowed opacity-50'
+                    )}
+                    onClick={() => handleClearPlatform(platform)}
+                    disabled={isClearing}
+                  >
+                    Clear Data
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Danger Zone Section */}
+          <section>
+            <div className="mb-4 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-400" />
+              <h3 className="font-heading text-lg font-semibold text-red-400">Danger Zone</h3>
+            </div>
+
+            <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h4 className="mb-1 font-medium">Delete All Data</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Permanently delete all synced conversations from all platforms. This action
+                    cannot be undone.
+                  </p>
                 </div>
                 <button
                   className={cn(
-                    'px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer',
-                    'text-red-400 hover:bg-red-500/10 hover:text-red-300',
-                    isClearing && 'opacity-50 cursor-not-allowed'
+                    'flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all',
+                    'bg-red-500/20 text-red-400 hover:bg-red-500/30',
+                    isClearing && 'cursor-not-allowed opacity-50'
                   )}
-                  onClick={() => handleClearPlatform(platform)}
+                  onClick={handleClearAll}
                   disabled={isClearing}
                 >
-                  Clear Data
+                  <Trash2 className="h-4 w-4" />
+                  {isClearing ? 'Deleting...' : 'Delete All'}
                 </button>
               </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Danger Zone Section */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-5 h-5 text-red-400" />
-            <h3 className="text-lg font-heading font-semibold text-red-400">Danger Zone</h3>
-          </div>
-
-          <div className="p-5 border border-red-500/30 rounded-xl bg-red-500/5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <h4 className="font-medium mb-1">Delete All Data</h4>
-                <p className="text-sm text-muted-foreground">
-                  Permanently delete all synced conversations from all platforms. This action cannot be undone.
-                </p>
-              </div>
-              <button
-                className={cn(
-                  'flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all cursor-pointer',
-                  'bg-red-500/20 text-red-400 hover:bg-red-500/30',
-                  isClearing && 'opacity-50 cursor-not-allowed'
-                )}
-                onClick={handleClearAll}
-                disabled={isClearing}
-              >
-                <Trash2 className="w-4 h-4" />
-                {isClearing ? 'Deleting...' : 'Delete All'}
-              </button>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* Privacy Info */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Shield className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-lg font-heading font-semibold">Privacy</h3>
-          </div>
+          {/* Privacy Info */}
+          <section>
+            <div className="mb-4 flex items-center gap-2">
+              <Shield className="h-5 w-5 text-emerald-400" />
+              <h3 className="font-heading text-lg font-semibold">Privacy</h3>
+            </div>
 
-          <div className="p-5 border border-emerald-500/20 rounded-xl bg-emerald-500/5">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              All your conversation data is stored locally in your browser using IndexedDB.
-              No data is sent to external servers. Your conversations remain private and secure on your device.
-            </p>
-          </div>
-        </section>
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                All your conversation data is stored locally in your browser using IndexedDB. No
+                data is sent to external servers. Your conversations remain private and secure on
+                your device.
+              </p>
+            </div>
+          </section>
         </div>
 
         {/* Tips Sidebar - Right Column */}
-        <div className="hidden xl:block w-72 flex-shrink-0">
+        <div className="hidden w-72 flex-shrink-0 xl:block">
           <div className="sticky top-6">
-            <div className="p-5 bg-card/50 border border-border rounded-2xl">
-              <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
-                <Lightbulb className="w-4 h-4 text-amber-400" />
+            <div className="rounded-2xl border border-border bg-card/50 p-5">
+              <h3 className="mb-4 flex items-center gap-2 font-heading font-semibold">
+                <Lightbulb className="h-4 w-4 text-amber-400" />
                 Tips & Shortcuts
               </h3>
               <div className="space-y-4">
                 {tips.map((tip) => (
                   <div key={tip.title} className="flex gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                      <tip.icon className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-muted">
+                      <tip.icon className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium mb-0.5">{tip.title}</h4>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{tip.description}</p>
+                      <h4 className="mb-0.5 text-sm font-medium">{tip.title}</h4>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        {tip.description}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -235,20 +249,20 @@ export function SettingsPanel() {
             </div>
 
             {/* Keyboard Shortcuts */}
-            <div className="mt-4 p-5 bg-card/50 border border-border rounded-2xl">
-              <h3 className="font-heading font-semibold mb-4">Keyboard Shortcuts</h3>
+            <div className="mt-4 rounded-2xl border border-border bg-card/50 p-5">
+              <h3 className="mb-4 font-heading font-semibold">Keyboard Shortcuts</h3>
               <div className="space-y-2.5 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Search</span>
-                  <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">Cmd + K</kbd>
+                  <kbd className="rounded bg-muted px-2 py-0.5 font-mono text-xs">Cmd + K</kbd>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">New Tab</span>
-                  <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">Cmd + T</kbd>
+                  <kbd className="rounded bg-muted px-2 py-0.5 font-mono text-xs">Cmd + T</kbd>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Toggle Favorite</span>
-                  <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">F</kbd>
+                  <kbd className="rounded bg-muted px-2 py-0.5 font-mono text-xs">F</kbd>
                 </div>
               </div>
             </div>

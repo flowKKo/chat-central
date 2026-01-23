@@ -1,4 +1,14 @@
-import { Sparkles, RefreshCw, Search, Database, Github, Heart, Star, Shield, Zap } from 'lucide-react'
+import {
+  Database,
+  Github,
+  Heart,
+  RefreshCw,
+  Search,
+  Shield,
+  Sparkles,
+  Star,
+  Zap,
+} from 'lucide-react'
 
 const features = [
   {
@@ -50,46 +60,45 @@ export function AboutPanel() {
     <div className="h-full">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-heading font-bold tracking-tight mb-1">About</h1>
-        <p className="text-sm text-muted-foreground">
-          Learn more about Chat Central
-        </p>
+        <h1 className="mb-1 font-heading text-2xl font-bold tracking-tight">About</h1>
+        <p className="text-sm text-muted-foreground">Learn more about Chat Central</p>
       </div>
 
       <div className="flex gap-8">
         {/* Main Content - Left */}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           {/* Hero Section */}
-          <div className="p-8 bg-gradient-to-br from-primary/10 via-blue-500/5 to-transparent border border-border rounded-2xl mb-8">
+          <div className="mb-8 rounded-2xl border border-border bg-gradient-to-br from-primary/10 via-blue-500/5 to-transparent p-8">
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center shadow-lg flex-shrink-0">
-                <Sparkles className="w-10 h-10 text-white" />
+              <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-400 shadow-lg">
+                <Sparkles className="h-10 w-10 text-white" />
               </div>
               <div>
-                <h2 className="text-3xl font-heading font-bold tracking-tight mb-2">
+                <h2 className="mb-2 font-heading text-3xl font-bold tracking-tight">
                   Chat Central
                 </h2>
-                <p className="text-muted-foreground max-w-lg">
-                  Unified AI conversation manager for Claude, ChatGPT, and Gemini. Keep all your AI conversations organized in one place.
+                <p className="max-w-lg text-muted-foreground">
+                  Unified AI conversation manager for Claude, ChatGPT, and Gemini. Keep all your AI
+                  conversations organized in one place.
                 </p>
               </div>
             </div>
           </div>
 
           {/* Features Grid */}
-          <div className="grid grid-cols-2 xl:grid-cols-3 gap-4 mb-8">
+          <div className="mb-8 grid grid-cols-2 gap-4 xl:grid-cols-3">
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="group p-5 bg-card/50 border border-border rounded-xl hover:bg-muted/30 transition-all"
+                className="group rounded-xl border border-border bg-card/50 p-5 transition-all hover:bg-muted/30"
               >
                 <div
-                  className={`w-10 h-10 rounded-lg ${feature.bgColor} flex items-center justify-center mb-3 transition-transform group-hover:scale-110`}
+                  className={`h-10 w-10 rounded-lg ${feature.bgColor} mb-3 flex items-center justify-center transition-transform group-hover:scale-110`}
                 >
-                  <feature.icon className={`w-5 h-5 ${feature.color}`} />
+                  <feature.icon className={`h-5 w-5 ${feature.color}`} />
                 </div>
-                <h4 className="font-heading font-semibold mb-1">{feature.title}</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <h4 className="mb-1 font-heading font-semibold">{feature.title}</h4>
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   {feature.description}
                 </p>
               </div>
@@ -97,7 +106,7 @@ export function AboutPanel() {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between p-4 bg-card/30 border border-border rounded-xl">
+          <div className="flex items-center justify-between rounded-xl border border-border bg-card/30 p-4">
             <p className="text-sm text-muted-foreground">
               Version <span className="font-medium text-foreground">0.1.0</span>
             </p>
@@ -107,47 +116,47 @@ export function AboutPanel() {
                 href="https://github.com/flowKKo/chat-central"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
-                <Github className="w-4 h-4" />
+                <Github className="h-4 w-4" />
                 GitHub
               </a>
               <span className="text-muted-foreground/30">·</span>
               <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                Made with <Heart className="w-3.5 h-3.5 text-red-400 fill-red-400" />
+                Made with <Heart className="h-3.5 w-3.5 fill-red-400 text-red-400" />
               </span>
             </div>
           </div>
         </div>
 
         {/* Sidebar - Right */}
-        <div className="hidden xl:block w-72 flex-shrink-0">
+        <div className="hidden w-72 flex-shrink-0 xl:block">
           <div className="sticky top-6 space-y-4">
             {/* Supported Platforms */}
-            <div className="p-5 bg-card/50 border border-border rounded-2xl">
-              <h3 className="font-heading font-semibold mb-4">Supported Platforms</h3>
+            <div className="rounded-2xl border border-border bg-card/50 p-5">
+              <h3 className="mb-4 font-heading font-semibold">Supported Platforms</h3>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
-                  <div className="w-10 h-10 rounded-lg bg-claude-light flex items-center justify-center">
-                    <span className="w-3 h-3 rounded-full bg-claude" />
+                <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-claude-light">
+                    <span className="h-3 w-3 rounded-full bg-claude" />
                   </div>
                   <div>
                     <span className="text-sm font-medium text-claude">Claude</span>
                     <p className="text-xs text-muted-foreground">claude.ai</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
-                  <div className="w-10 h-10 rounded-lg bg-chatgpt-light flex items-center justify-center">
-                    <span className="w-3 h-3 rounded-full bg-chatgpt" />
+                <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-chatgpt-light">
+                    <span className="h-3 w-3 rounded-full bg-chatgpt" />
                   </div>
                   <div>
                     <span className="text-sm font-medium text-chatgpt">ChatGPT</span>
                     <p className="text-xs text-muted-foreground">chatgpt.com</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30">
-                  <div className="w-10 h-10 rounded-lg bg-gemini-light flex items-center justify-center">
-                    <span className="w-3 h-3 rounded-full bg-gemini" />
+                <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gemini-light">
+                    <span className="h-3 w-3 rounded-full bg-gemini" />
                   </div>
                   <div>
                     <span className="text-sm font-medium text-gemini">Gemini</span>
@@ -158,25 +167,25 @@ export function AboutPanel() {
             </div>
 
             {/* Quick Links */}
-            <div className="p-5 bg-card/50 border border-border rounded-2xl">
-              <h3 className="font-heading font-semibold mb-4">Quick Links</h3>
+            <div className="rounded-2xl border border-border bg-card/50 p-5">
+              <h3 className="mb-4 font-heading font-semibold">Quick Links</h3>
               <div className="space-y-2">
                 <a
                   href="https://github.com/flowKKo/chat-central"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 p-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg p-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                 >
-                  <Github className="w-4 h-4" />
+                  <Github className="h-4 w-4" />
                   Source Code
                 </a>
                 <a
                   href="https://github.com/flowKKo/chat-central/issues"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 p-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg p-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                 >
-                  <Star className="w-4 h-4" />
+                  <Star className="h-4 w-4" />
                   Report Issue
                 </a>
               </div>

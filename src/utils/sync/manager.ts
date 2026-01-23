@@ -1,5 +1,6 @@
-import type { SyncProvider, ProviderConfig, SyncError, CloudSyncStatus } from './types'
+import type { CloudSyncStatus, ProviderConfig, SyncError, SyncProvider } from './types'
 import { syncCycle, pullOnly, pushOnly, type SyncCycleResult } from './engine'
+import { createRestProvider } from './providers/rest'
 import { syncLogger } from './utils'
 import {
   getSyncState,
@@ -8,7 +9,6 @@ import {
   getDirtyConversations,
   getDirtyMessages,
 } from '@/utils/db'
-import { createRestProvider } from './providers/rest'
 
 // ============================================================================
 // Types
@@ -293,7 +293,7 @@ class SyncManagerImpl {
 
     if (online && this.provider) {
       // Trigger sync when coming back online
-      this.sync().catch(error => {
+      this.sync().catch((error) => {
         syncLogger.error('Sync after reconnect failed', error)
       })
     }

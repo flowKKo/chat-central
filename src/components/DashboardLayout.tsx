@@ -10,7 +10,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     <ThemeProvider>
       <div className="flex h-screen bg-background text-foreground">
         <Sidebar />
-        <main className="flex-1 overflow-auto scrollbar-thin">
+        <main className="scrollbar-thin flex-1 overflow-auto">
           <div className="p-6">{children}</div>
         </main>
       </div>

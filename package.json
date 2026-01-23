@@ -1,8 +1,9 @@
 {
   "name": "chat-central",
-  "version": "0.1.0",
-  "description": "Unified AI conversation manager - Track, search, and export your Claude, ChatGPT, and Gemini conversations",
   "type": "module",
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.15.0",
+  "description": "Unified AI conversation manager - Track, search, and export your Claude, ChatGPT, and Gemini conversations",
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
@@ -12,13 +13,18 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "zip:all": "wxt zip && wxt zip -b firefox",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "type-check": "tsc --noEmit",
+    "validate": "pnpm type-check && pnpm lint && pnpm test",
     "generate:ai-guides": "node scripts/generate-ai-guides.js",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "prepare": "husky"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.60.0",
@@ -41,16 +47,26 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^3.10.0",
-    "@types/ws": "^8.5.13",
+    "@commitlint/cli": "^20.3.1",
+    "@commitlint/config-conventional": "^20.3.1",
+    "@eslint-react/eslint-plugin": "^1.53.1",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.1.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/ws": "^8.5.13",
     "@wxt-dev/module-react": "^1.1.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.15.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "husky": "^9.1.7",
     "jsdom": "^25.0.1",
+    "lint-staged": "^16.2.7",
     "postcss": "^8.4.47",
+    "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^3.4.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
@@ -58,5 +74,13 @@
     "ws": "^8.18.0",
     "wxt": "^0.19.0"
   },
-  "packageManager": "pnpm@9.15.0"
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,json,md,css}": [
+      "prettier --write"
+    ]
+  }
 }

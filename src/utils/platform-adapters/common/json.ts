@@ -77,7 +77,7 @@ export function parseJsonCandidates(text: string): unknown[] {
  */
 export function parseSseData(raw: string): string[] {
   return raw
-    .split(/\n\n+/)
+    .split(/\n{2,}/)
     .map((block) =>
       block
         .split('\n')

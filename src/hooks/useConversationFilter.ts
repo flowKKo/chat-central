@@ -1,9 +1,9 @@
-import { useMemo } from 'react'
 import type { Conversation } from '@/types'
+import { useMemo } from 'react'
 import {
-  filterAndSortConversations,
   type ConversationFilterOptions,
   type ConversationSortOptions,
+  filterAndSortConversations,
 } from '@/utils/filters'
 
 /**

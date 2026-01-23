@@ -1,7 +1,12 @@
-import type { Conversation } from '@/types'
 import { readTimestampFromObject } from '../common'
-import { GEMINI_APP_URL, CONVERSATION_ID_RE, RESPONSE_ID_RE, RESPONSE_ID_SHORT_RE } from './constants'
+import {
+  GEMINI_APP_URL,
+  CONVERSATION_ID_RE,
+  RESPONSE_ID_RE,
+  RESPONSE_ID_SHORT_RE,
+} from './constants'
 import { normalizeConversationId, isConversationId, findTimestampInArray, walk } from './utils'
+import type { Conversation } from '@/types'
 
 /**
  * Build a conversation object from parsed data
@@ -58,10 +63,7 @@ function parseConversationListItem(value: unknown, now: number): Conversation | 
 /**
  * Parse a conversation from object format
  */
-function parseConversationObject(
-  obj: Record<string, unknown>,
-  now: number
-): Conversation | null {
+function parseConversationObject(obj: Record<string, unknown>, now: number): Conversation | null {
   const idValue = obj.conversationId ?? obj.id ?? obj.c
   const titleValue = obj.title ?? obj.t ?? obj.name
   if (typeof idValue !== 'string' || !idValue) return null

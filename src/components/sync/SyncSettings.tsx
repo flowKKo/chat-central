@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
 import { useAtom } from 'jotai'
-import { X, Cloud, Save, TestTube, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle, Cloud, Loader2, Save, TestTube, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import {
+  type SyncSettings,
   syncSettingsAtom,
   syncSettingsOpenAtom,
   updateSyncSettingsAtom,
-  type SyncSettings,
 } from '@/utils/atoms/sync'
 import { cn } from '@/utils/cn'
 
@@ -29,10 +29,7 @@ export function SyncSettingsModal() {
 
   if (!isOpen) return null
 
-  const handleChange = <K extends keyof SyncSettings>(
-    key: K,
-    value: SyncSettings[K]
-  ) => {
+  const handleChange = <K extends keyof SyncSettings>(key: K, value: SyncSettings[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -49,9 +46,7 @@ export function SyncSettingsModal() {
     try {
       const response = await fetch(`${formData.endpoint}/health`, {
         method: 'GET',
-        headers: formData.apiKey
-          ? { Authorization: `Bearer ${formData.apiKey}` }
-          : undefined,
+        headers: formData.apiKey ? { Authorization: `Bearer ${formData.apiKey}` } : undefined,
       })
 
       if (response.ok) {
@@ -83,47 +78,39 @@ export function SyncSettingsModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={handleClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
 
       {/* Modal */}
-      <div className="relative bg-background border border-border rounded-lg shadow-lg w-full max-w-md mx-4">
+      <div className="relative mx-4 w-full max-w-md rounded-lg border border-border bg-background shadow-lg">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <div className="flex items-center gap-2">
-            <Cloud className="w-5 h-5" />
+            <Cloud className="h-5 w-5" />
             <h2 className="text-lg font-semibold">Cloud Sync Settings</h2>
           </div>
-          <button
-            className="p-1 hover:bg-muted rounded-md transition-colors"
-            onClick={handleClose}
-          >
-            <X className="w-5 h-5" />
+          <button className="rounded-md p-1 transition-colors hover:bg-muted" onClick={handleClose}>
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-4 space-y-4">
+        <div className="space-y-4 p-4">
           {/* Enable Toggle */}
           <div className="flex items-center justify-between">
             <div>
               <label className="font-medium">Enable Cloud Sync</label>
-              <p className="text-sm text-muted-foreground">
-                Sync conversations across devices
-              </p>
+              <p className="text-sm text-muted-foreground">Sync conversations across devices</p>
             </div>
             <button
               className={cn(
-                'relative w-11 h-6 rounded-full transition-colors',
+                'relative h-6 w-11 rounded-full transition-colors',
                 formData.enabled ? 'bg-primary' : 'bg-muted'
               )}
               onClick={() => handleChange('enabled', !formData.enabled)}
             >
               <span
                 className={cn(
-                  'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform',
+                  'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform',
                   formData.enabled && 'translate-x-5'
                 )}
               />
@@ -137,7 +124,7 @@ export function SyncSettingsModal() {
                 <label className="text-sm font-medium">Server Endpoint</label>
                 <input
                   type="url"
-                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-md border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="https://sync.example.com"
                   value={formData.endpoint}
                   onChange={(e) => handleChange('endpoint', e.target.value)}
@@ -149,7 +136,7 @@ export function SyncSettingsModal() {
                 <label className="text-sm font-medium">API Key (Optional)</label>
                 <input
                   type="password"
-                  className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-md border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Your API key"
                   value={formData.apiKey}
                   onChange={(e) => handleChange('apiKey', e.target.value)}
@@ -159,26 +146,26 @@ export function SyncSettingsModal() {
               {/* Test Connection */}
               <div className="flex items-center gap-2">
                 <button
-                  className="flex items-center gap-2 px-3 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
                   onClick={handleTest}
                   disabled={testStatus === 'testing' || !formData.endpoint}
                 >
                   {testStatus === 'testing' ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <TestTube className="w-4 h-4" />
+                    <TestTube className="h-4 w-4" />
                   )}
                   Test Connection
                 </button>
                 {testStatus === 'success' && (
                   <span className="flex items-center gap-1 text-sm text-green-600">
-                    <CheckCircle className="w-4 h-4" />
+                    <CheckCircle className="h-4 w-4" />
                     Connected
                   </span>
                 )}
                 {testStatus === 'error' && (
                   <span className="flex items-center gap-1 text-sm text-destructive">
-                    <AlertCircle className="w-4 h-4" />
+                    <AlertCircle className="h-4 w-4" />
                     {testError}
                   </span>
                 )}
@@ -190,20 +177,18 @@ export function SyncSettingsModal() {
               <div className="flex items-center justify-between">
                 <div>
                   <label className="font-medium">Auto Sync</label>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically sync in background
-                  </p>
+                  <p className="text-sm text-muted-foreground">Automatically sync in background</p>
                 </div>
                 <button
                   className={cn(
-                    'relative w-11 h-6 rounded-full transition-colors',
+                    'relative h-6 w-11 rounded-full transition-colors',
                     formData.autoSync ? 'bg-primary' : 'bg-muted'
                   )}
                   onClick={() => handleChange('autoSync', !formData.autoSync)}
                 >
                   <span
                     className={cn(
-                      'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform',
+                      'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform',
                       formData.autoSync && 'translate-x-5'
                     )}
                   />
@@ -214,11 +199,9 @@ export function SyncSettingsModal() {
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium">Sync Interval</label>
                   <select
-                    className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full rounded-md border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                     value={formData.autoSyncInterval}
-                    onChange={(e) =>
-                      handleChange('autoSyncInterval', Number(e.target.value))
-                    }
+                    onChange={(e) => handleChange('autoSyncInterval', Number(e.target.value))}
                   >
                     <option value={1}>Every 1 minute</option>
                     <option value={5}>Every 5 minutes</option>
@@ -239,7 +222,7 @@ export function SyncSettingsModal() {
                 </div>
                 <button
                   className={cn(
-                    'relative w-11 h-6 rounded-full transition-colors',
+                    'relative h-6 w-11 rounded-full transition-colors',
                     formData.autoResolveConflicts ? 'bg-primary' : 'bg-muted'
                   )}
                   onClick={() =>
@@ -248,7 +231,7 @@ export function SyncSettingsModal() {
                 >
                   <span
                     className={cn(
-                      'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform',
+                      'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform',
                       formData.autoResolveConflicts && 'translate-x-5'
                     )}
                   />
@@ -259,23 +242,19 @@ export function SyncSettingsModal() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 p-4 border-t border-border">
+        <div className="flex items-center justify-end gap-2 border-t border-border p-4">
           <button
-            className="px-4 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors"
+            className="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted"
             onClick={handleClose}
           >
             Cancel
           </button>
           <button
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
             onClick={handleSave}
             disabled={isSaving}
           >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
+            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Save
           </button>
         </div>

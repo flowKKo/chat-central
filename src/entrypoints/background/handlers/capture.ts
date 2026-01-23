@@ -1,6 +1,6 @@
 import { getAdapterForUrl, type PlatformAdapter } from '@/utils/platform-adapters'
-import { upsertConversationMerged, applyConversationUpdate } from '../services'
 import { CaptureApiResponseSchema, type CaptureApiResponseMessage } from '../schemas'
+import { upsertConversationMerged, applyConversationUpdate } from '../services'
 
 /**
  * Handle captured API response from content script

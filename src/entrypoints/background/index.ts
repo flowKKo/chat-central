@@ -1,5 +1,7 @@
-import { defineBackground } from 'wxt/sandbox'
 import { browser } from 'wxt/browser'
+import { defineBackground } from 'wxt/sandbox'
+import { handleContextMenuClick, handleContextMenuShown, registerContextMenus } from './contextMenu'
+import { connectDevReloadServer } from './devReload'
 import {
   handleCapturedResponse,
   handleGetConversations,
@@ -8,12 +10,6 @@ import {
   handleSearch,
   handleToggleFavorite,
 } from './handlers'
-import {
-  registerContextMenus,
-  handleContextMenuClick,
-  handleContextMenuShown,
-} from './contextMenu'
-import { connectDevReloadServer } from './devReload'
 
 export default defineBackground({
   type: 'module',
@@ -54,7 +50,7 @@ export default defineBackground({
   },
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line ts/no-explicit-any
 function safeAddListener(target: any, handler: (...args: any[]) => void) {
   if (!target?.addListener) return
   target.addListener(handler)
@@ -63,7 +59,7 @@ function safeAddListener(target: any, handler: (...args: any[]) => void) {
 /**
  * Message handler router
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line ts/no-explicit-any
 async function handleMessage(message: any): Promise<any> {
   const { action } = message
 

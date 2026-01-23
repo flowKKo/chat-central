@@ -15,9 +15,11 @@ Unified AI conversation manager - Track, search, and export your Claude, ChatGPT
 ## Installation
 
 ### Chrome Web Store
+
 Coming soon.
 
 ### Manual Installation
+
 1. Download the latest release from [Releases](https://github.com/flowKKo/chat-central/releases)
 2. Unzip the file
 3. Open `chrome://extensions/` in Chrome

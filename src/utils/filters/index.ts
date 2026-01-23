@@ -1,7 +1,7 @@
 export {
-  filterConversations,
-  sortConversations,
-  filterAndSortConversations,
   type ConversationFilterOptions,
   type ConversationSortOptions,
+  filterAndSortConversations,
+  filterConversations,
+  sortConversations,
 } from './conversationFilter'

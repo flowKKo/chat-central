@@ -1,10 +1,10 @@
 import type { Conversation, Message } from '@/types'
 import {
-  upsertConversation,
-  upsertMessages,
   getConversationById,
   getExistingMessageIds,
   getMessagesByIds,
+  upsertConversation,
+  upsertMessages,
 } from '@/utils/db'
 import { dedupeMessagesByContent } from '@/utils/message-dedupe'
 
@@ -32,7 +32,7 @@ export function mergeConversation(existing: Conversation, incoming: Conversation
   let detailSyncedAt =
     incomingRank >= existingRank
       ? Math.max(existing.detailSyncedAt ?? 0, incoming.detailSyncedAt ?? 0) || null
-      : existing.detailSyncedAt ?? null
+      : (existing.detailSyncedAt ?? null)
 
   if (incomingIsNewer && existing.detailStatus === 'full' && incomingRank < existingRank) {
     detailStatus = 'partial'
@@ -140,8 +140,7 @@ async function updateConversationFromMessages(
     }
   }
 
-  const messageCount =
-    options.mode === 'full' ? messages.length : existing.messageCount + newCount
+  const messageCount = options.mode === 'full' ? messages.length : existing.messageCount + newCount
 
   await upsertConversation({
     ...existing,

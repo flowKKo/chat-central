@@ -1,7 +1,3 @@
-import JSZip from 'jszip'
-import type { Conversation, Message } from '@/types'
-import { conversationSchema, messageSchema } from '@/types'
-import { db, addConflict } from '@/utils/db'
 import type {
   ExportManifest,
   ImportOptions,
@@ -9,8 +5,12 @@ import type {
   ImportError,
   ConflictRecord,
 } from './types'
+import type { Conversation, Message } from '@/types'
+import JSZip from 'jszip'
+import { conversationSchema, messageSchema } from '@/types'
+import { addConflict, db } from '@/utils/db'
 import { mergeConversation, mergeMessage } from './merge'
-import { sha256, parseJsonl } from './utils'
+import { parseJsonl, sha256 } from './utils'
 
 // ============================================================================
 // Constants
@@ -110,12 +110,11 @@ export async function importData(
     const conversations = parseJsonl<Conversation>(
       conversationsRaw,
       conversationSchema,
-      (line, msg) => result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
+      (line, msg) =>
+        result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
     )
-    const messages = parseJsonl<Message>(
-      messagesRaw,
-      messageSchema,
-      (line, msg) => result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
+    const messages = parseJsonl<Message>(messagesRaw, messageSchema, (line, msg) =>
+      result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
     )
 
     // Import within a transaction
@@ -157,9 +156,9 @@ export async function importData(
 // ============================================================================
 
 interface ImportTable<T> {
-  get(id: string): Promise<T | undefined>
-  add(item: T): Promise<unknown>
-  put(item: T): Promise<unknown>
+  get: (id: string) => Promise<T | undefined>
+  add: (item: T) => Promise<unknown>
+  put: (item: T) => Promise<unknown>
 }
 
 interface ImportMergeResult<T> {
@@ -231,7 +230,11 @@ function importConversation(record: Conversation, options: ImportOptions, result
     db.conversations as ImportTable<Conversation>,
     (existing, rec) => {
       const r = mergeConversation(existing, rec)
-      return { merged: r.conversation, conflicts: r.conflicts, needsUserResolution: r.needsUserResolution }
+      return {
+        merged: r.conversation,
+        conflicts: r.conflicts,
+        needsUserResolution: r.needsUserResolution,
+      }
     },
     options,
     result
@@ -246,7 +249,11 @@ function importMessage(record: Message, options: ImportOptions, result: ImportRe
     db.messages as ImportTable<Message>,
     (existing, rec) => {
       const r = mergeMessage(existing, rec)
-      return { merged: r.message, conflicts: r.conflicts, needsUserResolution: r.needsUserResolution }
+      return {
+        merged: r.message,
+        conflicts: r.conflicts,
+        needsUserResolution: r.needsUserResolution,
+      }
     },
     options,
     result
@@ -319,7 +326,6 @@ export async function importFromJson(
   }
 }
 
-
 // ============================================================================
 // File Validation
 // ============================================================================
@@ -363,10 +369,7 @@ export async function validateImportFile(file: File): Promise<{
           deviceId: 'unknown',
           counts: {
             conversations: data.conversations.length,
-            messages: data.conversations.reduce(
-              (sum, c) => sum + (c.messages?.length || 0),
-              0
-            ),
+            messages: data.conversations.reduce((sum, c) => sum + (c.messages?.length || 0), 0),
           },
           checksums: { 'conversations.jsonl': '', 'messages.jsonl': '' },
           exportType: 'full',

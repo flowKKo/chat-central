@@ -1,10 +1,10 @@
 import type {
-  SyncProvider,
   ProviderConfig,
   PullResult,
   PushResult,
-  SyncRecord,
   SyncError,
+  SyncProvider,
+  SyncRecord,
 } from '../types'
 
 // ============================================================================
@@ -104,7 +104,7 @@ export class RestSyncProvider implements SyncProvider {
         }
       }
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         records: SyncRecord[]
         cursor: string | null
         hasMore: boolean
@@ -168,7 +168,7 @@ export class RestSyncProvider implements SyncProvider {
         }
       }
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         applied: string[]
         failed: Array<{
           id: string
@@ -222,7 +222,7 @@ export class RestSyncProvider implements SyncProvider {
     }
 
     if (this.config.apiKey) {
-      headers['Authorization'] = `Bearer ${this.config.apiKey}`
+      headers.Authorization = `Bearer ${this.config.apiKey}`
     }
 
     const controller = new AbortController()
@@ -249,7 +249,7 @@ export class RestSyncProvider implements SyncProvider {
 
   private async parseErrorResponse(response: Response): Promise<SyncError> {
     try {
-      const data = await response.json() as { error?: string; code?: string }
+      const data = (await response.json()) as { error?: string; code?: string }
 
       if (response.status === 401 || response.status === 403) {
         return this.createError('auth_failed', data.error ?? 'Authentication failed')

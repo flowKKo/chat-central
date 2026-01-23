@@ -1,5 +1,5 @@
-import { z } from 'zod'
 import type { Conversation, Message, Platform } from '@/types'
+import { z } from 'zod'
 
 // ============================================================================
 // Sync Field Extensions
@@ -52,13 +52,7 @@ export type OperationLog = z.infer<typeof operationLogSchema>
 // Sync State
 // ============================================================================
 
-export const cloudSyncStatusSchema = z.enum([
-  'disabled',
-  'idle',
-  'syncing',
-  'error',
-  'conflict',
-])
+export const cloudSyncStatusSchema = z.enum(['disabled', 'idle', 'syncing', 'error', 'conflict'])
 export type CloudSyncStatus = z.infer<typeof cloudSyncStatusSchema>
 
 export const syncStateSchema = z.object({
@@ -78,13 +72,7 @@ export type SyncState = z.infer<typeof syncStateSchema>
 // Conflict Record
 // ============================================================================
 
-export const conflictResolutionSchema = z.enum([
-  'pending',
-  'local',
-  'remote',
-  'merged',
-  'auto',
-])
+export const conflictResolutionSchema = z.enum(['pending', 'local', 'remote', 'merged', 'auto'])
 export type ConflictResolution = z.infer<typeof conflictResolutionSchema>
 
 /** Simplified resolution type for UI actions */
@@ -137,12 +125,12 @@ export function toSyncConflict(record: ConflictRecord): SyncConflict {
 // ============================================================================
 
 export type MergeStrategy =
-  | 'lww'    // Last-Write-Wins based on modifiedAt
-  | 'or'     // Boolean OR (any true = true)
-  | 'and'    // Boolean AND (all true = true)
-  | 'union'  // Array union
-  | 'max'    // Take maximum value
-  | 'min'    // Take minimum value
+  | 'lww' // Last-Write-Wins based on modifiedAt
+  | 'or' // Boolean OR (any true = true)
+  | 'and' // Boolean AND (all true = true)
+  | 'union' // Array union
+  | 'max' // Take maximum value
+  | 'min' // Take minimum value
 
 export interface MergeResult {
   merged: Record<string, unknown>
@@ -266,10 +254,10 @@ export interface SyncProvider {
   readonly name: string
   readonly type: 'rest' | 'file'
 
-  connect(config: ProviderConfig): Promise<void>
-  disconnect(): Promise<void>
-  isConnected(): boolean
+  connect: (config: ProviderConfig) => Promise<void>
+  disconnect: () => Promise<void>
+  isConnected: () => boolean
 
-  pull(cursor?: string | null): Promise<PullResult>
-  push(changes: SyncRecord[]): Promise<PushResult>
+  pull: (cursor?: string | null) => Promise<PullResult>
+  push: (changes: SyncRecord[]) => Promise<PushResult>
 }

@@ -1,13 +1,13 @@
-import JSZip from 'jszip'
+import type { ExportManifest } from './types'
 import type { Message, Platform } from '@/types'
+import JSZip from 'jszip'
 import {
   getAllConversationsForExport,
   getAllMessagesForExport,
   getSyncState,
   initializeSyncState,
 } from '@/utils/db'
-import type { ExportManifest } from './types'
-import { sha256, toJsonl, formatDateForFilename, downloadBlob } from './utils'
+import { downloadBlob, formatDateForFilename, sha256, toJsonl } from './utils'
 
 // ============================================================================
 // Constants
@@ -161,10 +161,12 @@ export interface SimpleExportResult {
 /**
  * Export to a simple JSON file (for debugging/viewing)
  */
-export async function exportToJson(options: {
-  platforms?: Platform[]
-  includeDeleted?: boolean
-} = {}): Promise<SimpleExportResult> {
+export async function exportToJson(
+  options: {
+    platforms?: Platform[]
+    includeDeleted?: boolean
+  } = {}
+): Promise<SimpleExportResult> {
   const conversations = await getAllConversationsForExport({
     platforms: options.platforms,
     includeDeleted: options.includeDeleted,

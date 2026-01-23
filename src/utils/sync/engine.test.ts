@@ -1,6 +1,6 @@
+import type { SyncRecord } from './types'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { MockSyncProvider } from './providers/mock'
-import type { SyncRecord } from './types'
 
 // Mock the database module
 vi.mock('@/utils/db', () => ({
@@ -42,7 +42,7 @@ vi.mock('@/utils/db', () => ({
   markOperationsSynced: vi.fn(),
 }))
 
-describe('MockSyncProvider', () => {
+describe('mockSyncProvider', () => {
   let provider: MockSyncProvider
 
   beforeEach(() => {
@@ -137,14 +137,16 @@ describe('MockSyncProvider', () => {
     })
 
     it('pushes records successfully', async () => {
-      const records: SyncRecord[] = [{
-        id: 'conv_1',
-        entityType: 'conversation',
-        data: { id: 'conv_1', title: 'Test' },
-        syncVersion: 1,
-        modifiedAt: Date.now(),
-        deleted: false,
-      }]
+      const records: SyncRecord[] = [
+        {
+          id: 'conv_1',
+          entityType: 'conversation',
+          data: { id: 'conv_1', title: 'Test' },
+          syncVersion: 1,
+          modifiedAt: Date.now(),
+          deleted: false,
+        },
+      ]
 
       const result = await provider.push(records)
       expect(result.success).toBe(true)
@@ -153,14 +155,16 @@ describe('MockSyncProvider', () => {
     })
 
     it('stores pushed records on server', async () => {
-      const records: SyncRecord[] = [{
-        id: 'conv_1',
-        entityType: 'conversation',
-        data: { id: 'conv_1', title: 'Test' },
-        syncVersion: 1,
-        modifiedAt: Date.now(),
-        deleted: false,
-      }]
+      const records: SyncRecord[] = [
+        {
+          id: 'conv_1',
+          entityType: 'conversation',
+          data: { id: 'conv_1', title: 'Test' },
+          syncVersion: 1,
+          modifiedAt: Date.now(),
+          deleted: false,
+        },
+      ]
 
       await provider.push(records)
       const serverRecords = provider.getServerRecords()
@@ -170,25 +174,29 @@ describe('MockSyncProvider', () => {
 
     it('simulates conflict', async () => {
       // Add existing record
-      provider.addServerRecords([{
-        id: 'conv_1',
-        entityType: 'conversation',
-        data: { id: 'conv_1', title: 'Server Title' },
-        syncVersion: 1,
-        modifiedAt: Date.now(),
-        deleted: false,
-      }])
+      provider.addServerRecords([
+        {
+          id: 'conv_1',
+          entityType: 'conversation',
+          data: { id: 'conv_1', title: 'Server Title' },
+          syncVersion: 1,
+          modifiedAt: Date.now(),
+          deleted: false,
+        },
+      ])
 
       provider.simulateConflict = true
 
-      const result = await provider.push([{
-        id: 'conv_1',
-        entityType: 'conversation',
-        data: { id: 'conv_1', title: 'Client Title' },
-        syncVersion: 2,
-        modifiedAt: Date.now(),
-        deleted: false,
-      }])
+      const result = await provider.push([
+        {
+          id: 'conv_1',
+          entityType: 'conversation',
+          data: { id: 'conv_1', title: 'Client Title' },
+          syncVersion: 2,
+          modifiedAt: Date.now(),
+          deleted: false,
+        },
+      ])
 
       expect(result.success).toBe(true)
       expect(result.applied).toHaveLength(0)
@@ -211,22 +219,26 @@ describe('MockSyncProvider', () => {
     })
 
     it('tracks push history', async () => {
-      const batch1: SyncRecord[] = [{
-        id: 'conv_1',
-        entityType: 'conversation',
-        data: {},
-        syncVersion: 1,
-        modifiedAt: Date.now(),
-        deleted: false,
-      }]
-      const batch2: SyncRecord[] = [{
-        id: 'conv_2',
-        entityType: 'conversation',
-        data: {},
-        syncVersion: 1,
-        modifiedAt: Date.now(),
-        deleted: false,
-      }]
+      const batch1: SyncRecord[] = [
+        {
+          id: 'conv_1',
+          entityType: 'conversation',
+          data: {},
+          syncVersion: 1,
+          modifiedAt: Date.now(),
+          deleted: false,
+        },
+      ]
+      const batch2: SyncRecord[] = [
+        {
+          id: 'conv_2',
+          entityType: 'conversation',
+          data: {},
+          syncVersion: 1,
+          modifiedAt: Date.now(),
+          deleted: false,
+        },
+      ]
 
       await provider.push(batch1)
       await provider.push(batch2)

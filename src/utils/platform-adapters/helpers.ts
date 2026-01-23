@@ -3,9 +3,9 @@
  * New code should import from './common' directly
  */
 export {
+  parseJsonCandidates,
   parseJsonIfString,
+  parseJsonSafe,
   parseSseData,
   stripXssiPrefix,
-  parseJsonSafe,
-  parseJsonCandidates,
 } from './common'

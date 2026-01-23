@@ -1,3 +1,12 @@
+import type {
+  ConflictRecord,
+  EntityType,
+  PullResult,
+  SyncError,
+  SyncProvider,
+  SyncRecord,
+} from './types'
+import { mergeConversation, mergeMessage } from './merge'
 import type { Conversation, Message } from '@/types'
 import {
   db,
@@ -10,18 +19,6 @@ import {
   getPendingOperations,
   markOperationsSynced,
 } from '@/utils/db'
-import type {
-  SyncProvider,
-  SyncRecord,
-  PullResult,
-  SyncError,
-  ConflictRecord,
-  EntityType,
-} from './types'
-import {
-  mergeConversation,
-  mergeMessage,
-} from './merge'
 
 // ============================================================================
 // Types
@@ -92,10 +89,7 @@ export async function syncCycle(
     }
 
     // ========== MERGE ==========
-    const mergeResult = await mergeRemoteChanges(
-      pullResult.records,
-      autoResolveConflicts
-    )
+    const mergeResult = await mergeRemoteChanges(pullResult.records, autoResolveConflicts)
 
     result.pulled = mergeResult.applied
     result.conflicts.push(...mergeResult.conflicts)
@@ -136,7 +130,7 @@ export async function syncCycle(
     await updateSyncState({
       status: finalStatus,
       lastPushAt: Date.now(),
-      pendingConflicts: result.conflicts.filter(c => c.resolution === 'pending').length,
+      pendingConflicts: result.conflicts.filter((c) => c.resolution === 'pending').length,
     })
 
     return result
@@ -166,10 +160,7 @@ export async function syncCycle(
 /**
  * Pull changes from remote
  */
-async function pullChanges(
-  provider: SyncProvider,
-  cursor: string | null
-): Promise<PullResult> {
+async function pullChanges(provider: SyncProvider, cursor: string | null): Promise<PullResult> {
   const allRecords: SyncRecord[] = []
   let currentCursor = cursor
   let hasMore = true
@@ -220,8 +211,8 @@ async function mergeRemoteChanges(
   }
 
   // Group records by entity type
-  const conversations = records.filter(r => r.entityType === 'conversation')
-  const messages = records.filter(r => r.entityType === 'message')
+  const conversations = records.filter((r) => r.entityType === 'conversation')
+  const messages = records.filter((r) => r.entityType === 'message')
 
   // Process in a transaction
   await db.transaction('rw', [db.conversations, db.messages, db.conflicts], async () => {
@@ -257,10 +248,10 @@ interface MergeRecordResult {
 }
 
 interface EntityTable<T> {
-  get(id: string): Promise<T | undefined>
-  add(item: T): Promise<unknown>
-  put(item: T): Promise<unknown>
-  update(id: string, changes: Partial<T>): Promise<unknown>
+  get: (id: string) => Promise<T | undefined>
+  add: (item: T) => Promise<unknown>
+  put: (item: T) => Promise<unknown>
+  update: (id: string, changes: Partial<T>) => Promise<unknown>
 }
 
 interface MergeEntityResult<T> {
@@ -292,7 +283,12 @@ async function mergeRemoteEntity<T extends { dirty?: boolean }>(
       return { applied: true, conflict: null }
     } else if (local?.dirty) {
       if (!autoResolve) {
-        const conflict = await createConflict(entityType, record.id, local as Record<string, unknown>, { ...(remote as Record<string, unknown>), deleted: true })
+        const conflict = await createConflict(
+          entityType,
+          record.id,
+          local as Record<string, unknown>,
+          { ...(remote as Record<string, unknown>), deleted: true }
+        )
         return { applied: false, conflict }
       }
       return { applied: false, conflict: null }
@@ -324,7 +320,12 @@ async function mergeRemoteEntity<T extends { dirty?: boolean }>(
   const mergeResult = mergeFn(local, remote)
 
   if (mergeResult.needsUserResolution && !autoResolve) {
-    const conflict = await createConflict(entityType, record.id, local as Record<string, unknown>, remote as Record<string, unknown>)
+    const conflict = await createConflict(
+      entityType,
+      record.id,
+      local as Record<string, unknown>,
+      remote as Record<string, unknown>
+    )
     return { applied: false, conflict }
   }
 
@@ -338,7 +339,10 @@ async function mergeRemoteEntity<T extends { dirty?: boolean }>(
 }
 
 /** Merge a single remote conversation */
-async function mergeRemoteConversation(record: SyncRecord, autoResolve: boolean): Promise<MergeRecordResult> {
+async function mergeRemoteConversation(
+  record: SyncRecord,
+  autoResolve: boolean
+): Promise<MergeRecordResult> {
   return mergeRemoteEntity(
     record,
     'conversation',
@@ -352,7 +356,10 @@ async function mergeRemoteConversation(record: SyncRecord, autoResolve: boolean)
 }
 
 /** Merge a single remote message */
-async function mergeRemoteMessage(record: SyncRecord, autoResolve: boolean): Promise<MergeRecordResult> {
+async function mergeRemoteMessage(
+  record: SyncRecord,
+  autoResolve: boolean
+): Promise<MergeRecordResult> {
   return mergeRemoteEntity(
     record,
     'message',
@@ -430,10 +437,7 @@ interface PushChangesResult {
 /**
  * Push local changes to remote
  */
-async function pushChanges(
-  provider: SyncProvider,
-  batchSize: number
-): Promise<PushChangesResult> {
+async function pushChanges(provider: SyncProvider, batchSize: number): Promise<PushChangesResult> {
   const result: PushChangesResult = {
     success: true,
     counts: { conversations: 0, messages: 0 },
@@ -446,8 +450,8 @@ async function pushChanges(
     const dirtyMessages = await getDirtyMessages()
 
     // Convert to sync records
-    const conversationRecords = dirtyConversations.map(c => toSyncRecord('conversation', c))
-    const messageRecords = dirtyMessages.map(m => toSyncRecord('message', m))
+    const conversationRecords = dirtyConversations.map((c) => toSyncRecord('conversation', c))
+    const messageRecords = dirtyMessages.map((m) => toSyncRecord('message', m))
 
     const allRecords = [...conversationRecords, ...messageRecords]
 
@@ -456,8 +460,8 @@ async function pushChanges(
     }
 
     // Create Sets for O(1) lookup
-    const conversationIdSet = new Set(conversationRecords.map(r => r.id))
-    const messageIdSet = new Set(messageRecords.map(r => r.id))
+    const conversationIdSet = new Set(conversationRecords.map((r) => r.id))
+    const messageIdSet = new Set(messageRecords.map((r) => r.id))
 
     // Push in batches
     for (let i = 0; i < allRecords.length; i += batchSize) {
@@ -472,8 +476,8 @@ async function pushChanges(
 
       // Track successful pushes (O(n) with Set lookup)
       const appliedSet = new Set(pushResult.applied)
-      const appliedConvIds = pushResult.applied.filter(id => conversationIdSet.has(id))
-      const appliedMsgIds = pushResult.applied.filter(id => messageIdSet.has(id))
+      const appliedConvIds = pushResult.applied.filter((id) => conversationIdSet.has(id))
+      const appliedMsgIds = pushResult.applied.filter((id) => messageIdSet.has(id))
 
       result.counts.conversations += appliedConvIds.length
       result.counts.messages += appliedMsgIds.length
@@ -483,19 +487,19 @@ async function pushChanges(
 
       // Mark operations as synced (O(n) with Set lookup)
       const pendingOps = await getPendingOperations()
-      const syncedOpIds = pendingOps
-        .filter(op => appliedSet.has(op.entityId))
-        .map(op => op.id)
+      const syncedOpIds = pendingOps.filter((op) => appliedSet.has(op.entityId)).map((op) => op.id)
       if (syncedOpIds.length > 0) {
         await markOperationsSynced(syncedOpIds)
       }
 
       // Track failures
-      result.failed.push(...pushResult.failed.map(f => ({
-        id: f.id,
-        reason: f.reason,
-        serverVersion: f.serverVersion,
-      })))
+      result.failed.push(
+        ...pushResult.failed.map((f) => ({
+          id: f.id,
+          reason: f.reason,
+          serverVersion: f.serverVersion,
+        }))
+      )
     }
 
     return result
@@ -557,11 +561,12 @@ export async function applyConflictResolution(
     throw new Error(`Conflict not found: ${conflictId}`)
   }
 
-  const dataToApply = resolution === 'local'
-    ? conflict.localVersion
-    : resolution === 'remote'
-    ? conflict.remoteVersion
-    : mergedData
+  const dataToApply =
+    resolution === 'local'
+      ? conflict.localVersion
+      : resolution === 'remote'
+        ? conflict.remoteVersion
+        : mergedData
 
   if (!dataToApply) {
     throw new Error('No data to apply for resolution')
@@ -570,13 +575,13 @@ export async function applyConflictResolution(
   await db.transaction('rw', [db.conversations, db.messages, db.conflicts], async () => {
     if (conflict.entityType === 'conversation') {
       await db.conversations.put({
-        ...dataToApply as Conversation,
+        ...(dataToApply as Conversation),
         dirty: resolution === 'local', // If keeping local, still need to push
         syncedAt: Date.now(),
       })
     } else {
       await db.messages.put({
-        ...dataToApply as Message,
+        ...(dataToApply as Message),
         dirty: resolution === 'local',
         syncedAt: Date.now(),
       })

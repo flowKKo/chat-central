@@ -9,61 +9,64 @@
  * - bulk.ts: Bulk operations
  */
 
-// Database schema and instance
-export { ChatCentralDB, db } from './schema'
+// Bulk operations
+export { clearAllData, clearPlatformData } from './bulk'
 
 // Conversation operations
 export {
-  getConversations,
+  deleteConversation,
+  getAllConversationsForExport,
   getConversationById,
   getConversationByOriginalId,
+  getConversationCount,
+  getConversations,
+  getDeletedConversations,
+  getFavoriteConversationCount,
+  permanentlyDeleteConversation,
+  softDeleteConversation,
+  updateConversationFavorite,
   upsertConversation,
   upsertConversations,
-  updateConversationFavorite,
-  deleteConversation,
-  getConversationCount,
-  getFavoriteConversationCount,
-  softDeleteConversation,
-  getDeletedConversations,
-  permanentlyDeleteConversation,
-  getAllConversationsForExport,
 } from './repositories/conversations'
 
 // Message operations
 export {
-  getMessagesByConversationId,
-  upsertMessages,
   deleteMessagesByConversationId,
-  getExistingMessageIds,
-  getMessagesByIds,
   getAllMessagesForExport,
+  getExistingMessageIds,
+  getMessagesByConversationId,
+  getMessagesByIds,
+  upsertMessages,
 } from './repositories/messages'
 
 // Sync operations
 export {
-  // Sync state
-  getSyncState,
-  updateSyncState,
-  initializeSyncState,
-  // Operation log
-  addOperationLog,
-  getPendingOperations,
-  markOperationsSynced,
-  cleanupSyncedOperations,
   // Conflicts
   addConflict,
-  getPendingConflicts,
-  resolveConflict,
-  getConflictById,
+  // Operation log
+  addOperationLog,
+  cleanupDeletedRecords,
   cleanupResolvedConflicts,
+  cleanupSyncedOperations,
+  clearDirtyFlags,
+  getConflictById,
   // Dirty tracking
   getDirtyConversations,
   getDirtyMessages,
+  getPendingConflicts,
+  getPendingOperations,
+  // Sync state
+  getSyncState,
+  initializeSyncState,
   markConversationDirty,
   markMessageDirty,
-  clearDirtyFlags,
-  cleanupDeletedRecords,
+  markOperationsSynced,
+  resolveConflict,
+  updateSyncState,
 } from './repositories/sync'
+
+// Database schema and instance
+export { ChatCentralDB, db } from './schema'
 
 // Search operations
 export {
@@ -75,7 +78,4 @@ export {
 } from './search'
 
 // Statistics
-export { getDBStats, type DBStats } from './stats'
-
-// Bulk operations
-export { clearAllData, clearPlatformData } from './bulk'
+export { type DBStats, getDBStats } from './stats'

@@ -1,8 +1,8 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { DashboardLayout } from '@/components/DashboardLayout'
-import ConversationsManager from '@/components/ConversationsManager'
-import { SettingsPanel } from '@/components/SettingsPanel'
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AboutPanel } from '@/components/AboutPanel'
+import ConversationsManager from '@/components/ConversationsManager'
+import { DashboardLayout } from '@/components/DashboardLayout'
+import { SettingsPanel } from '@/components/SettingsPanel'
 
 export default function App() {
   return (

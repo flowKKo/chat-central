@@ -3,7 +3,7 @@ import type { Message } from '@/types'
 /**
  * Handlers for walking through nested data structures
  */
-export type WalkHandlers = {
+export interface WalkHandlers {
   array?: (value: unknown[]) => boolean | void
   object?: (value: Record<string, unknown>) => boolean | void
   string?: (value: string) => boolean | void
@@ -12,7 +12,7 @@ export type WalkHandlers = {
 /**
  * State for tracking conversation detail parsing
  */
-export type DetailState = {
+export interface DetailState {
   originalId: string
   title: string
   defaultTimestamp: number | null

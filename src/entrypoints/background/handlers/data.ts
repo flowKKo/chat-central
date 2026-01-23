@@ -1,3 +1,9 @@
+import {
+  GetConversationsSchema,
+  GetMessagesSchema,
+  SearchSchema,
+  ToggleFavoriteSchema,
+} from '../schemas'
 import type { Conversation, Message } from '@/types'
 import {
   getConversations,
@@ -6,12 +12,6 @@ import {
   getConversationById,
   updateConversationFavorite,
 } from '@/utils/db'
-import {
-  GetConversationsSchema,
-  GetMessagesSchema,
-  SearchSchema,
-  ToggleFavoriteSchema,
-} from '../schemas'
 
 /**
  * Get conversation list
@@ -73,7 +73,8 @@ export async function handleSearch(
 
   const lowerQuery = query.toLowerCase()
   const results = conversations.filter(
-    (c) => c.title.toLowerCase().includes(lowerQuery) || c.preview.toLowerCase().includes(lowerQuery)
+    (c) =>
+      c.title.toLowerCase().includes(lowerQuery) || c.preview.toLowerCase().includes(lowerQuery)
   )
 
   return { results }

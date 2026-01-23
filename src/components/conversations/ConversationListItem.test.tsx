@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
-import { ConversationListItem } from './ConversationListItem'
 import type { Conversation } from '@/types'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { ConversationListItem } from './ConversationListItem'
 
 // Mock wxt/browser
 vi.mock('wxt/browser', () => ({
@@ -12,7 +12,7 @@ vi.mock('wxt/browser', () => ({
   },
 }))
 
-describe('ConversationListItem', () => {
+describe('conversationListItem', () => {
   const createConversation = (overrides: Partial<Conversation> = {}): Conversation => ({
     id: 'claude_123',
     platform: 'claude',
@@ -96,7 +96,7 @@ describe('ConversationListItem', () => {
   it('should have selected indicator when isSelected is true', () => {
     const conversation = createConversation()
     const { container } = render(
-      <ConversationListItem conversation={conversation} {...defaultProps} isSelected={true} />
+      <ConversationListItem conversation={conversation} {...defaultProps} isSelected />
     )
 
     // Check for selected state class
@@ -107,11 +107,7 @@ describe('ConversationListItem', () => {
   it('should highlight search query in title', () => {
     const conversation = createConversation({ title: 'Hello World Chat' })
     render(
-      <ConversationListItem
-        conversation={conversation}
-        {...defaultProps}
-        searchQuery="World"
-      />
+      <ConversationListItem conversation={conversation} {...defaultProps} searchQuery="World" />
     )
 
     expect(screen.getByText(/World/i)).toBeInTheDocument()

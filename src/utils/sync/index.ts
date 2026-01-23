@@ -1,86 +1,82 @@
-// Types
-export type {
-  SyncFields,
-  SyncableConversation,
-  SyncableMessage,
-  OperationType,
-  EntityType,
-  OperationLog,
-  CloudSyncStatus,
-  SyncState,
-  ConflictResolution,
-  ConflictRecord,
-  MergeStrategy,
-  MergeResult,
-  ExportType,
-  ExportManifest,
-  ExportOptionsSync,
-  ImportOptions,
-  ImportResult,
-  ImportError,
-  SyncRecord,
-  PullResult,
-  PushResult,
-  FailedRecord,
-  SyncErrorCode,
-  SyncError,
-  ProviderConfig,
-  SyncProvider,
-} from './types'
-
-// Merge utilities
-export {
-  mergeRecords,
-  mergeConversation,
-  mergeMessage,
-  hasConflicts,
-  conversationMergeStrategies,
-  messageMergeStrategies,
-} from './merge'
-
-// Export utilities
-export {
-  exportData,
-  exportConversations,
-  exportToJson,
-  downloadExport,
-  type ExportOptions,
-  type ExportResult,
-  type SimpleExportResult,
-} from './export'
-
-// Import utilities
-export {
-  importData,
-  importFromJson,
-  validateImportFile,
-} from './import'
-
 // Sync engine
 export {
-  syncCycle,
+  applyConflictResolution,
   pullOnly,
   pushOnly,
-  applyConflictResolution,
+  syncCycle,
   type SyncCycleResult,
   type SyncEngineOptions,
 } from './engine'
 
+// Export utilities
+export {
+  downloadExport,
+  exportConversations,
+  exportData,
+  type ExportOptions,
+  type ExportResult,
+  exportToJson,
+  type SimpleExportResult,
+} from './export'
+
+// Import utilities
+export { importData, importFromJson, validateImportFile } from './import'
+
 // Sync manager
 export {
-  syncManager,
-  SyncManagerImpl,
-  type SyncManagerConfig,
-  type SyncManagerState,
-  type SyncEventType,
   type SyncEventListener,
+  type SyncEventType,
+  syncManager,
+  type SyncManagerConfig,
+  SyncManagerImpl,
+  type SyncManagerState,
 } from './manager'
+
+// Merge utilities
+export {
+  conversationMergeStrategies,
+  hasConflicts,
+  mergeConversation,
+  mergeMessage,
+  mergeRecords,
+  messageMergeStrategies,
+} from './merge'
 
 // Providers
 export {
-  RestSyncProvider,
+  createMockProvider,
   createRestProvider,
   MockSyncProvider,
-  createMockProvider,
   type RestProviderConfig,
+  RestSyncProvider,
 } from './providers'
+
+// Types
+export type {
+  CloudSyncStatus,
+  ConflictRecord,
+  ConflictResolution,
+  EntityType,
+  ExportManifest,
+  ExportOptionsSync,
+  ExportType,
+  FailedRecord,
+  ImportError,
+  ImportOptions,
+  ImportResult,
+  MergeResult,
+  MergeStrategy,
+  OperationLog,
+  OperationType,
+  ProviderConfig,
+  PullResult,
+  PushResult,
+  SyncableConversation,
+  SyncableMessage,
+  SyncError,
+  SyncErrorCode,
+  SyncFields,
+  SyncProvider,
+  SyncRecord,
+  SyncState,
+} from './types'

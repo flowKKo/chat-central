@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  mergeRecords,
-  mergeConversation,
-  mergeMessage,
-} from './merge'
+import { mergeRecords, mergeConversation, mergeMessage } from './merge'
 import type { Conversation, Message } from '@/types'
 
 describe('mergeRecords', () => {

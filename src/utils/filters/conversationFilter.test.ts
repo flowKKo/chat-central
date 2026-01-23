@@ -1,10 +1,10 @@
+import type { Conversation } from '@/types'
 import { describe, it, expect } from 'vitest'
 import {
   filterConversations,
   sortConversations,
   filterAndSortConversations,
 } from './conversationFilter'
-import type { Conversation } from '@/types'
 
 const createConversation = (overrides: Partial<Conversation> = {}): Conversation => ({
   id: 'test-id',
@@ -33,7 +33,12 @@ describe('filterConversations', () => {
     createConversation({ id: '1', platform: 'claude', title: 'Claude Chat', isFavorite: true }),
     createConversation({ id: '2', platform: 'chatgpt', title: 'GPT Chat', isFavorite: false }),
     createConversation({ id: '3', platform: 'gemini', title: 'Gemini Chat', isFavorite: true }),
-    createConversation({ id: '4', platform: 'claude', title: 'Another Claude', preview: 'Hello world' }),
+    createConversation({
+      id: '4',
+      platform: 'claude',
+      title: 'Another Claude',
+      preview: 'Hello world',
+    }),
   ]
 
   it('returns all conversations when no filters applied', () => {

@@ -1,6 +1,6 @@
-import { PLATFORM_CONFIG, type Conversation, type Platform } from '@/types'
+import { type Conversation, type Platform, PLATFORM_CONFIG } from '@/types'
 
-export type ParsedConversation = {
+export interface ParsedConversation {
   platform: Platform
   originalId: string
   conversationId: string

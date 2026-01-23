@@ -1,2 +1,2 @@
-export { RestSyncProvider, createRestProvider, type RestProviderConfig } from './rest'
-export { MockSyncProvider, createMockProvider } from './mock'
+export { createMockProvider, MockSyncProvider } from './mock'
+export { createRestProvider, type RestProviderConfig, RestSyncProvider } from './rest'

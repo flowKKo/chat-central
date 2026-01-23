@@ -36,14 +36,17 @@ export async function searchConversationsAndMessages(query: string): Promise<Con
 /**
  * Search conversations and messages with match details
  */
-export async function searchConversationsWithMatches(query: string): Promise<SearchResultWithMatches[]> {
+export async function searchConversationsWithMatches(
+  query: string
+): Promise<SearchResultWithMatches[]> {
   const lowerQuery = query.toLowerCase()
 
   // 1. Find conversations with matching titles or previews
   const titleMatchConvs = await db.conversations
-    .filter((conv) =>
-      conv.title.toLowerCase().includes(lowerQuery) ||
-      conv.preview.toLowerCase().includes(lowerQuery)
+    .filter(
+      (conv) =>
+        conv.title.toLowerCase().includes(lowerQuery) ||
+        conv.preview.toLowerCase().includes(lowerQuery)
     )
     .toArray()
 

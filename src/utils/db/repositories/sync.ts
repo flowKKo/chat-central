@@ -1,6 +1,6 @@
+import { db } from '../schema'
 import type { Conversation, Message } from '@/types'
 import type { OperationLog, SyncState, ConflictRecord } from '@/utils/sync/types'
-import { db } from '../schema'
 
 // ============================================================================
 // Sync State Operations
@@ -49,7 +49,9 @@ export async function initializeSyncState(): Promise<SyncState> {
 /**
  * Add an operation to the log
  */
-export async function addOperationLog(log: Omit<OperationLog, 'id' | 'synced' | 'syncedAt'>): Promise<string> {
+export async function addOperationLog(
+  log: Omit<OperationLog, 'id' | 'synced' | 'syncedAt'>
+): Promise<string> {
   const id = crypto.randomUUID()
   await db.operationLog.add({
     ...log,
@@ -81,7 +83,9 @@ export async function markOperationsSynced(ids: string[]): Promise<void> {
 /**
  * Cleanup old synced operations
  */
-export async function cleanupSyncedOperations(olderThanMs: number = 7 * 24 * 60 * 60 * 1000): Promise<number> {
+export async function cleanupSyncedOperations(
+  olderThanMs: number = 7 * 24 * 60 * 60 * 1000
+): Promise<number> {
   const cutoff = Date.now() - olderThanMs
   return db.operationLog
     .where('synced')
@@ -97,7 +101,9 @@ export async function cleanupSyncedOperations(olderThanMs: number = 7 * 24 * 60 
 /**
  * Add a conflict record
  */
-export async function addConflict(conflict: Omit<ConflictRecord, 'id' | 'createdAt'>): Promise<string> {
+export async function addConflict(
+  conflict: Omit<ConflictRecord, 'id' | 'createdAt'>
+): Promise<string> {
   const id = crypto.randomUUID()
   await db.conflicts.add({
     ...conflict,
@@ -137,7 +143,9 @@ export async function getConflictById(id: string): Promise<ConflictRecord | unde
 /**
  * Cleanup old resolved conflicts
  */
-export async function cleanupResolvedConflicts(olderThanMs: number = 30 * 24 * 60 * 60 * 1000): Promise<number> {
+export async function cleanupResolvedConflicts(
+  olderThanMs: number = 30 * 24 * 60 * 60 * 1000
+): Promise<number> {
   const cutoff = Date.now() - olderThanMs
   return db.conflicts
     .filter((c) => c.resolution !== 'pending' && (c.resolvedAt ?? 0) < cutoff)
@@ -189,7 +197,10 @@ export async function markMessageDirty(id: string): Promise<void> {
 /**
  * Clear dirty flags after successful sync
  */
-export async function clearDirtyFlags(conversationIds: string[], messageIds: string[]): Promise<void> {
+export async function clearDirtyFlags(
+  conversationIds: string[],
+  messageIds: string[]
+): Promise<void> {
   const now = Date.now()
   await db.transaction('rw', [db.conversations, db.messages], async () => {
     if (conversationIds.length > 0) {
@@ -210,7 +221,9 @@ export async function clearDirtyFlags(conversationIds: string[], messageIds: str
 /**
  * Cleanup old deleted records
  */
-export async function cleanupDeletedRecords(olderThanMs: number = 30 * 24 * 60 * 60 * 1000): Promise<{
+export async function cleanupDeletedRecords(
+  olderThanMs: number = 30 * 24 * 60 * 60 * 1000
+): Promise<{
   conversations: number
   messages: number
 }> {

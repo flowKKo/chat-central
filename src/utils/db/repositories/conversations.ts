@@ -1,5 +1,5 @@
-import type { Conversation, Platform } from '@/types'
 import { db } from '../schema'
+import type { Conversation, Platform } from '@/types'
 
 /**
  * Get conversations with optional filtering and pagination
@@ -103,7 +103,7 @@ export async function updateConversationFavorite(
   const existing = await db.conversations.get(id)
   if (!existing) return null
 
-  const favoriteAt = isFavorite ? existing.favoriteAt ?? Date.now() : null
+  const favoriteAt = isFavorite ? (existing.favoriteAt ?? Date.now()) : null
   const updated = { ...existing, isFavorite, favoriteAt }
   await db.conversations.put(updated)
   return updated
@@ -134,7 +134,11 @@ export async function getConversationCount(platform?: Platform): Promise<number>
  */
 export async function getFavoriteConversationCount(platform?: Platform): Promise<number> {
   if (platform) {
-    return db.conversations.where('platform').equals(platform).filter((conv) => conv.isFavorite).count()
+    return db.conversations
+      .where('platform')
+      .equals(platform)
+      .filter((conv) => conv.isFavorite)
+      .count()
   }
   return db.conversations.filter((conv) => conv.isFavorite).count()
 }

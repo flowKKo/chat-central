@@ -1,5 +1,3 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
-import { browser } from 'wxt/browser'
 import { useAtom } from 'jotai'
 import {
   Search,
@@ -12,25 +10,27 @@ import {
   X,
   Github,
 } from 'lucide-react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { browser } from 'wxt/browser'
+import type { SearchResultWithMatches } from '@/utils/db'
+import { HighlightText } from '@/components/HighlightText'
+import { ThemeProvider } from '@/components/providers/ThemeProvider'
+import { ConflictResolverModal, SyncSettingsModal, SyncStatusBar } from '@/components/sync'
+import { type Conversation, type Platform, PLATFORM_CONFIG } from '@/types'
 import {
-  conversationsAtom,
-  loadConversationsAtom,
-  conversationCountsAtom,
-  paginationAtom,
-  isLoadingConversationsAtom,
-  toggleFavoriteAtom,
-  performSearchAtom,
   activeSearchQueryAtom,
+  conversationCountsAtom,
+  conversationsAtom,
+  isLoadingConversationsAtom,
+  loadConversationsAtom,
+  paginationAtom,
+  performSearchAtom,
   searchResultsAtom,
+  toggleFavoriteAtom,
 } from '@/utils/atoms'
 import { initializeSyncAtom } from '@/utils/atoms/sync'
-import { PLATFORM_CONFIG, type Platform, type Conversation } from '@/types'
 import { cn } from '@/utils/cn'
-import { SyncStatusBar, SyncSettingsModal, ConflictResolverModal } from '@/components/sync'
-import { ThemeProvider } from '@/components/providers/ThemeProvider'
-import { HighlightText } from '@/components/HighlightText'
 import { filterAndSortConversations } from '@/utils/filters'
-import type { SearchResultWithMatches } from '@/utils/db'
 
 export default function App() {
   const [conversations] = useAtom(conversationsAtom)
@@ -74,11 +74,12 @@ export default function App() {
 
   // Use shared filtering and sorting utilities
   const sortedConversations = useMemo(
-    () => filterAndSortConversations(
-      conversations,
-      { platform: selectedPlatform, favoritesOnly: showFavoritesOnly },
-      { byFavoriteTime: showFavoritesOnly }
-    ),
+    () =>
+      filterAndSortConversations(
+        conversations,
+        { platform: selectedPlatform, favoritesOnly: showFavoritesOnly },
+        { byFavoriteTime: showFavoritesOnly }
+      ),
     [conversations, selectedPlatform, showFavoritesOnly]
   )
   const filteredConversations = sortedConversations
@@ -90,164 +91,182 @@ export default function App() {
 
   return (
     <ThemeProvider>
-    <div className="w-[400px] min-h-[520px] max-h-[600px] flex flex-col bg-background text-foreground">
-      {/* Header */}
-      <header className="relative px-4 pt-4 pb-3 bg-card">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
+      <div className="flex max-h-[600px] min-h-[520px] w-[400px] flex-col bg-background text-foreground">
+        {/* Header */}
+        <header className="relative bg-card px-4 pb-3 pt-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-blue-400">
+                <Sparkles className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h1 className="font-heading text-base font-semibold text-foreground">
+                  Chat Central
+                </h1>
+                <p className="text-[11px] text-muted-foreground">AI Conversation Manager</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-base font-heading font-semibold text-foreground">Chat Central</h1>
-              <p className="text-[11px] text-muted-foreground">AI Conversation Manager</p>
+            <div className="flex items-center gap-1">
+              <button
+                className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
+                onClick={() =>
+                  browser.tabs.create({ url: 'https://github.com/flowKKo/chat-central' })
+                }
+                aria-label="View on GitHub"
+              >
+                <Github className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <button
+                className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
+                onClick={() =>
+                  browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/settings') })
+                }
+                aria-label="Open settings"
+              >
+                <Settings className="h-4 w-4 text-muted-foreground" />
+              </button>
             </div>
           </div>
+
+          {/* Search */}
+          <div className="relative">
+            <label htmlFor="search-input" className="sr-only">
+              Search conversations
+            </label>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              ref={searchInputRef}
+              id="search-input"
+              type="text"
+              placeholder="Search conversations... (⌘K)"
+              className="w-full rounded-xl border border-border bg-muted py-2.5 pl-9 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1 transition-colors hover:bg-accent"
+                onClick={clearSearch}
+                aria-label="Clear search"
+              >
+                <X className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* Platform Filter Tabs */}
+        <div
+          className="border-b border-border bg-card px-3 py-2"
+          role="tablist"
+          aria-label="Filter by platform"
+        >
           <div className="flex items-center gap-1">
+            <PlatformTab
+              label="All"
+              count={counts.total}
+              isActive={selectedPlatform === 'all'}
+              onClick={() => setSelectedPlatform('all')}
+            />
+            {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
+              <PlatformTab
+                key={platform}
+                platform={platform}
+                count={counts[platform]}
+                isActive={selectedPlatform === platform}
+                onClick={() => setSelectedPlatform(platform)}
+              />
+            ))}
+            <div className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
             <button
-              className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer kbd-focus"
-              onClick={() => browser.tabs.create({ url: 'https://github.com/flowKKo/chat-central' })}
-              aria-label="View on GitHub"
+              className={cn(
+                'kbd-focus flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
+                showFavoritesOnly
+                  ? 'bg-amber-500/20 text-amber-400'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              )}
+              onClick={() => setShowFavoritesOnly((value) => !value)}
+              aria-label={showFavoritesOnly ? 'Show all conversations' : 'Show favorites only'}
+              aria-pressed={showFavoritesOnly}
             >
-              <Github className="w-4 h-4 text-muted-foreground" />
-            </button>
-            <button
-              className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer kbd-focus"
-              onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/settings') })}
-              aria-label="Open settings"
-            >
-              <Settings className="w-4 h-4 text-muted-foreground" />
+              <Star className={cn('h-3.5 w-3.5', showFavoritesOnly && 'fill-amber-400')} />
             </button>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative">
-          <label htmlFor="search-input" className="sr-only">Search conversations</label>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <input
-            ref={searchInputRef}
-            id="search-input"
-            type="text"
-            placeholder="Search conversations... (⌘K)"
-            className="w-full pl-9 pr-8 py-2.5 bg-muted border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-accent transition-colors cursor-pointer"
-              onClick={clearSearch}
-              aria-label="Clear search"
-            >
-              <X className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
+        {/* Conversation List */}
+        <div
+          className="scrollbar-thin flex-1 overflow-y-auto bg-background"
+          role="list"
+          aria-label="Conversations"
+        >
+          {isLoading && conversations.length === 0 ? (
+            <LoadingSkeleton />
+          ) : filteredConversations.length === 0 ? (
+            <EmptyState searchQuery={searchQuery} onClearSearch={clearSearch} />
+          ) : (
+            <div className="space-y-1 p-2">
+              {sortedConversations.map((conv, index) => {
+                const matchInfo = searchResults.find((r) => r.conversation.id === conv.id)
+                return (
+                  <ConversationItem
+                    key={conv.id}
+                    conversation={conv}
+                    searchQuery={activeSearchQuery}
+                    matchInfo={matchInfo}
+                    style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
+                  />
+                )
+              })}
+              {pagination.hasMore && (
+                <div className="pb-1 pt-2">
+                  <button
+                    className="kbd-focus w-full cursor-pointer rounded-xl border border-dashed border-border px-3 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+                    onClick={() => loadConversations()}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" />
+                        Loading...
+                      </span>
+                    ) : (
+                      'Load more conversations'
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
-      </header>
 
-      {/* Platform Filter Tabs */}
-      <div className="px-3 py-2 border-b border-border bg-card" role="tablist" aria-label="Filter by platform">
-        <div className="flex items-center gap-1">
-          <PlatformTab
-            label="All"
-            count={counts.total}
-            isActive={selectedPlatform === 'all'}
-            onClick={() => setSelectedPlatform('all')}
-          />
-          {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
-            <PlatformTab
-              key={platform}
-              platform={platform}
-              count={counts[platform]}
-              isActive={selectedPlatform === platform}
-              onClick={() => setSelectedPlatform(platform)}
-            />
-          ))}
-          <div className="w-px h-5 bg-border mx-1" aria-hidden="true" />
-          <button
-            className={cn(
-              'flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer kbd-focus',
-              showFavoritesOnly
-                ? 'bg-amber-500/20 text-amber-400'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-            onClick={() => setShowFavoritesOnly((value) => !value)}
-            aria-label={showFavoritesOnly ? 'Show all conversations' : 'Show favorites only'}
-            aria-pressed={showFavoritesOnly}
-          >
-            <Star className={cn('w-3.5 h-3.5', showFavoritesOnly && 'fill-amber-400')} />
-          </button>
-        </div>
-      </div>
-
-      {/* Conversation List */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin bg-background" role="list" aria-label="Conversations">
-        {isLoading && conversations.length === 0 ? (
-          <LoadingSkeleton />
-        ) : filteredConversations.length === 0 ? (
-          <EmptyState searchQuery={searchQuery} onClearSearch={clearSearch} />
-        ) : (
-          <div className="p-2 space-y-1">
-            {sortedConversations.map((conv, index) => {
-              const matchInfo = searchResults.find((r) => r.conversation.id === conv.id)
-              return (
-                <ConversationItem
-                  key={conv.id}
-                  conversation={conv}
-                  searchQuery={activeSearchQuery}
-                  matchInfo={matchInfo}
-                  style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
-                />
-              )
-            })}
-            {pagination.hasMore && (
-              <div className="pt-2 pb-1">
-                <button
-                  className="w-full px-3 py-2.5 text-xs font-medium text-muted-foreground border border-dashed border-border rounded-xl hover:bg-muted hover:text-foreground transition-colors disabled:opacity-50 cursor-pointer kbd-focus"
-                  onClick={() => loadConversations()}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="w-3 h-3 border-2 border-muted-foreground border-t-foreground rounded-full animate-spin" />
-                      Loading...
-                    </span>
-                  ) : (
-                    'Load more conversations'
-                  )}
-                </button>
+        {/* Footer */}
+        <footer className="border-t border-border bg-card px-3 py-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <MessageSquare className="h-3.5 w-3.5" />
+                <span className="font-medium tabular-nums text-foreground">{counts.total}</span>
+                <span>conversations</span>
               </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Footer */}
-      <footer className="px-3 py-2.5 border-t border-border bg-card">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span className="font-medium tabular-nums text-foreground">{counts.total}</span>
-              <span>conversations</span>
+              <SyncStatusBar />
             </div>
-            <SyncStatusBar />
+            <button
+              className="kbd-focus group flex cursor-pointer items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
+              onClick={() =>
+                browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/conversations') })
+              }
+            >
+              Manage
+              <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+            </button>
           </div>
-          <button
-            className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer group kbd-focus"
-            onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/conversations') })}
-          >
-            Manage
-            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-          </button>
-        </div>
-      </footer>
+        </footer>
 
-      {/* Modals */}
-      <SyncSettingsModal />
-      <ConflictResolverModal />
-    </div>
+        {/* Modals */}
+        <SyncSettingsModal />
+        <ConflictResolverModal />
+      </div>
     </ThemeProvider>
   )
 }
@@ -273,7 +292,7 @@ function PlatformTab({
       role="tab"
       aria-selected={isActive}
       className={cn(
-        'flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all cursor-pointer kbd-focus',
+        'kbd-focus flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
         isActive
           ? platform
             ? 'text-foreground'
@@ -289,7 +308,7 @@ function PlatformTab({
     >
       {platform && (
         <span
-          className="w-2 h-2 rounded-full"
+          className="h-2 w-2 rounded-full"
           style={{ backgroundColor: config?.color }}
           aria-hidden="true"
         />
@@ -337,42 +356,41 @@ function ConversationItem({
     <div
       role="listitem"
       tabIndex={0}
-      className="group relative p-3 rounded-xl hover:bg-muted cursor-pointer transition-all animate-slide-in kbd-focus"
+      className="kbd-focus group relative animate-slide-in cursor-pointer rounded-xl p-3 transition-all hover:bg-muted"
       style={style}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
       {/* Platform indicator line */}
       <div
-        className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full"
+        className="absolute bottom-3 left-0 top-3 w-0.5 rounded-full"
         style={{ backgroundColor: platformConfig.color }}
         aria-hidden="true"
       />
 
       <div className="flex items-start gap-3 pl-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-medium text-sm text-foreground truncate">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-center gap-2">
+            <h3 className="truncate text-sm font-medium text-foreground">
               {searchQuery ? (
                 <HighlightText text={conversation.title} query={searchQuery} />
               ) : (
                 conversation.title
               )}
             </h3>
-            <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" aria-hidden="true" />
+            <ExternalLink
+              className="h-3 w-3 flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+              aria-hidden="true"
+            />
           </div>
 
           {/* Show message match snippet if available, otherwise show preview */}
           {hasMessageMatch && searchQuery ? (
-            <div className="text-xs text-muted-foreground bg-muted/50 rounded-md px-2 py-1 line-clamp-2 leading-relaxed mb-2">
-              <HighlightText
-                text={messageMatch.text}
-                query={searchQuery}
-                maxLength={80}
-              />
+            <div className="mb-2 line-clamp-2 rounded-md bg-muted/50 px-2 py-1 text-xs leading-relaxed text-muted-foreground">
+              <HighlightText text={messageMatch.text} query={searchQuery} maxLength={80} />
             </div>
           ) : conversation.preview ? (
-            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-2">
+            <p className="mb-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
               {searchQuery ? (
                 <HighlightText text={conversation.preview} query={searchQuery} maxLength={100} />
               ) : (
@@ -382,17 +400,18 @@ function ConversationItem({
           ) : null}
 
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span
-              className="font-medium"
-              style={{ color: platformConfig.color }}
-            >
+            <span className="font-medium" style={{ color: platformConfig.color }}>
               {platformConfig.name}
             </span>
-            <span className="opacity-50" aria-hidden="true">·</span>
+            <span className="opacity-50" aria-hidden="true">
+              ·
+            </span>
             <span>{formatDate(conversation.updatedAt)}</span>
             {conversation.messageCount > 0 && (
               <>
-                <span className="opacity-50" aria-hidden="true">·</span>
+                <span className="opacity-50" aria-hidden="true">
+                  ·
+                </span>
                 <span>{conversation.messageCount} msgs</span>
               </>
             )}
@@ -401,7 +420,7 @@ function ConversationItem({
 
         <button
           className={cn(
-            'p-1.5 rounded-lg hover:bg-accent transition-colors flex-shrink-0 cursor-pointer kbd-focus',
+            'kbd-focus flex-shrink-0 cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-accent',
             conversation.isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
           )}
           onClick={(event) => {
@@ -413,10 +432,8 @@ function ConversationItem({
         >
           <Star
             className={cn(
-              'w-3.5 h-3.5 transition-colors',
-              conversation.isFavorite
-                ? 'fill-amber-400 text-amber-400'
-                : 'text-muted-foreground'
+              'h-3.5 w-3.5 transition-colors',
+              conversation.isFavorite ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'
             )}
           />
         </button>
@@ -427,14 +444,14 @@ function ConversationItem({
 
 function LoadingSkeleton() {
   return (
-    <div className="p-3 space-y-2" aria-busy="true" aria-label="Loading conversations">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="p-3 rounded-xl">
+    <div className="space-y-2 p-3" aria-busy="true" aria-label="Loading conversations">
+      {[...Array.from({ length: 5 })].map((_, i) => (
+        <div key={i} className="rounded-xl p-3">
           <div className="flex items-start gap-3 pl-2">
             <div className="flex-1 space-y-2">
-              <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
-              <div className="h-3 w-full bg-muted rounded animate-pulse" />
-              <div className="h-3 w-1/2 bg-muted rounded animate-pulse" />
+              <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-full animate-pulse rounded bg-muted" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
             </div>
           </div>
         </div>
@@ -443,20 +460,24 @@ function LoadingSkeleton() {
   )
 }
 
-function EmptyState({ searchQuery, onClearSearch }: { searchQuery: string; onClearSearch: () => void }) {
+function EmptyState({
+  searchQuery,
+  onClearSearch,
+}: {
+  searchQuery: string
+  onClearSearch: () => void
+}) {
   return (
-    <div className="flex flex-col items-center justify-center h-full p-8 text-center animate-fade-in">
-      <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-4">
-        <Search className="w-6 h-6 text-muted-foreground" />
+    <div className="flex h-full animate-fade-in flex-col items-center justify-center p-8 text-center">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+        <Search className="h-6 w-6 text-muted-foreground" />
       </div>
       {searchQuery ? (
         <>
-          <h3 className="font-heading font-medium text-foreground mb-1">No results found</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Try a different search term
-          </p>
+          <h3 className="mb-1 font-heading font-medium text-foreground">No results found</h3>
+          <p className="mb-4 text-sm text-muted-foreground">Try a different search term</p>
           <button
-            className="px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer kbd-focus"
+            className="kbd-focus cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
             onClick={onClearSearch}
           >
             Clear search
@@ -464,21 +485,21 @@ function EmptyState({ searchQuery, onClearSearch }: { searchQuery: string; onCle
         </>
       ) : (
         <>
-          <h3 className="font-heading font-medium text-foreground mb-1">No conversations yet</h3>
-          <p className="text-sm text-muted-foreground max-w-[240px] mb-4">
+          <h3 className="mb-1 font-heading font-medium text-foreground">No conversations yet</h3>
+          <p className="mb-4 max-w-[240px] text-sm text-muted-foreground">
             Visit Claude, ChatGPT, or Gemini to start syncing your conversations
           </p>
           <div className="flex items-center gap-2">
             {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
               <button
                 key={platform}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border hover:bg-muted transition-colors cursor-pointer kbd-focus"
+                className="kbd-focus flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
                 style={{ color: PLATFORM_CONFIG[platform].color }}
                 onClick={() => browser.tabs.create({ url: PLATFORM_CONFIG[platform].baseUrl })}
                 aria-label={`Open ${PLATFORM_CONFIG[platform].name}`}
               >
                 <span
-                  className="w-2 h-2 rounded-full"
+                  className="h-2 w-2 rounded-full"
                   style={{ backgroundColor: PLATFORM_CONFIG[platform].color }}
                 />
                 {PLATFORM_CONFIG[platform].name}

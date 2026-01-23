@@ -8,7 +8,7 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center bg-background">
       <p className="text-muted-foreground">Redirecting to settings...</p>
     </div>
   )

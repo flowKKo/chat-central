@@ -5,14 +5,14 @@ import {
   readTimestampFromObject,
   extractMessageContent,
 } from '../common'
-import { GEMINI_APP_URL, CONVERSATION_ID_RE, RESPONSE_ID_RE } from './constants'
 import type { DetailState } from './types'
+import { CONVERSATION_ID_RE, GEMINI_APP_URL, RESPONSE_ID_RE } from './constants'
 import {
-  normalizeConversationId,
+  findTimestampInArray,
   isConversationId,
   isResponseId,
   isStringArray,
-  findTimestampInArray,
+  normalizeConversationId,
 } from './utils'
 
 /**
@@ -41,8 +41,7 @@ function normalizeMessageTimestamp(
 ): number {
   if (candidate == null) {
     const base = state.defaultTimestamp ?? now
-    const adjusted =
-      state.lastProducedTimestamp !== null ? state.lastProducedTimestamp + 1 : base
+    const adjusted = state.lastProducedTimestamp !== null ? state.lastProducedTimestamp + 1 : base
     state.lastProducedTimestamp = adjusted
     state.lastBaseTimestamp = null
     state.tieBreaker = 0

@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
-import { parseConversationFromUrl, buildPlaceholderConversation } from './urlParser'
+import { describe, expect, it } from 'vitest'
+import { buildPlaceholderConversation, parseConversationFromUrl } from './urlParser'
 
 describe('urlParser', () => {
   describe('parseConversationFromUrl', () => {

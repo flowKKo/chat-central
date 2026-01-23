@@ -71,7 +71,8 @@ export function extractRole(message: unknown): 'user' | 'assistant' | null {
 
   const lowerSender = sender.toLowerCase()
   if (lowerSender === 'human' || lowerSender === 'user') return 'user'
-  if (lowerSender === 'assistant' || lowerSender === 'model' || lowerSender === 'ai') return 'assistant'
+  if (lowerSender === 'assistant' || lowerSender === 'model' || lowerSender === 'ai')
+    return 'assistant'
 
   return null
 }

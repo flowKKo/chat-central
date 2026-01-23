@@ -16,10 +16,7 @@ export async function clearAllData(): Promise<void> {
  */
 export async function clearPlatformData(platform: Platform): Promise<void> {
   await db.transaction('rw', [db.conversations, db.messages], async () => {
-    const conversationIds = await db.conversations
-      .where('platform')
-      .equals(platform)
-      .primaryKeys()
+    const conversationIds = await db.conversations.where('platform').equals(platform).primaryKeys()
 
     for (const id of conversationIds) {
       await db.messages.where('conversationId').equals(id).delete()

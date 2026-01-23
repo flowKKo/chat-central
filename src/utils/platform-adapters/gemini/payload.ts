@@ -1,4 +1,4 @@
-import { stripXssiPrefix, parseJsonSafe, parseJsonCandidates } from '../common'
+import { parseJsonCandidates, parseJsonSafe, stripXssiPrefix } from '../common'
 
 /**
  * Normalize raw data into array of payloads

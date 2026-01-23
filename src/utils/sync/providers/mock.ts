@@ -1,10 +1,4 @@
-import type {
-  SyncProvider,
-  ProviderConfig,
-  PullResult,
-  PushResult,
-  SyncRecord,
-} from '../types'
+import type { ProviderConfig, PullResult, PushResult, SyncProvider, SyncRecord } from '../types'
 
 // ============================================================================
 // Mock Provider - For Testing and Development
@@ -65,7 +59,7 @@ export class MockSyncProvider implements SyncProvider {
 
     await this.delay()
 
-    const startIndex = cursor ? parseInt(cursor, 10) : 0
+    const startIndex = cursor ? Number.parseInt(cursor, 10) : 0
     const allRecords = Array.from(this.records.values())
     const pageSize = 50
     const pageRecords = allRecords.slice(startIndex, startIndex + pageSize)
@@ -165,7 +159,7 @@ export class MockSyncProvider implements SyncProvider {
 
   private async delay(): Promise<void> {
     if (this.simulateLatency > 0) {
-      await new Promise(resolve => setTimeout(resolve, this.simulateLatency))
+      await new Promise((resolve) => setTimeout(resolve, this.simulateLatency))
     }
   }
 }

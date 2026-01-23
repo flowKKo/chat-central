@@ -13,6 +13,7 @@
 **Role**: You are an expert Full-Stack Engineer and Browser Extension Specialist working on Chat Central. Your goal is to deliver a high-quality, robust, and unified AI conversation manager that works seamlessly across Claude, ChatGPT, and Gemini.
 
 **Core Mandates**:
+
 1.  **Safety First**: Never commit secrets. Validate all system operations.
 2.  **Code Consistency**: Strictly follow the project's architectural patterns (Platform Adapters, Jotai Atoms, Dexie Database).
 3.  **Type Safety**: No `any`. Use `unknown` with narrowing. Use Zod for runtime validation.
@@ -26,24 +27,29 @@
 Before writing code, apply this "Linus-style" problem-solving framework to ensure robust and simple solutions.
 
 ### Phase 1: The Three Questions
+
 Ask yourself before starting:
+
 1.  **"Is this a real problem?"** - Reject over-engineering.
 2.  **"Is there a simpler way?"** - Always seek the simplest solution (KISS).
 3.  **"Will it break anything?"** - Backward compatibility is an iron law.
 
 ### Phase 2: Requirements Analysis
+
 When analyzing a request:
+
 1.  **Data Structure First**: "Bad programmers worry about the code. Good programmers worry about data structures."
-    *   What is the core data? Who owns it? (IndexedDB via Dexie)
-    *   Can we redesign data structures to eliminate branches/complexity?
+    - What is the core data? Who owns it? (IndexedDB via Dexie)
+    - Can we redesign data structures to eliminate branches/complexity?
 2.  **Eliminate Special Cases**: "Good code has no special cases."
-    *   Identify `if/else` branches that patch bad design.
-    *   Refactor to make the "special case" the normal case (e.g., use Platform Adapters).
+    - Identify `if/else` branches that patch bad design.
+    - Refactor to make the "special case" the normal case (e.g., use Platform Adapters).
 3.  **Destructive Analysis**:
-    *   List all existing features that might be affected.
-    *   Ensure zero destructiveness to user data (especially local IndexedDB).
+    - List all existing features that might be affected.
+    - Ensure zero destructiveness to user data (especially local IndexedDB).
 
 ### Phase 3: Decision Output
+
 If a task is complex or ambiguous, present your analysis in this format:
 
 ```text
@@ -68,14 +74,16 @@ If a task is complex or ambiguous, present your analysis in this format:
 Strictly adhere to these protocols to prevent errors and ensure data integrity.
 
 ### 🛡️ The "Read-Write-Verify" Loop
+
 1.  **READ**: Always read the target file **before** editing. Do not rely on memory or assumptions.
-    *   *Tool*: `read_file`
+    - _Tool_: `read_file`
 2.  **WRITE**: Apply atomic changes. Use sufficient context for `replace`.
-    *   *Tool*: `write_file` or `replace`
+    - _Tool_: `write_file` or `replace`
 3.  **VERIFY**: Check the file content **after** editing to ensure the change was applied correctly and didn't break syntax.
-    *   *Tool*: `read_file` or `run_shell_command` (grep/cat)
+    - _Tool_: `read_file` or `run_shell_command` (grep/cat)
 
 ### 🚨 Critical Safety Checks
+
 - **Never** modify `.output` or `.wxt` folders directly.
 - **Never** commit `.env` or secrets.
 - **Always** run `pnpm type-check` after modifying TypeScript definitions.
@@ -85,17 +93,17 @@ Strictly adhere to these protocols to prevent errors and ensure data integrity.
 
 ## 4. Module Glossary & Complexity Hotspots
 
-| Module (Path) | Responsibility | Complexity | Notes |
-|---------------|----------------|------------|-------|
-| `utils/platform-adapters/` | **Core Logic** for parsing AI responses. | 🌶️ High | Handles different API schemas (Claude/GPT/Gemini). Critical for sync. |
-| `entrypoints/interceptor.content` | Network request interception. | 🌶️ High | Injects into page context (MAIN world). Fragile to site updates. |
-| `utils/sync/` | Sync engine, merge logic, import/export. | 🌶️ High | Handles data synchronization and conflict resolution. |
-| `utils/db/` | **Single Source of Truth** (IndexedDB). | 🟡 Medium | Wrapper around Dexie.js. Handles persistence and search. |
-| `entrypoints/background` | Central coordinator. | 🟡 Medium | Handles messages, triggers DB updates, dev reload. |
-| `utils/atoms/` | Global State (Jotai). | 🟢 Low | React state management (conversations, theme, config, sync). |
-| `entrypoints/popup` | Extension Popup UI. | 🟢 Low | Main user interface with search. |
-| `entrypoints/manage` | Full-page Conversation Manager. | 🟢 Low | Detailed conversation view with search highlighting. |
-| `components/providers/` | React Context Providers. | 🟢 Low | Theme provider for light/dark/system modes. |
+| Module (Path)                     | Responsibility                           | Complexity | Notes                                                                 |
+| --------------------------------- | ---------------------------------------- | ---------- | --------------------------------------------------------------------- |
+| `utils/platform-adapters/`        | **Core Logic** for parsing AI responses. | 🌶️ High    | Handles different API schemas (Claude/GPT/Gemini). Critical for sync. |
+| `entrypoints/interceptor.content` | Network request interception.            | 🌶️ High    | Injects into page context (MAIN world). Fragile to site updates.      |
+| `utils/sync/`                     | Sync engine, merge logic, import/export. | 🌶️ High    | Handles data synchronization and conflict resolution.                 |
+| `utils/db/`                       | **Single Source of Truth** (IndexedDB).  | 🟡 Medium  | Wrapper around Dexie.js. Handles persistence and search.              |
+| `entrypoints/background`          | Central coordinator.                     | 🟡 Medium  | Handles messages, triggers DB updates, dev reload.                    |
+| `utils/atoms/`                    | Global State (Jotai).                    | 🟢 Low     | React state management (conversations, theme, config, sync).          |
+| `entrypoints/popup`               | Extension Popup UI.                      | 🟢 Low     | Main user interface with search.                                      |
+| `entrypoints/manage`              | Full-page Conversation Manager.          | 🟢 Low     | Detailed conversation view with search highlighting.                  |
+| `components/providers/`           | React Context Providers.                 | 🟢 Low     | Theme provider for light/dark/system modes.                           |
 
 ---
 
@@ -124,15 +132,18 @@ Strictly adhere to these protocols to prevent errors and ensure data integrity.
 **Framework**: Vitest (jsdom environment)
 
 ### TDD Workflow Guidelines
+
 1.  **Write the Test First**: Define the expected behavior in `*.test.ts`.
 2.  **Fail**: Ensure the test fails (validates the test itself).
 3.  **Implement**: Write the minimal code to pass the test.
 4.  **Refactor**: Clean up the code while keeping tests green.
 
 ### Mocking Patterns
+
 This project uses `wxt` testing utilities and `vi.mock`.
 
 **Running Tests**:
+
 ```bash
 pnpm test                # Run all tests
 pnpm test:watch          # Interactive mode
@@ -143,11 +154,13 @@ pnpm test:watch          # Interactive mode
 ## 7. Workflows & Definition of Done
 
 ### Setup
+
 ```bash
 pnpm install
 ```
 
 ### Development
+
 ```bash
 # Start Dev Server (with HMR)
 pnpm dev
@@ -162,6 +175,7 @@ pnpm dev:reload
 ```
 
 ### Definition of Done (DoD)
+
 Before claiming a task is complete, verify:
 
 1.  **Functionality**: Does it meet the requirements?
@@ -223,22 +237,22 @@ chat-central/
 
 ### 📍 Where to Look (Task Map)
 
-| Task | File Path / Directory |
-|------|-----------------------|
-| **Add support for new AI** | `src/utils/platform-adapters/` (Create new adapter) |
-| **Fix message parsing** | `src/utils/platform-adapters/{platform}.ts` |
-| **Modify database schema** | `src/utils/db/index.ts` |
-| **Update UI state** | `src/utils/atoms/` |
-| **Change network interception** | `src/entrypoints/interceptor.content/index.ts` |
-| **Update extension permissions** | `wxt.config.ts` |
-| **Adjust UI styles / theming** | `src/assets/styles/globals.css` or `tailwind.config.js` |
-| **Modify theme behavior** | `src/utils/atoms/theme.ts`, `src/components/providers/ThemeProvider.tsx` |
-| **Update search functionality** | `src/utils/db/index.ts` (search), `src/utils/atoms/conversations.ts` |
-| **Modify sync behavior** | `src/utils/sync/` |
-| **Update conversation manager UI** | `src/components/ConversationsManager.tsx` |
-| **Change popup UI** | `src/entrypoints/popup/App.tsx` |
-| **Change manage page UI** | `src/entrypoints/manage/App.tsx` |
-| **Modify dev workflow** | `scripts/dev-reload.ts`, `src/entrypoints/background/index.ts` |
+| Task                               | File Path / Directory                                                    |
+| ---------------------------------- | ------------------------------------------------------------------------ |
+| **Add support for new AI**         | `src/utils/platform-adapters/` (Create new adapter)                      |
+| **Fix message parsing**            | `src/utils/platform-adapters/{platform}.ts`                              |
+| **Modify database schema**         | `src/utils/db/index.ts`                                                  |
+| **Update UI state**                | `src/utils/atoms/`                                                       |
+| **Change network interception**    | `src/entrypoints/interceptor.content/index.ts`                           |
+| **Update extension permissions**   | `wxt.config.ts`                                                          |
+| **Adjust UI styles / theming**     | `src/assets/styles/globals.css` or `tailwind.config.js`                  |
+| **Modify theme behavior**          | `src/utils/atoms/theme.ts`, `src/components/providers/ThemeProvider.tsx` |
+| **Update search functionality**    | `src/utils/db/index.ts` (search), `src/utils/atoms/conversations.ts`     |
+| **Modify sync behavior**           | `src/utils/sync/`                                                        |
+| **Update conversation manager UI** | `src/components/ConversationsManager.tsx`                                |
+| **Change popup UI**                | `src/entrypoints/popup/App.tsx`                                          |
+| **Change manage page UI**          | `src/entrypoints/manage/App.tsx`                                         |
+| **Modify dev workflow**            | `scripts/dev-reload.ts`, `src/entrypoints/background/index.ts`           |
 
 ---
 

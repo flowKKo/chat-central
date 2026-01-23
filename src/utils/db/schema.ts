@@ -35,10 +35,13 @@ export class ChatCentralDB extends Dexie {
         messages: 'id, conversationId, createdAt',
       })
       .upgrade(async (tx) => {
-        await tx.table('conversations').toCollection().modify((conv) => {
-          if (!('detailStatus' in conv)) conv.detailStatus = 'none'
-          if (!('detailSyncedAt' in conv)) conv.detailSyncedAt = null
-        })
+        await tx
+          .table('conversations')
+          .toCollection()
+          .modify((conv) => {
+            if (!('detailStatus' in conv)) conv.detailStatus = 'none'
+            if (!('detailSyncedAt' in conv)) conv.detailSyncedAt = null
+          })
       })
 
     // Version 3: Add favorites support
@@ -48,18 +51,22 @@ export class ChatCentralDB extends Dexie {
         messages: 'id, conversationId, createdAt',
       })
       .upgrade(async (tx) => {
-        await tx.table('conversations').toCollection().modify((conv) => {
-          if (!('detailStatus' in conv)) conv.detailStatus = 'none'
-          if (!('detailSyncedAt' in conv)) conv.detailSyncedAt = null
-          if (!('isFavorite' in conv)) conv.isFavorite = false
-          if (!('favoriteAt' in conv)) conv.favoriteAt = null
-        })
+        await tx
+          .table('conversations')
+          .toCollection()
+          .modify((conv) => {
+            if (!('detailStatus' in conv)) conv.detailStatus = 'none'
+            if (!('detailSyncedAt' in conv)) conv.detailSyncedAt = null
+            if (!('isFavorite' in conv)) conv.isFavorite = false
+            if (!('favoriteAt' in conv)) conv.favoriteAt = null
+          })
       })
 
     // Version 4: Add sync-related fields and tables
     this.version(4)
       .stores({
-        conversations: 'id, platform, updatedAt, syncedAt, isFavorite, favoriteAt, dirty, deleted, modifiedAt, *tags',
+        conversations:
+          'id, platform, updatedAt, syncedAt, isFavorite, favoriteAt, dirty, deleted, modifiedAt, *tags',
         messages: 'id, conversationId, createdAt, dirty, deleted, modifiedAt',
         operationLog: 'id, entityType, entityId, timestamp, synced',
         syncState: 'id',
@@ -67,23 +74,29 @@ export class ChatCentralDB extends Dexie {
       })
       .upgrade(async (tx) => {
         // Add sync fields to conversations
-        await tx.table('conversations').toCollection().modify((conv) => {
-          if (!('syncVersion' in conv)) conv.syncVersion = 1
-          if (!('modifiedAt' in conv)) conv.modifiedAt = conv.updatedAt || Date.now()
-          if (!('dirty' in conv)) conv.dirty = false
-          if (!('deleted' in conv)) conv.deleted = false
-          if (!('deletedAt' in conv)) conv.deletedAt = null
-        })
+        await tx
+          .table('conversations')
+          .toCollection()
+          .modify((conv) => {
+            if (!('syncVersion' in conv)) conv.syncVersion = 1
+            if (!('modifiedAt' in conv)) conv.modifiedAt = conv.updatedAt || Date.now()
+            if (!('dirty' in conv)) conv.dirty = false
+            if (!('deleted' in conv)) conv.deleted = false
+            if (!('deletedAt' in conv)) conv.deletedAt = null
+          })
 
         // Add sync fields to messages
-        await tx.table('messages').toCollection().modify((msg) => {
-          if (!('syncVersion' in msg)) msg.syncVersion = 1
-          if (!('modifiedAt' in msg)) msg.modifiedAt = msg.createdAt || Date.now()
-          if (!('syncedAt' in msg)) msg.syncedAt = null
-          if (!('dirty' in msg)) msg.dirty = false
-          if (!('deleted' in msg)) msg.deleted = false
-          if (!('deletedAt' in msg)) msg.deletedAt = null
-        })
+        await tx
+          .table('messages')
+          .toCollection()
+          .modify((msg) => {
+            if (!('syncVersion' in msg)) msg.syncVersion = 1
+            if (!('modifiedAt' in msg)) msg.modifiedAt = msg.createdAt || Date.now()
+            if (!('syncedAt' in msg)) msg.syncedAt = null
+            if (!('dirty' in msg)) msg.dirty = false
+            if (!('deleted' in msg)) msg.deleted = false
+            if (!('deletedAt' in msg)) msg.deletedAt = null
+          })
 
         // Initialize sync state
         await tx.table('syncState').add({

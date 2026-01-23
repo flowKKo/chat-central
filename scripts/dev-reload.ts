@@ -16,24 +16,24 @@
  *   h, help           - Show help
  */
 
-import { WebSocketServer, WebSocket } from 'ws'
-import { spawn } from 'child_process'
-import * as readline from 'readline'
+import { spawn } from 'node:child_process'
+import * as readline from 'node:readline'
+import { WebSocket, WebSocketServer } from 'ws'
 
 const PORT = 3717
 const clients = new Set<WebSocket>()
 
 // ANSI colors
 const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m',
-  red: '\x1b[31m',
+  reset: '\x1B[0m',
+  bright: '\x1B[1m',
+  dim: '\x1B[2m',
+  green: '\x1B[32m',
+  yellow: '\x1B[33m',
+  blue: '\x1B[34m',
+  magenta: '\x1B[35m',
+  cyan: '\x1B[36m',
+  red: '\x1B[31m',
 }
 
 function log(message: string, color = colors.reset) {
@@ -52,7 +52,7 @@ function logError(message: string) {
   log(`[ERROR] ${message}`, colors.red)
 }
 
-function logCommand(message: string) {
+function _logCommand(message: string) {
   log(`> ${message}`, colors.yellow)
 }
 
@@ -92,11 +92,11 @@ function build(): Promise<boolean> {
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 
-    let stdout = ''
+    let _stdout = ''
     let stderr = ''
 
     child.stdout?.on('data', (data) => {
-      stdout += data.toString()
+      _stdout += data.toString()
     })
 
     child.stderr?.on('data', (data) => {

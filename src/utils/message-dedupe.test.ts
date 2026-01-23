@@ -19,10 +19,7 @@ describe('dedupeMessagesByContent', () => {
 
   it('renames message id when content differs', () => {
     const existing = new Map<string, Message>([['m1', { ...baseMessage }]])
-    const result = dedupeMessagesByContent(
-      [{ ...baseMessage, content: 'Different' }],
-      existing
-    )
+    const result = dedupeMessagesByContent([{ ...baseMessage, content: 'Different' }], existing)
     expect(result[0]?.id).toBe('m1_dup1')
   })
 
@@ -31,10 +28,7 @@ describe('dedupeMessagesByContent', () => {
       ['m1', { ...baseMessage }],
       ['m1_dup1', { ...baseMessage, id: 'm1_dup1' }],
     ])
-    const result = dedupeMessagesByContent(
-      [{ ...baseMessage, content: 'Different' }],
-      existing
-    )
+    const result = dedupeMessagesByContent([{ ...baseMessage, content: 'Different' }], existing)
     expect(result[0]?.id).toBe('m1_dup2')
   })
 })

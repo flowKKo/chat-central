@@ -16,16 +16,23 @@ export interface DBStats {
  * Get database statistics
  */
 export async function getDBStats(): Promise<DBStats> {
-  const [totalConversations, totalMessages, claudeCount, chatgptCount, geminiCount, oldest, newest] =
-    await Promise.all([
-      db.conversations.count(),
-      db.messages.count(),
-      db.conversations.where('platform').equals('claude').count(),
-      db.conversations.where('platform').equals('chatgpt').count(),
-      db.conversations.where('platform').equals('gemini').count(),
-      db.conversations.orderBy('createdAt').first(),
-      db.conversations.orderBy('createdAt').last(),
-    ])
+  const [
+    totalConversations,
+    totalMessages,
+    claudeCount,
+    chatgptCount,
+    geminiCount,
+    oldest,
+    newest,
+  ] = await Promise.all([
+    db.conversations.count(),
+    db.messages.count(),
+    db.conversations.where('platform').equals('claude').count(),
+    db.conversations.where('platform').equals('chatgpt').count(),
+    db.conversations.where('platform').equals('gemini').count(),
+    db.conversations.orderBy('createdAt').first(),
+    db.conversations.orderBy('createdAt').last(),
+  ])
 
   return {
     totalConversations,

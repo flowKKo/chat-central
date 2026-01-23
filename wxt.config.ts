@@ -8,12 +8,14 @@ export default defineConfig({
 
   manifest: ({ mode, browser }) => ({
     name: 'Chat Central',
-    description: 'Unified AI conversation manager - Track, search, and export your Claude, ChatGPT, and Gemini conversations',
+    description:
+      'Unified AI conversation manager - Track, search, and export your Claude, ChatGPT, and Gemini conversations',
     version: '0.1.0',
 
     // Chrome/Edge fixed dev ID (development environment)
     ...(mode === 'development' &&
-      (browser === 'chrome' || browser === 'edge') && {
+      (browser === 'chrome' || browser === 'edge') &&
+      {
         // Can generate fixed dev key later
       }),
 

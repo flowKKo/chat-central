@@ -1,10 +1,10 @@
-import type { Platform } from '@/types'
 import type { PlatformAdapter } from './types'
-import { claudeAdapter } from './claude'
 import { chatgptAdapter } from './chatgpt'
+import { claudeAdapter } from './claude'
 import { geminiAdapter } from './gemini'
+import type { Platform } from '@/types'
 
-export type { PlatformAdapter, CapturedResponse } from './types'
+export type { CapturedResponse, PlatformAdapter } from './types'
 
 /**
  * All Platform Adapters

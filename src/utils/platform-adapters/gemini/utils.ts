@@ -1,6 +1,6 @@
+import type { WalkHandlers } from './types'
 import { parseJsonSafe, findMaxTimestampInArray } from '../common'
 import { CONVERSATION_ID_RE, RESPONSE_ID_RE, RESPONSE_ID_SHORT_RE } from './constants'
-import type { WalkHandlers } from './types'
 
 /**
  * Normalize conversation ID by removing 'c_' prefix
@@ -21,8 +21,7 @@ export function isConversationId(value: unknown): value is string {
  */
 export function isResponseId(value: unknown): value is string {
   return (
-    typeof value === 'string' &&
-    (RESPONSE_ID_RE.test(value) || RESPONSE_ID_SHORT_RE.test(value))
+    typeof value === 'string' && (RESPONSE_ID_RE.test(value) || RESPONSE_ID_SHORT_RE.test(value))
   )
 }
 

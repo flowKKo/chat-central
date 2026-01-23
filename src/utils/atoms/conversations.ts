@@ -2,14 +2,14 @@ import { atom } from 'jotai'
 import { browser } from 'wxt/browser'
 import type { Conversation, Message, Platform, SearchFilters, SyncState } from '@/types'
 import {
-  getConversations,
-  getMessagesByConversationId,
-  getConversationCount,
-  getFavoriteConversationCount,
-  upsertMessages,
   deleteMessagesByConversationId,
+  getConversationCount,
+  getConversations,
+  getFavoriteConversationCount,
+  getMessagesByConversationId,
   searchConversationsWithMatches,
   type SearchResultWithMatches,
+  upsertMessages,
 } from '@/utils/db'
 
 // ============================================================================
@@ -271,7 +271,10 @@ export const performSearchAtom = atom(null, async (_get, set, query: string) => 
     // Store search state
     set(activeSearchQueryAtom, query)
     set(searchResultsAtom, results)
-    set(conversationsAtom, results.map((r) => r.conversation))
+    set(
+      conversationsAtom,
+      results.map((r) => r.conversation)
+    )
 
     // Disable pagination for search results
     set(paginationAtom, {
@@ -279,7 +282,6 @@ export const performSearchAtom = atom(null, async (_get, set, query: string) => 
       limit: results.length,
       hasMore: false,
     })
-
   } catch (e) {
     console.error('[ChatCentral] Failed to search:', e)
   } finally {

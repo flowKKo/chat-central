@@ -1,21 +1,21 @@
 import { useAtom } from 'jotai'
 import {
-  Cloud,
-  CloudOff,
-  RefreshCw,
   AlertCircle,
   CheckCircle,
-  Settings,
+  Cloud,
+  CloudOff,
   Loader2,
+  RefreshCw,
+  Settings,
 } from 'lucide-react'
 import {
-  syncUIStateAtom,
-  syncSettingsAtom,
-  syncStatusTextAtom,
-  triggerSyncAtom,
-  syncSettingsOpenAtom,
-  hasConflictsAtom,
   conflictResolverOpenAtom,
+  hasConflictsAtom,
+  syncSettingsAtom,
+  syncSettingsOpenAtom,
+  syncStatusTextAtom,
+  syncUIStateAtom,
+  triggerSyncAtom,
 } from '@/utils/atoms/sync'
 import { cn } from '@/utils/cn'
 
@@ -31,11 +31,11 @@ export function SyncStatusBar() {
   if (!settings.enabled) {
     return (
       <button
-        className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors cursor-pointer"
+        className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground"
         onClick={() => setSyncSettingsOpen(true)}
         title="Enable cloud sync"
       >
-        <CloudOff className="w-3.5 h-3.5" />
+        <CloudOff className="h-3.5 w-3.5" />
         <span>Sync off</span>
       </button>
     )
@@ -43,21 +43,21 @@ export function SyncStatusBar() {
 
   const getStatusIcon = () => {
     if (uiState.isSyncing) {
-      return <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+      return <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-400" />
     }
     if (!uiState.isOnline) {
-      return <CloudOff className="w-3.5 h-3.5 text-muted-foreground" />
+      return <CloudOff className="h-3.5 w-3.5 text-muted-foreground" />
     }
     if (uiState.lastError) {
-      return <AlertCircle className="w-3.5 h-3.5 text-red-400" />
+      return <AlertCircle className="h-3.5 w-3.5 text-red-400" />
     }
     if (hasConflicts) {
-      return <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+      return <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
     }
     if (uiState.pendingChanges > 0) {
-      return <Cloud className="w-3.5 h-3.5 text-blue-400" />
+      return <Cloud className="h-3.5 w-3.5 text-blue-400" />
     }
-    return <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+    return <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
   }
 
   const getStatusColor = () => {
@@ -73,10 +73,7 @@ export function SyncStatusBar() {
     <div className="flex items-center gap-1">
       {/* Status indicator */}
       <div
-        className={cn(
-          'flex items-center gap-1.5 text-xs',
-          getStatusColor()
-        )}
+        className={cn('flex items-center gap-1.5 text-xs', getStatusColor())}
         title={uiState.lastError ?? statusText}
       >
         {getStatusIcon()}
@@ -86,34 +83,37 @@ export function SyncStatusBar() {
       {/* Conflict badge */}
       {hasConflicts && (
         <button
-          className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-amber-500/20 text-amber-400 rounded-md hover:bg-amber-500/30 transition-colors cursor-pointer"
+          className="flex cursor-pointer items-center gap-1 rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium text-amber-400 transition-colors hover:bg-amber-500/30"
           onClick={() => setConflictResolverOpen(true)}
           title="Resolve conflicts"
         >
-          <AlertCircle className="w-3 h-3" />
+          <AlertCircle className="h-3 w-3" />
           <span>{uiState.pendingConflicts}</span>
         </button>
       )}
 
       {/* Sync button */}
       <button
-        className="p-1 hover:bg-muted/50 rounded-md transition-colors disabled:opacity-40 cursor-pointer"
+        className="cursor-pointer rounded-md p-1 transition-colors hover:bg-muted/50 disabled:opacity-40"
         onClick={() => triggerSync()}
         disabled={uiState.isSyncing || !uiState.isOnline}
         title="Sync now"
       >
         <RefreshCw
-          className={cn('w-3.5 h-3.5 text-muted-foreground', uiState.isSyncing && 'animate-spin text-blue-400')}
+          className={cn(
+            'h-3.5 w-3.5 text-muted-foreground',
+            uiState.isSyncing && 'animate-spin text-blue-400'
+          )}
         />
       </button>
 
       {/* Settings button */}
       <button
-        className="p-1 hover:bg-muted/50 rounded-md transition-colors cursor-pointer"
+        className="cursor-pointer rounded-md p-1 transition-colors hover:bg-muted/50"
         onClick={() => setSyncSettingsOpen(true)}
         title="Sync settings"
       >
-        <Settings className="w-3.5 h-3.5 text-muted-foreground" />
+        <Settings className="h-3.5 w-3.5 text-muted-foreground" />
       </button>
     </div>
   )

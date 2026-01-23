@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react'
 import { Download, Upload, Loader2, CheckCircle, AlertCircle, FileArchive } from 'lucide-react'
+import { useState, useRef } from 'react'
+import type { Platform } from '@/types'
+import { cn } from '@/utils/cn'
 import { exportData } from '@/utils/sync/export'
 import { importData, validateImportFile } from '@/utils/sync/import'
-import { cn } from '@/utils/cn'
-import type { Platform } from '@/types'
 
 interface ImportExportProps {
   className?: string
@@ -109,28 +109,28 @@ export function ImportExportActions({ className }: ImportExportProps) {
       <div className="flex items-center gap-3">
         {/* Export Button */}
         <button
-          className="flex items-center gap-2 px-4 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
           onClick={handleExport}
           disabled={isExporting}
         >
           {isExporting ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Download className="w-4 h-4" />
+            <Download className="h-4 w-4" />
           )}
           Export Data
         </button>
 
         {/* Import Button */}
         <button
-          className="flex items-center gap-2 px-4 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted disabled:opacity-50"
           onClick={handleImportClick}
           disabled={isImporting}
         >
           {isImporting ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <Upload className="w-4 h-4" />
+            <Upload className="h-4 w-4" />
           )}
           Import Data
         </button>
@@ -146,8 +146,8 @@ export function ImportExportActions({ className }: ImportExportProps) {
 
       {/* Export Error */}
       {exportError && (
-        <div className="flex items-center gap-2 p-3 text-sm bg-destructive/10 text-destructive rounded-md">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+        <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
           <span>{exportError}</span>
         </div>
       )}
@@ -156,17 +156,17 @@ export function ImportExportActions({ className }: ImportExportProps) {
       {importResult && (
         <div
           className={cn(
-            'p-3 rounded-md text-sm',
+            'rounded-md p-3 text-sm',
             importResult.success
               ? 'bg-green-100 text-green-800'
               : 'bg-destructive/10 text-destructive'
           )}
         >
-          <div className="flex items-center gap-2 mb-2">
+          <div className="mb-2 flex items-center gap-2">
             {importResult.success ? (
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle className="h-4 w-4" />
             ) : (
-              <AlertCircle className="w-4 h-4" />
+              <AlertCircle className="h-4 w-4" />
             )}
             <span className="font-medium">
               {importResult.success ? 'Import successful' : 'Import failed'}
@@ -175,19 +175,31 @@ export function ImportExportActions({ className }: ImportExportProps) {
 
           {importResult.success && (
             <ul className="space-y-1 text-xs">
-              <li>Conversations imported: {importResult.conversationsImported}</li>
-              <li>Messages imported: {importResult.messagesImported}</li>
+              <li>
+                Conversations imported:
+                {importResult.conversationsImported}
+              </li>
+              <li>
+                Messages imported:
+                {importResult.messagesImported}
+              </li>
               {importResult.conversationsSkipped > 0 && (
-                <li>Conversations skipped: {importResult.conversationsSkipped}</li>
+                <li>
+                  Conversations skipped:
+                  {importResult.conversationsSkipped}
+                </li>
               )}
               {importResult.messagesSkipped > 0 && (
-                <li>Messages skipped: {importResult.messagesSkipped}</li>
+                <li>
+                  Messages skipped:
+                  {importResult.messagesSkipped}
+                </li>
               )}
             </ul>
           )}
 
           {importResult.errors.length > 0 && (
-            <ul className="space-y-1 text-xs mt-2">
+            <ul className="mt-2 space-y-1 text-xs">
               {importResult.errors.map((error: string, i: number) => (
                 <li key={i}>{error}</li>
               ))}
@@ -242,23 +254,23 @@ export function ImportExportButtons() {
   return (
     <div className="flex items-center gap-1">
       <button
-        className="p-1.5 hover:bg-muted rounded-md transition-colors"
+        className="rounded-md p-1.5 transition-colors hover:bg-muted"
         onClick={handleExport}
         disabled={isExporting}
         title="Export data"
       >
         {isExporting ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <FileArchive className="w-4 h-4" />
+          <FileArchive className="h-4 w-4" />
         )}
       </button>
       <button
-        className="p-1.5 hover:bg-muted rounded-md transition-colors"
+        className="rounded-md p-1.5 transition-colors hover:bg-muted"
         onClick={() => fileInputRef.current?.click()}
         title="Import data"
       >
-        <Upload className="w-4 h-4" />
+        <Upload className="h-4 w-4" />
       </button>
       <input
         ref={fileInputRef}

@@ -65,7 +65,11 @@
   }
 
   html {
-    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-family:
+      'DM Sans',
+      system-ui,
+      -apple-system,
+      sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -75,7 +79,12 @@
   }
 
   /* Headings use Space Grotesk */
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Space Grotesk', system-ui, sans-serif;
   }
 }
@@ -83,7 +92,7 @@
 @layer utilities {
   /* Glass Effect Utilities */
   .glass {
-    @apply bg-white/80 dark:bg-white/5 backdrop-blur-xl;
+    @apply bg-white/80 backdrop-blur-xl dark:bg-white/5;
   }
 
   .glass-border {
@@ -137,7 +146,7 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30 rounded-full;
+    @apply rounded-full bg-muted-foreground/30;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
@@ -175,8 +184,12 @@
   }
 
   @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   /* Hover lift effect */
@@ -197,15 +210,15 @@
 
 /* Skeleton loading animation */
 .skeleton {
-  @apply bg-muted/50 animate-pulse rounded;
+  @apply animate-pulse rounded bg-muted/50;
 }
 
 .skeleton-text {
-  @apply h-4 skeleton;
+  @apply skeleton h-4;
 }
 
 .skeleton-avatar {
-  @apply w-8 h-8 skeleton rounded-xl;
+  @apply skeleton h-8 w-8 rounded-xl;
 }
 
 /* Subtle noise texture overlay */
@@ -234,7 +247,7 @@
 
 /* Platform icon styles */
 .platform-icon {
-  @apply w-5 h-5 object-contain;
+  @apply h-5 w-5 object-contain;
 }
 
 /* Keyboard focus styles */
@@ -244,7 +257,7 @@
 
 /* Interactive card */
 .interactive-card {
-  @apply transition-all duration-200 cursor-pointer;
+  @apply cursor-pointer transition-all duration-200;
 }
 
 .interactive-card:hover {
@@ -269,8 +282,12 @@
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Respect reduced motion */

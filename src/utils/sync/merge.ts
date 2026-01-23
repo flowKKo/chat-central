@@ -1,5 +1,5 @@
+import type { MergeResult, MergeStrategy, SyncFields } from './types'
 import type { Conversation, Message } from '@/types'
-import type { MergeStrategy, MergeResult, SyncFields } from './types'
 
 // ============================================================================
 // Merge Strategy Configuration
@@ -71,7 +71,14 @@ export function mergeRecords(
   const allKeys = new Set([...Object.keys(local), ...Object.keys(remote)])
 
   // Fields to skip (internal/derived)
-  const skipFields = new Set(['id', 'platform', 'originalId', 'conversationId', 'createdAt', '_raw'])
+  const skipFields = new Set([
+    'id',
+    'platform',
+    'originalId',
+    'conversationId',
+    'createdAt',
+    '_raw',
+  ])
 
   for (const key of allKeys) {
     if (skipFields.has(key)) {
@@ -164,10 +171,7 @@ export function mergeConversation(
 /**
  * Merge a message with remote version
  */
-export function mergeMessage(
-  local: Message,
-  remote: Message
-): MergeResult & { message: Message } {
+export function mergeMessage(local: Message, remote: Message): MergeResult & { message: Message } {
   const result = mergeRecords(
     local as unknown as SyncRecord,
     remote as unknown as SyncRecord,
@@ -202,10 +206,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
     const bKeys = Object.keys(b as Record<string, unknown>)
     if (aKeys.length !== bKeys.length) return false
     return aKeys.every((key) =>
-      deepEqual(
-        (a as Record<string, unknown>)[key],
-        (b as Record<string, unknown>)[key]
-      )
+      deepEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])
     )
   }
 
@@ -227,7 +228,7 @@ function arrayUnion(a: unknown, b: unknown): unknown[] {
 function toNumber(val: unknown): number {
   if (typeof val === 'number') return val
   if (typeof val === 'string') {
-    const parsed = parseFloat(val)
+    const parsed = Number.parseFloat(val)
     return isNaN(parsed) ? 0 : parsed
   }
   return 0
@@ -260,7 +261,14 @@ export function hasConflicts(
 ): string[] {
   const conflicts: string[] = []
   const allKeys = new Set([...Object.keys(local), ...Object.keys(remote)])
-  const skipFields = new Set(['id', 'platform', 'originalId', 'conversationId', 'createdAt', '_raw'])
+  const skipFields = new Set([
+    'id',
+    'platform',
+    'originalId',
+    'conversationId',
+    'createdAt',
+    '_raw',
+  ])
 
   for (const key of allKeys) {
     if (skipFields.has(key)) continue

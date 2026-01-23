@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { MessageBubble } from './MessageBubble'
 import type { Message } from '@/types'
+import { render, screen } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { MessageBubble } from './MessageBubble'
 
-describe('MessageBubble', () => {
+describe('messageBubble', () => {
   const createMessage = (overrides: Partial<Message> = {}): Message => ({
     id: 'msg_1',
     conversationId: 'conv_1',
@@ -50,7 +50,7 @@ describe('MessageBubble', () => {
     render(<MessageBubble message={message} platformColor="#0ea5e9" />)
 
     // Time should be displayed (format depends on locale)
-    const timeElement = screen.getByText(/\d{1,2}:\d{2}/i)
+    const timeElement = screen.getByText(/\d{1,2}:\d{2}/)
     expect(timeElement).toBeInTheDocument()
   })
 })

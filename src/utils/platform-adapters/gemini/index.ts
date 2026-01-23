@@ -1,9 +1,9 @@
-import type { Conversation, Message } from '@/types'
 import type { PlatformAdapter } from '../types'
 import { API_PATTERNS, GEMINI_APP_URL } from './constants'
-import { getPayloadSources } from './payload'
-import { parseConversationListPayload } from './list'
 import { parseConversationDetailPayload } from './detail'
+import { parseConversationListPayload } from './list'
+import { getPayloadSources } from './payload'
+import type { Conversation, Message } from '@/types'
 
 export const geminiAdapter: PlatformAdapter = {
   platform: 'gemini',
@@ -60,12 +60,8 @@ export const geminiAdapter: PlatformAdapter = {
       messageMap.set(message.id, { ...existing, ...message, content, createdAt })
     }
 
-    const mergeConversationMeta = (
-      current: Conversation,
-      incoming: Conversation
-    ): Conversation => {
-      const title =
-        current.title.length >= incoming.title.length ? current.title : incoming.title
+    const mergeConversationMeta = (current: Conversation, incoming: Conversation): Conversation => {
+      const title = current.title.length >= incoming.title.length ? current.title : incoming.title
       return {
         ...current,
         ...incoming,

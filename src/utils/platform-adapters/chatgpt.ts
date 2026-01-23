@@ -1,6 +1,6 @@
-import type { Conversation, Message } from '@/types'
 import type { PlatformAdapter } from './types'
 import { parseJsonIfString, parseSseData } from './helpers'
+import type { Conversation, Message } from '@/types'
 
 /**
  * ChatGPT API Endpoint Patterns
@@ -110,7 +110,9 @@ export const chatgptAdapter: PlatformAdapter = {
       .filter((c): c is Conversation => c !== null)
   },
 
-  parseConversationDetail(data: unknown): { conversation: Conversation; messages: Message[] } | null {
+  parseConversationDetail(
+    data: unknown
+  ): { conversation: Conversation; messages: Message[] } | null {
     // ChatGPT conversation detail format
     // { title, create_time, update_time, mapping: { [node_id]: { message, parent, children } }, ... }
     const parsed = parseJsonIfString(data)
@@ -120,13 +122,13 @@ export const chatgptAdapter: PlatformAdapter = {
     }
 
     let item = parsed as any
-    
+
     // Handle streaming data
     if (item.isStream && Array.isArray(item.events)) {
       // Find full state containing mapping in events
       // Usually the last event containing mapping
       const eventWithMapping = [...item.events].reverse().find((e: any) => e && e.mapping)
-      
+
       if (eventWithMapping) {
         item = eventWithMapping
       } else {
@@ -218,7 +220,10 @@ export const chatgptAdapter: PlatformAdapter = {
     return { conversation, messages }
   },
 
-  parseStreamResponse(data: unknown, url: string): { conversation: Conversation; messages: Message[] } | null {
+  parseStreamResponse(
+    data: unknown,
+    url: string
+  ): { conversation: Conversation; messages: Message[] } | null {
     let raw = ''
     if (typeof data === 'string') {
       raw = data

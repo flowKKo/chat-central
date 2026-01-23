@@ -1,5 +1,5 @@
-import { defineContentScript } from 'wxt/sandbox'
 import { browser } from 'wxt/browser'
+import { defineContentScript } from 'wxt/sandbox'
 import { getPlatformFromHost } from '@/utils/platform-adapters'
 
 /**

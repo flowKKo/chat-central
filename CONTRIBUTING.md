@@ -41,6 +41,7 @@ pnpm dev:reload
 ```
 
 Commands:
+
 - `r` or `Enter` - Build and reload extension
 - `b` - Build only
 - `s` - Show connection status
@@ -75,6 +76,47 @@ pnpm test:watch        # Interactive mode
 pnpm type-check        # TypeScript check
 pnpm lint              # ESLint
 pnpm lint:fix          # Auto-fix lint issues
+pnpm format            # Format with Prettier
+pnpm format:check      # Check formatting
+pnpm validate          # Run all checks (type-check + lint + test)
+```
+
+### Pre-commit Hooks
+
+This project uses [Husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/okonet/lint-staged) for automated checks:
+
+- **pre-commit**: Runs ESLint and Prettier on staged files
+- **commit-msg**: Validates commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
+
+#### Commit Message Format
+
+```
+<type>(<scope>): <subject>
+
+[optional body]
+
+[optional footer]
+```
+
+**Types:**
+
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation
+- `style`: Formatting (no code change)
+- `refactor`: Code refactoring
+- `perf`: Performance improvement
+- `test`: Adding tests
+- `chore`: Maintenance
+- `ci`: CI/CD changes
+- `build`: Build system changes
+
+**Examples:**
+
+```bash
+git commit -m "feat: add conversation export to markdown"
+git commit -m "fix: resolve search highlight flicker"
+git commit -m "docs: update API documentation"
 ```
 
 ## Project Structure
@@ -166,27 +208,27 @@ AI Platform → Interceptor → Background → IndexedDB → UI
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Run tests and linting:
+4. Run validation (or let pre-commit hooks handle it):
    ```bash
-   pnpm test
-   pnpm type-check
-   pnpm lint
-   pnpm build
+   pnpm validate  # Runs type-check + lint + test
+   pnpm build     # Ensure it builds
    ```
-5. Commit your changes
+5. Commit your changes (follow conventional commits format)
 6. Push to your fork
 7. Open a Pull Request
 
+The pre-commit hooks will automatically run ESLint and Prettier on your staged files.
+
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Build errors | Clear `.output/` and `.wxt/`, run `pnpm install` |
-| HMR not working | Reload extension in `chrome://extensions` or use `pnpm dev:reload` |
-| Type errors | Run `pnpm type-check` |
-| Interception not working | Check console in page context (not extension context) |
-| Theme not applying | Verify `ThemeProvider` wraps the app |
-| Dev reload not connecting | Ensure `pnpm dev:reload` is running on port 3717 |
+| Issue                     | Solution                                                           |
+| ------------------------- | ------------------------------------------------------------------ |
+| Build errors              | Clear `.output/` and `.wxt/`, run `pnpm install`                   |
+| HMR not working           | Reload extension in `chrome://extensions` or use `pnpm dev:reload` |
+| Type errors               | Run `pnpm type-check`                                              |
+| Interception not working  | Check console in page context (not extension context)              |
+| Theme not applying        | Verify `ThemeProvider` wraps the app                               |
+| Dev reload not connecting | Ensure `pnpm dev:reload` is running on port 3717                   |
 
 ## Questions?
 

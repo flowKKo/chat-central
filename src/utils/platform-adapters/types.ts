@@ -10,37 +10,42 @@ export interface PlatformAdapter {
   /**
    * Check if the URL is an API endpoint that needs to be intercepted
    */
-  shouldCapture(url: string): boolean
+  shouldCapture: (url: string) => boolean
 
   /**
    * Determine if it is a conversation list or conversation detail
    */
-  getEndpointType(url: string): 'list' | 'detail' | 'stream' | 'unknown'
+  getEndpointType: (url: string) => 'list' | 'detail' | 'stream' | 'unknown'
 
   /**
    * Parse conversation list API response
    */
-  parseConversationList(data: unknown): Conversation[]
+  parseConversationList: (data: unknown) => Conversation[]
 
   /**
    * Parse single conversation detail API response
    */
-  parseConversationDetail(data: unknown): { conversation: Conversation; messages: Message[] } | null
+  parseConversationDetail: (
+    data: unknown
+  ) => { conversation: Conversation; messages: Message[] } | null
 
   /**
    * Parse streaming response (SSE / batchexecute etc.)
    */
-  parseStreamResponse?(data: unknown, url: string): { conversation: Conversation; messages: Message[] } | null
+  parseStreamResponse?: (
+    data: unknown,
+    url: string
+  ) => { conversation: Conversation; messages: Message[] } | null
 
   /**
    * Extract conversation ID from URL
    */
-  extractConversationId(url: string): string | null
+  extractConversationId: (url: string) => string | null
 
   /**
    * Generate conversation URL
    */
-  buildConversationUrl(originalId: string): string
+  buildConversationUrl: (originalId: string) => string
 }
 
 /**

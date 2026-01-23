@@ -36,7 +36,7 @@ export function registerContextMenus() {
 /**
  * Handle context menu click
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line ts/no-explicit-any
 export async function handleContextMenuClick(info: any, tab?: any) {
   if (info.menuItemId !== FAVORITE_MENU_ID) return
   const result = await toggleFavoriteFromTab(tab)
@@ -48,7 +48,7 @@ export async function handleContextMenuClick(info: any, tab?: any) {
 /**
  * Handle context menu shown - update menu title based on favorite status
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line ts/no-explicit-any
 export async function handleContextMenuShown(_info: any, tab?: any) {
   if (!tab?.url) return
 

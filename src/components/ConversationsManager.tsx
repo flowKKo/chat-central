@@ -1,13 +1,8 @@
-import { useEffect, useState, useRef, useMemo } from 'react'
 import { useAtom } from 'jotai'
-import {
-  Search,
-  RefreshCw,
-  Filter,
-  MessageSquare,
-  ChevronDown,
-  X,
-} from 'lucide-react'
+import { ChevronDown, Filter, MessageSquare, RefreshCw, Search, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ConversationDetail, ConversationListItem, ConversationListSkeleton } from './conversations'
+import { PLATFORM_CONFIG, type Platform } from '@/types'
 import {
   conversationsAtom,
   loadConversationsAtom,
@@ -28,20 +23,12 @@ import {
   activeSearchQueryAtom,
   searchResultsAtom,
 } from '@/utils/atoms'
-import { PLATFORM_CONFIG, type Platform } from '@/types'
 import { cn } from '@/utils/cn'
 import { filterAndSortConversations } from '@/utils/filters'
-import {
-  ConversationListItem,
-  ConversationDetail,
-  ConversationListSkeleton,
-} from './conversations'
 
 export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 'favorites' }) {
   const isFavorites = mode === 'favorites'
-  const [conversations] = useAtom(
-    isFavorites ? favoritesConversationsAtom : conversationsAtom
-  )
+  const [conversations] = useAtom(isFavorites ? favoritesConversationsAtom : conversationsAtom)
   const [counts] = useAtom(isFavorites ? favoriteCountsAtom : conversationCountsAtom)
   const [, loadConversations] = useAtom(isFavorites ? loadFavoritesAtom : loadConversationsAtom)
   const [selectedConversation] = useAtom(selectedConversationAtom)
@@ -102,15 +89,16 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
 
   // Use shared filtering and sorting utilities
   const sortedConversations = useMemo(
-    () => filterAndSortConversations(
-      conversations,
-      {
-        platform: selectedPlatform,
-        // Only apply local search filter in favorites mode (full search handled by atoms)
-        searchQuery: isFavorites ? searchQuery : undefined,
-      },
-      { byFavoriteTime: isFavorites }
-    ),
+    () =>
+      filterAndSortConversations(
+        conversations,
+        {
+          platform: selectedPlatform,
+          // Only apply local search filter in favorites mode (full search handled by atoms)
+          searchQuery: isFavorites ? searchQuery : undefined,
+        },
+        { byFavoriteTime: isFavorites }
+      ),
     [conversations, selectedPlatform, isFavorites, searchQuery]
   )
   const filteredConversations = sortedConversations
@@ -122,7 +110,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
     <div className="h-full">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-heading font-bold tracking-tight mb-1">{pageTitle}</h1>
+        <h1 className="mb-1 font-heading text-2xl font-bold tracking-tight">{pageTitle}</h1>
         <p className="text-sm text-muted-foreground">
           {isFavorites
             ? 'Your starred conversations for quick access'
@@ -130,29 +118,31 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
         </p>
       </div>
 
-      <div className="flex gap-6 h-[calc(100vh-180px)]">
+      <div className="flex h-[calc(100vh-180px)] gap-6">
         {/* Left: Conversation List */}
-        <div className="w-[380px] flex-shrink-0 flex flex-col">
+        <div className="flex w-[380px] flex-shrink-0 flex-col">
           {/* Search and Filters */}
-          <div className="space-y-3 mb-4">
+          <div className="mb-4 space-y-3">
             <div className="relative">
-              <label htmlFor="manage-search" className="sr-only">Search conversations</label>
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <label htmlFor="manage-search" className="sr-only">
+                Search conversations
+              </label>
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 id="manage-search"
                 type="text"
                 placeholder="Search conversations..."
-                className="w-full pl-10 pr-8 py-2.5 bg-muted/50 border border-border rounded-xl text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+                className="w-full rounded-xl border border-border bg-muted/50 py-2.5 pl-10 pr-8 text-sm transition-all placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               {searchQuery && (
                 <button
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-muted transition-colors cursor-pointer"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1 transition-colors hover:bg-muted"
                   onClick={() => setSearchQuery('')}
                   aria-label="Clear search"
                 >
-                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
               )}
             </div>
@@ -161,14 +151,14 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
               {/* Platform Filter Dropdown */}
               <div className="relative flex-1" ref={filterRef}>
                 <button
-                  className="w-full flex items-center justify-between px-3 py-2 bg-muted/50 border border-border rounded-xl text-sm hover:bg-muted/80 transition-colors cursor-pointer kbd-focus"
+                  className="kbd-focus flex w-full cursor-pointer items-center justify-between rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm transition-colors hover:bg-muted/80"
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                   aria-haspopup="listbox"
                   aria-expanded={isFilterOpen}
                   aria-label="Filter by platform"
                 >
                   <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-muted-foreground" />
+                    <Filter className="h-4 w-4 text-muted-foreground" />
                     <span>
                       {selectedPlatform === 'all'
                         ? `All Platforms (${counts.total})`
@@ -177,7 +167,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                   </div>
                   <ChevronDown
                     className={cn(
-                      'w-4 h-4 text-muted-foreground transition-transform duration-200',
+                      'h-4 w-4 text-muted-foreground transition-transform duration-200',
                       isFilterOpen && 'rotate-180'
                     )}
                   />
@@ -186,13 +176,13 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                 {isFilterOpen && (
                   <div
                     role="listbox"
-                    className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-10 overflow-hidden animate-scale-in"
+                    className="absolute left-0 right-0 top-full z-10 mt-1 animate-scale-in overflow-hidden rounded-xl border border-border bg-card shadow-lg"
                   >
                     <button
                       role="option"
                       aria-selected={selectedPlatform === 'all'}
                       className={cn(
-                        'w-full px-3 py-2.5 text-sm text-left hover:bg-muted/80 transition-colors cursor-pointer',
+                        'w-full cursor-pointer px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80',
                         selectedPlatform === 'all' && 'bg-primary/10 text-primary'
                       )}
                       onClick={() => {
@@ -208,7 +198,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                         role="option"
                         aria-selected={selectedPlatform === platform}
                         className={cn(
-                          'w-full px-3 py-2.5 text-sm text-left hover:bg-muted/80 transition-colors cursor-pointer flex items-center gap-2',
+                          'flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80',
                           selectedPlatform === platform && 'bg-primary/10 text-primary'
                         )}
                         onClick={() => {
@@ -217,7 +207,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                         }}
                       >
                         <span
-                          className="w-2.5 h-2.5 rounded-full"
+                          className="h-2.5 w-2.5 rounded-full"
                           style={{ backgroundColor: PLATFORM_CONFIG[platform].color }}
                         />
                         {PLATFORM_CONFIG[platform].name} ({counts[platform]})
@@ -229,26 +219,30 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
 
               <button
                 className={cn(
-                  'p-2.5 border border-border rounded-xl hover:bg-muted/80 transition-all cursor-pointer kbd-focus',
+                  'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
                   isLoading && 'animate-pulse'
                 )}
                 onClick={() => loadConversations({ reset: true })}
                 aria-label="Refresh conversations"
               >
-                <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+                <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
               </button>
             </div>
           </div>
 
           {/* Conversation List */}
-          <div className="flex-1 border border-border rounded-2xl overflow-hidden bg-card/30">
-            <div className="h-full overflow-y-auto scrollbar-thin" role="list" aria-label="Conversation list">
+          <div className="flex-1 overflow-hidden rounded-2xl border border-border bg-card/30">
+            <div
+              className="scrollbar-thin h-full overflow-y-auto"
+              role="list"
+              aria-label="Conversation list"
+            >
               {isLoading && conversations.length === 0 ? (
                 <ConversationListSkeleton />
               ) : filteredConversations.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
-                    <MessageSquare className="w-5 h-5 text-muted-foreground/50" />
+                <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50">
+                    <MessageSquare className="h-5 w-5 text-muted-foreground/50" />
                   </div>
                   <p className="text-sm text-muted-foreground">{emptyLabel}</p>
                 </div>
@@ -279,13 +273,13 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
           {pagination.hasMore && (
             <div className="mt-3">
               <button
-                className="w-full px-4 py-2.5 text-sm font-medium text-muted-foreground border border-dashed border-border rounded-xl hover:bg-muted/50 hover:text-foreground transition-colors disabled:opacity-50 cursor-pointer kbd-focus"
+                className="kbd-focus w-full cursor-pointer rounded-xl border border-dashed border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
                 onClick={() => loadConversations()}
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="w-3 h-3 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
                     Loading...
                   </span>
                 ) : (
@@ -297,7 +291,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
         </div>
 
         {/* Right: Detail View */}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           {selectedConversation ? (
             <ConversationDetail
               conversation={selectedConversation}
@@ -305,11 +299,11 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
               searchQuery={activeSearchQuery}
             />
           ) : (
-            <div className="h-full border border-dashed border-border rounded-2xl flex flex-col items-center justify-center text-muted-foreground bg-muted/10">
-              <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
-                <MessageSquare className="w-7 h-7 text-muted-foreground/40" />
+            <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/10 text-muted-foreground">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50">
+                <MessageSquare className="h-7 w-7 text-muted-foreground/40" />
               </div>
-              <p className="text-sm font-medium mb-1">Select a conversation</p>
+              <p className="mb-1 text-sm font-medium">Select a conversation</p>
               <p className="text-xs text-muted-foreground/60">
                 Choose from the list to view details
               </p>

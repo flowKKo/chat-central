@@ -1,8 +1,8 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import type { CloudSyncStatus, SyncConflict, ConflictRecord } from '@/utils/sync/types'
-import { toSyncConflict } from '@/utils/sync/types'
 import { syncManager, type SyncManagerState } from '@/utils/sync/manager'
+import { toSyncConflict } from '@/utils/sync/types'
 
 // ============================================================================
 // Storage Keys
@@ -241,7 +241,10 @@ export const initializeSyncAtom = atom(null, async (get, set) => {
         status_changed: { status: data as CloudSyncStatus },
         sync_started: { isSyncing: true },
         sync_completed: { isSyncing: false, lastSyncAt: Date.now(), lastError: null },
-        sync_failed: { isSyncing: false, lastError: (data as { message?: string })?.message ?? 'Sync failed' },
+        sync_failed: {
+          isSyncing: false,
+          lastError: (data as { message?: string })?.message ?? 'Sync failed',
+        },
         online_changed: { isOnline: data as boolean },
       }
 

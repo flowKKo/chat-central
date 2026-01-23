@@ -197,7 +197,12 @@ export const DEFAULT_CONFIG: Config = {
 
 export type BackgroundMessage =
   | { action: 'CAPTURE_CONVERSATION'; platform: Platform; endpoint: string; payload: unknown }
-  | { action: 'UPDATE_CONVERSATION'; platform: Platform; conversationId: string; messages: Message[] }
+  | {
+      action: 'UPDATE_CONVERSATION'
+      platform: Platform
+      conversationId: string
+      messages: Message[]
+    }
   | { action: 'GET_CONVERSATIONS'; filters?: SearchFilters }
   | { action: 'SEARCH'; query: string; filters?: SearchFilters }
   | { action: 'EXPORT'; options: ExportOptions }

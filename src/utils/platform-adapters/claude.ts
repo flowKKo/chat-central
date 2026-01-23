@@ -1,5 +1,5 @@
-import type { Conversation, Message } from '@/types'
 import type { PlatformAdapter } from './types'
+import type { Conversation, Message } from '@/types'
 import { parseJsonIfString, parseSseData } from './helpers'
 
 /**
@@ -15,7 +15,8 @@ const API_PATTERNS = {
   // Match conversation detail (exclude completion etc. subpaths)
   detail: /\/api\/organizations\/[^/]+\/chat_conversations\/([a-f0-9-]+)\/?(?:\?.*)?$/,
   // Match conversation messages endpoint
-  detailMessages: /\/api\/organizations\/[^/]+\/chat_conversations\/([a-f0-9-]+)\/messages(?:\?.*)?$/,
+  detailMessages:
+    /\/api\/organizations\/[^/]+\/chat_conversations\/([a-f0-9-]+)\/messages(?:\?.*)?$/,
   // Match message stream
   stream: /\/api\/organizations\/[^/]+\/chat_conversations\/([a-f0-9-]+)\/completion(?:\?.*)?$/,
 }
@@ -130,10 +131,7 @@ export const claudeAdapter: PlatformAdapter = {
   platform: 'claude',
 
   shouldCapture(url: string): boolean {
-    return (
-      url.includes('/api/organizations/') &&
-      url.includes('/chat_conversations')
-    )
+    return url.includes('/api/organizations/') && url.includes('/chat_conversations')
   },
 
   getEndpointType(url: string): 'list' | 'detail' | 'stream' | 'unknown' {
@@ -188,7 +186,9 @@ export const claudeAdapter: PlatformAdapter = {
       .filter((c): c is Conversation => c !== null)
   },
 
-  parseConversationDetail(data: unknown): { conversation: Conversation; messages: Message[] } | null {
+  parseConversationDetail(
+    data: unknown
+  ): { conversation: Conversation; messages: Message[] } | null {
     // Claude conversation detail format
     // { uuid, name, created_at, updated_at, chat_messages: [...] }
     const parsed = parseJsonIfString(data)
@@ -242,10 +242,10 @@ export const claudeAdapter: PlatformAdapter = {
         const createdAt = msg?.created_at
           ? new Date(msg.created_at).getTime()
           : msg?.createdAt
-          ? new Date(msg.createdAt).getTime()
-          : msg?.timestamp
-          ? new Date(msg.timestamp).getTime()
-          : now
+            ? new Date(msg.createdAt).getTime()
+            : msg?.timestamp
+              ? new Date(msg.timestamp).getTime()
+              : now
 
         minCreatedAt = Math.min(minCreatedAt, createdAt)
         maxCreatedAt = Math.max(maxCreatedAt, createdAt)
@@ -272,14 +272,14 @@ export const claudeAdapter: PlatformAdapter = {
     const createdAt = base?.created_at
       ? new Date(base.created_at).getTime()
       : base?.createdAt
-      ? new Date(base.createdAt).getTime()
-      : minCreatedAt || now
+        ? new Date(base.createdAt).getTime()
+        : minCreatedAt || now
 
     const updatedAt = base?.updated_at
       ? new Date(base.updated_at).getTime()
       : base?.updatedAt
-      ? new Date(base.updatedAt).getTime()
-      : maxCreatedAt || createdAt
+        ? new Date(base.updatedAt).getTime()
+        : maxCreatedAt || createdAt
 
     const conversation: Conversation = {
       id: `claude_${originalId}`,
@@ -311,7 +311,10 @@ export const claudeAdapter: PlatformAdapter = {
     return { conversation, messages }
   },
 
-  parseStreamResponse(data: unknown, url: string): { conversation: Conversation; messages: Message[] } | null {
+  parseStreamResponse(
+    data: unknown,
+    url: string
+  ): { conversation: Conversation; messages: Message[] } | null {
     let raw = ''
     if (typeof data === 'string') {
       raw = data
@@ -358,7 +361,10 @@ export const claudeAdapter: PlatformAdapter = {
 
       const chunk = extractClaudeContent(eventData)
       if (chunk) {
-        if (typeof eventData?.completion === 'string' || typeof eventData?.delta?.text === 'string') {
+        if (
+          typeof eventData?.completion === 'string' ||
+          typeof eventData?.delta?.text === 'string'
+        ) {
           content += chunk
         } else if (chunk.length > content.length) {
           content = chunk

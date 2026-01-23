@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   CaptureApiResponseSchema,
   GetConversationsSchema,
@@ -7,8 +7,8 @@ import {
   ToggleFavoriteSchema,
 } from './schemas'
 
-describe('Background Message Schemas', () => {
-  describe('CaptureApiResponseSchema', () => {
+describe('background Message Schemas', () => {
+  describe('captureApiResponseSchema', () => {
     it('should validate valid capture message', () => {
       const result = CaptureApiResponseSchema.safeParse({
         action: 'CAPTURE_API_RESPONSE',
@@ -49,7 +49,7 @@ describe('Background Message Schemas', () => {
     })
   })
 
-  describe('GetConversationsSchema', () => {
+  describe('getConversationsSchema', () => {
     it('should validate minimal message', () => {
       const result = GetConversationsSchema.safeParse({
         action: 'GET_CONVERSATIONS',
@@ -92,7 +92,7 @@ describe('Background Message Schemas', () => {
     })
   })
 
-  describe('GetMessagesSchema', () => {
+  describe('getMessagesSchema', () => {
     it('should validate valid message', () => {
       const result = GetMessagesSchema.safeParse({
         action: 'GET_MESSAGES',
@@ -117,7 +117,7 @@ describe('Background Message Schemas', () => {
     })
   })
 
-  describe('SearchSchema', () => {
+  describe('searchSchema', () => {
     it('should validate valid search message', () => {
       const result = SearchSchema.safeParse({
         action: 'SEARCH',
@@ -143,7 +143,7 @@ describe('Background Message Schemas', () => {
     })
   })
 
-  describe('ToggleFavoriteSchema', () => {
+  describe('toggleFavoriteSchema', () => {
     it('should validate minimal message', () => {
       const result = ToggleFavoriteSchema.safeParse({
         action: 'TOGGLE_FAVORITE',
