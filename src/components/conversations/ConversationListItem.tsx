@@ -90,8 +90,8 @@ export function ConversationListItem({
 
           {/* Show message match snippet if searching by message content */}
           {hasMessageMatch && searchQuery && (
-            <div className="mt-1.5 line-clamp-2 rounded-md bg-muted/50 px-2 py-1 text-xs text-muted-foreground">
-              <HighlightText text={messageMatch.text} query={searchQuery} maxLength={100} />
+            <div className="mt-1.5 line-clamp-2 border-l-2 border-muted-foreground/20 pl-2 text-xs text-muted-foreground">
+              <HighlightText text={messageMatch.text} query={searchQuery} maxLength={120} />
             </div>
           )}
         </div>

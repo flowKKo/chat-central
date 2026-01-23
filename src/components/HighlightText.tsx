@@ -7,6 +7,8 @@ interface HighlightTextProps {
   className?: string
   highlightClassName?: string
   maxLength?: number
+  /** Use gradient fade instead of ellipsis for truncation */
+  fadeEdges?: boolean
 }
 
 /**
@@ -18,54 +20,64 @@ export function HighlightText({
   className,
   highlightClassName = 'bg-amber-500/30 text-foreground rounded-sm px-0.5',
   maxLength,
+  fadeEdges = false,
 }: HighlightTextProps) {
-  const parts = useMemo(() => {
+  const { parts, hasTruncatedStart, hasTruncatedEnd } = useMemo(() => {
     if (!query.trim()) {
-      return [{ text: maxLength ? truncateText(text, maxLength) : text, highlight: false }]
+      const truncated = maxLength ? truncateText(text, maxLength) : text
+      return {
+        parts: [{ text: truncated, highlight: false }],
+        hasTruncatedStart: false,
+        hasTruncatedEnd: maxLength ? text.length > maxLength : false,
+      }
     }
 
     const lowerText = text.toLowerCase()
     const lowerQuery = query.toLowerCase()
     const result: { text: string; highlight: boolean }[] = []
 
-    let lastIndex = 0
     let matchIndex = lowerText.indexOf(lowerQuery)
 
     // If maxLength is set and match exists, center the text around the first match
     let displayText = text
-    let offset = 0
+    let truncatedStart = false
+    let truncatedEnd = false
+
     if (maxLength && matchIndex >= 0) {
-      const { text: truncated, offset: off } = truncateAroundMatch(
-        text,
-        matchIndex,
-        query.length,
-        maxLength
-      )
+      const {
+        text: truncated,
+        hasStart,
+        hasEnd,
+      } = truncateAroundMatch(text, matchIndex, query.length, maxLength, fadeEdges)
       displayText = truncated
-      offset = off
-      matchIndex = matchIndex - offset
+      truncatedStart = hasStart
+      truncatedEnd = hasEnd
+      // Recalculate match index in the truncated text
+      const lowerDisplayText = displayText.toLowerCase()
+      matchIndex = lowerDisplayText.indexOf(lowerQuery)
     } else if (maxLength) {
       displayText = truncateText(text, maxLength)
+      truncatedEnd = text.length > maxLength
     }
 
     const lowerDisplayText = displayText.toLowerCase()
-    lastIndex = 0
-    matchIndex = lowerDisplayText.indexOf(lowerQuery)
+    let lastIndex = 0
+    let currentMatchIndex = lowerDisplayText.indexOf(lowerQuery)
 
-    while (matchIndex !== -1) {
+    while (currentMatchIndex !== -1) {
       // Add text before match
-      if (matchIndex > lastIndex) {
-        result.push({ text: displayText.slice(lastIndex, matchIndex), highlight: false })
+      if (currentMatchIndex > lastIndex) {
+        result.push({ text: displayText.slice(lastIndex, currentMatchIndex), highlight: false })
       }
 
       // Add matched text
       result.push({
-        text: displayText.slice(matchIndex, matchIndex + query.length),
+        text: displayText.slice(currentMatchIndex, currentMatchIndex + query.length),
         highlight: true,
       })
 
-      lastIndex = matchIndex + query.length
-      matchIndex = lowerDisplayText.indexOf(lowerQuery, lastIndex)
+      lastIndex = currentMatchIndex + query.length
+      currentMatchIndex = lowerDisplayText.indexOf(lowerQuery, lastIndex)
     }
 
     // Add remaining text
@@ -73,8 +85,48 @@ export function HighlightText({
       result.push({ text: displayText.slice(lastIndex), highlight: false })
     }
 
-    return result
-  }, [text, query, maxLength])
+    return {
+      parts: result,
+      hasTruncatedStart: truncatedStart,
+      hasTruncatedEnd: truncatedEnd,
+    }
+  }, [text, query, maxLength, fadeEdges])
+
+  if (fadeEdges && (hasTruncatedStart || hasTruncatedEnd)) {
+    return (
+      <span className={cn('relative inline-flex items-center', className)}>
+        {hasTruncatedStart && (
+          <span
+            className="pointer-events-none absolute left-0 top-0 h-full w-8 bg-gradient-to-r from-inherit to-transparent"
+            style={{
+              background:
+                'linear-gradient(to right, var(--fade-color, rgb(var(--muted) / 0.5)), transparent)',
+            }}
+          />
+        )}
+        <span className="overflow-hidden">
+          {parts.map((part, index) =>
+            part.highlight ? (
+              <mark key={index} className={cn('font-medium', highlightClassName)}>
+                {part.text}
+              </mark>
+            ) : (
+              <span key={index}>{part.text}</span>
+            )
+          )}
+        </span>
+        {hasTruncatedEnd && (
+          <span
+            className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-inherit to-transparent"
+            style={{
+              background:
+                'linear-gradient(to left, var(--fade-color, rgb(var(--muted) / 0.5)), transparent)',
+            }}
+          />
+        )}
+      </span>
+    )
+  }
 
   return (
     <span className={className}>
@@ -100,15 +152,19 @@ function truncateAroundMatch(
   text: string,
   matchIndex: number,
   matchLength: number,
-  maxLength: number
-): { text: string; offset: number } {
+  maxLength: number,
+  fadeEdges: boolean
+): { text: string; hasStart: boolean; hasEnd: boolean } {
   if (text.length <= maxLength) {
-    return { text, offset: 0 }
+    return { text, hasStart: false, hasEnd: false }
   }
 
-  const padding = Math.floor((maxLength - matchLength) / 2)
-  let start = Math.max(0, matchIndex - padding)
-  let end = Math.min(text.length, matchIndex + matchLength + padding)
+  // Give more padding before the match for better context
+  const paddingBefore = Math.floor((maxLength - matchLength) * 0.4)
+  const paddingAfter = maxLength - matchLength - paddingBefore
+
+  let start = Math.max(0, matchIndex - paddingBefore)
+  let end = Math.min(text.length, matchIndex + matchLength + paddingAfter)
 
   // Adjust if we hit boundaries
   if (start === 0) {
@@ -117,16 +173,20 @@ function truncateAroundMatch(
     start = Math.max(0, text.length - maxLength)
   }
 
+  const hasStart = start > 0
+  const hasEnd = end < text.length
+
   let result = text.slice(start, end)
-  const offset = start
 
-  // Add ellipsis
-  if (start > 0) {
-    result = `...${result.slice(3)}`
-  }
-  if (end < text.length) {
-    result = `${result.slice(0, -3)}...`
+  // If not using fade edges, add ellipsis
+  if (!fadeEdges) {
+    if (hasStart) {
+      result = `...${result.slice(3)}`
+    }
+    if (hasEnd) {
+      result = `${result.slice(0, -3)}...`
+    }
   }
 
-  return { text: result, offset }
+  return { text: result, hasStart, hasEnd }
 }
