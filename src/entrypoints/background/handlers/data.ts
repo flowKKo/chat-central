@@ -1,0 +1,101 @@
+import type { Conversation, Message } from '@/types'
+import {
+  getConversations,
+  getMessagesByConversationId,
+  getDBStats,
+  getConversationById,
+  updateConversationFavorite,
+} from '@/utils/db'
+import {
+  GetConversationsSchema,
+  GetMessagesSchema,
+  SearchSchema,
+  ToggleFavoriteSchema,
+} from '../schemas'
+
+/**
+ * Get conversation list
+ */
+export async function handleGetConversations(
+  rawMessage: unknown
+): Promise<{ conversations: Conversation[] } | { error: string }> {
+  const parseResult = GetConversationsSchema.safeParse(rawMessage)
+  if (!parseResult.success) {
+    console.warn('[ChatCentral] Invalid get conversations message:', parseResult.error.message)
+    return { error: 'Invalid message format' }
+  }
+
+  const { platform, limit, offset } = parseResult.data
+  const conversations = await getConversations({ platform, limit, offset })
+  return { conversations }
+}
+
+/**
+ * Get conversation messages
+ */
+export async function handleGetMessages(
+  rawMessage: unknown
+): Promise<{ messages: Message[] } | { error: string }> {
+  const parseResult = GetMessagesSchema.safeParse(rawMessage)
+  if (!parseResult.success) {
+    console.warn('[ChatCentral] Invalid get messages request:', parseResult.error.message)
+    return { error: 'Invalid message format' }
+  }
+
+  const { conversationId } = parseResult.data
+  const messages = await getMessagesByConversationId(conversationId)
+  return { messages }
+}
+
+/**
+ * Get statistics
+ */
+export async function handleGetStats() {
+  const stats = await getDBStats()
+  return { stats }
+}
+
+/**
+ * Search conversations
+ */
+export async function handleSearch(
+  rawMessage: unknown
+): Promise<{ results: Conversation[] } | { error: string }> {
+  const parseResult = SearchSchema.safeParse(rawMessage)
+  if (!parseResult.success) {
+    console.warn('[ChatCentral] Invalid search message:', parseResult.error.message)
+    return { error: 'Invalid message format' }
+  }
+
+  // Simple implementation, can use MiniSearch for enhancement later
+  const { query } = parseResult.data
+  const conversations = await getConversations({ limit: 100 })
+
+  const lowerQuery = query.toLowerCase()
+  const results = conversations.filter(
+    (c) => c.title.toLowerCase().includes(lowerQuery) || c.preview.toLowerCase().includes(lowerQuery)
+  )
+
+  return { results }
+}
+
+/**
+ * Toggle favorite status
+ */
+export async function handleToggleFavorite(
+  rawMessage: unknown
+): Promise<{ success: boolean; conversation?: Conversation | null; error?: string }> {
+  const parseResult = ToggleFavoriteSchema.safeParse(rawMessage)
+  if (!parseResult.success) {
+    console.warn('[ChatCentral] Invalid toggle favorite message:', parseResult.error.message)
+    return { success: false, error: 'Invalid message format' }
+  }
+
+  const { conversationId, value } = parseResult.data
+  const existing = await getConversationById(conversationId)
+  if (!existing) return { success: false, conversation: null }
+
+  const next = typeof value === 'boolean' ? value : !existing.isFavorite
+  const updated = await updateConversationFavorite(conversationId, next)
+  return { success: !!updated, conversation: updated }
+}

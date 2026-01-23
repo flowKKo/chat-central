@@ -1,18 +1,4 @@
-/**
- * Database module - Re-exports all database operations
- *
- * This module provides backward compatibility by re-exporting from:
- * - schema.ts: Database class and instance
- * - repositories/*: CRUD operations
- * - search.ts: Search operations
- * - stats.ts: Statistics
- * - bulk.ts: Bulk operations
- */
-
-// Database schema and instance
-export { ChatCentralDB, db } from './schema'
-
-// Conversation operations
+// Conversation repository
 export {
   getConversations,
   getConversationById,
@@ -27,9 +13,9 @@ export {
   getDeletedConversations,
   permanentlyDeleteConversation,
   getAllConversationsForExport,
-} from './repositories/conversations'
+} from './conversations'
 
-// Message operations
+// Message repository
 export {
   getMessagesByConversationId,
   upsertMessages,
@@ -37,9 +23,9 @@ export {
   getExistingMessageIds,
   getMessagesByIds,
   getAllMessagesForExport,
-} from './repositories/messages'
+} from './messages'
 
-// Sync operations
+// Sync repository
 export {
   // Sync state
   getSyncState,
@@ -63,19 +49,4 @@ export {
   markMessageDirty,
   clearDirtyFlags,
   cleanupDeletedRecords,
-} from './repositories/sync'
-
-// Search operations
-export {
-  searchConversations,
-  searchConversationsAndMessages,
-  searchConversationsWithMatches,
-  searchMessages,
-  type SearchResultWithMatches,
-} from './search'
-
-// Statistics
-export { getDBStats, type DBStats } from './stats'
-
-// Bulk operations
-export { clearAllData, clearPlatformData } from './bulk'
+} from './sync'
