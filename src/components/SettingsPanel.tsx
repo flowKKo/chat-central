@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAtom } from 'jotai'
-import { Trash2, AlertTriangle, Database, Shield, Palette, Sun, Moon, Monitor } from 'lucide-react'
+import { Trash2, AlertTriangle, Database, Shield, Palette, Sun, Moon, Monitor, Lightbulb, Keyboard, Zap } from 'lucide-react'
 import { PLATFORM_CONFIG, type Platform } from '@/types'
 import { clearAllData, clearPlatformData } from '@/utils/db'
 import { themePreferenceAtom, type ThemePreference } from '@/utils/atoms/theme'
@@ -10,6 +10,24 @@ const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[
   { value: 'light', label: 'Light', icon: Sun },
   { value: 'dark', label: 'Dark', icon: Moon },
   { value: 'system', label: 'System', icon: Monitor },
+]
+
+const tips = [
+  {
+    icon: Keyboard,
+    title: 'Quick Search',
+    description: 'Press Cmd/Ctrl + K to quickly search conversations',
+  },
+  {
+    icon: Zap,
+    title: 'Auto Sync',
+    description: 'Conversations sync automatically when you visit AI platforms',
+  },
+  {
+    icon: Lightbulb,
+    title: 'Favorites',
+    description: 'Star important conversations for quick access later',
+  },
 ]
 
 export function SettingsPanel() {
@@ -56,7 +74,9 @@ export function SettingsPanel() {
         </p>
       </div>
 
-      <div className="max-w-2xl space-y-8">
+      <div className="flex gap-8">
+        {/* Main Settings - Left Column */}
+        <div className="flex-1 min-w-0 max-w-2xl space-y-8">
         {/* Appearance Section */}
         <section>
           <div className="flex items-center gap-2 mb-4">
@@ -189,6 +209,51 @@ export function SettingsPanel() {
             </p>
           </div>
         </section>
+        </div>
+
+        {/* Tips Sidebar - Right Column */}
+        <div className="hidden xl:block w-72 flex-shrink-0">
+          <div className="sticky top-6">
+            <div className="p-5 bg-card/50 border border-border rounded-2xl">
+              <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-amber-400" />
+                Tips & Shortcuts
+              </h3>
+              <div className="space-y-4">
+                {tips.map((tip) => (
+                  <div key={tip.title} className="flex gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <tip.icon className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium mb-0.5">{tip.title}</h4>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{tip.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Keyboard Shortcuts */}
+            <div className="mt-4 p-5 bg-card/50 border border-border rounded-2xl">
+              <h3 className="font-heading font-semibold mb-4">Keyboard Shortcuts</h3>
+              <div className="space-y-2.5 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Search</span>
+                  <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">Cmd + K</kbd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">New Tab</span>
+                  <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">Cmd + T</kbd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Toggle Favorite</span>
+                  <kbd className="px-2 py-0.5 bg-muted rounded text-xs font-mono">F</kbd>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Sparkles,
   X,
+  Github,
 } from 'lucide-react'
 import {
   conversationsAtom,
@@ -97,13 +98,22 @@ export default function App() {
               <p className="text-[11px] text-muted-foreground">AI Conversation Manager</p>
             </div>
           </div>
-          <button
-            className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer kbd-focus"
-            onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/settings') })}
-            aria-label="Open settings"
-          >
-            <Settings className="w-4 h-4 text-muted-foreground" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer kbd-focus"
+              onClick={() => browser.tabs.create({ url: 'https://github.com/flowKKo/chat-central' })}
+              aria-label="View on GitHub"
+            >
+              <Github className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <button
+              className="p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer kbd-focus"
+              onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/settings') })}
+              aria-label="Open settings"
+            >
+              <Settings className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
         </div>
 
         {/* Search */}

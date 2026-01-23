@@ -497,13 +497,13 @@ function ConversationDetail({
         </div>
 
         {needsSync && (
-          <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-            <div className="flex items-center gap-2 text-sm text-amber-200">
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-200">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>Open the original conversation to sync full content</span>
             </div>
             <button
-              className="px-3 py-1.5 text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 rounded-lg transition-colors cursor-pointer text-amber-200"
+              className="px-3 py-1.5 text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 rounded-lg transition-colors cursor-pointer text-amber-700 dark:text-amber-200"
               onClick={() => conversation.url && browser.tabs.create({ url: conversation.url })}
             >
               Open
