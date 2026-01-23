@@ -44,6 +44,7 @@ export {
   exportConversations,
   exportToJson,
   downloadExport,
+  type ExportOptions,
   type ExportResult,
   type SimpleExportResult,
 } from './export'

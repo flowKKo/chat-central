@@ -6,7 +6,7 @@ import {
   getSyncState,
   initializeSyncState,
 } from '@/utils/db'
-import type { ExportManifest, ExportOptionsSync } from './types'
+import type { ExportManifest } from './types'
 import { sha256, toJsonl, formatDateForFilename, downloadBlob } from './utils'
 
 // ============================================================================
@@ -19,8 +19,21 @@ const FILENAME_MESSAGES = 'messages.jsonl'
 const FILENAME_MANIFEST = 'manifest.json'
 
 // ============================================================================
-// Export Functions
+// Types
 // ============================================================================
+
+export interface ExportOptions {
+  /** Export type: full, incremental, or selected conversations */
+  type?: 'full' | 'incremental' | 'selected'
+  /** Specific conversation IDs (for 'selected' type) */
+  conversationIds?: string[]
+  /** Export changes since timestamp (for 'incremental' type) */
+  since?: number
+  /** Filter by platforms */
+  platforms?: Platform[]
+  /** Include soft-deleted records */
+  includeDeleted?: boolean
+}
 
 export interface ExportResult {
   blob: Blob
@@ -32,36 +45,46 @@ export interface ExportResult {
   }
 }
 
+// ============================================================================
+// Export Functions
+// ============================================================================
+
 /**
  * Export data to a ZIP file containing JSONL files
  */
-export async function exportData(options: ExportOptionsSync = { type: 'full' }): Promise<ExportResult> {
+export async function exportData(options: ExportOptions = {}): Promise<ExportResult> {
+  const { type = 'full', conversationIds, since, platforms, includeDeleted } = options
+
   // Get sync state for device ID
   let syncState = await getSyncState()
   if (!syncState) {
     syncState = await initializeSyncState()
   }
 
-  // Fetch conversations
-  const conversations = await getAllConversationsForExport({
-    since: options.type === 'incremental' ? options.since : undefined,
-    platforms: options.platforms,
-    includeDeleted: options.includeDeleted,
+  // Fetch conversations based on export type
+  let conversations = await getAllConversationsForExport({
+    since: type === 'incremental' ? since : undefined,
+    platforms,
+    includeDeleted,
   })
+
+  // Filter to selected conversations if specified
+  if (type === 'selected' && conversationIds?.length) {
+    const idSet = new Set(conversationIds)
+    conversations = conversations.filter((c) => idSet.has(c.id))
+  }
 
   // Fetch messages for these conversations
-  const conversationIds = conversations.map((c) => c.id)
-  const messages = await getAllMessagesForExport(conversationIds, {
-    includeDeleted: options.includeDeleted,
-  })
+  const convIds = conversations.map((c) => c.id)
+  const messages = await getAllMessagesForExport(convIds, { includeDeleted })
 
-  // Generate JSONL content
+  // Generate JSONL content and checksums
   const conversationsJsonl = toJsonl(conversations)
   const messagesJsonl = toJsonl(messages)
-
-  // Calculate checksums
-  const conversationsChecksum = await sha256(conversationsJsonl)
-  const messagesChecksum = await sha256(messagesJsonl)
+  const [conversationsChecksum, messagesChecksum] = await Promise.all([
+    sha256(conversationsJsonl),
+    sha256(messagesJsonl),
+  ])
 
   // Create manifest
   const manifest: ExportManifest = {
@@ -76,8 +99,8 @@ export async function exportData(options: ExportOptionsSync = { type: 'full' }):
       [FILENAME_CONVERSATIONS]: conversationsChecksum,
       [FILENAME_MESSAGES]: messagesChecksum,
     },
-    exportType: options.type,
-    sinceTimestamp: options.type === 'incremental' ? (options.since ?? null) : null,
+    exportType: type === 'selected' ? 'full' : type,
+    sinceTimestamp: type === 'incremental' ? (since ?? null) : null,
     encrypted: false,
   }
 
@@ -87,7 +110,6 @@ export async function exportData(options: ExportOptionsSync = { type: 'full' }):
   zip.file(FILENAME_CONVERSATIONS, conversationsJsonl)
   zip.file(FILENAME_MESSAGES, messagesJsonl)
 
-  // Generate blob
   const blob = await zip.generateAsync({
     type: 'blob',
     compression: 'DEFLATE',
@@ -96,8 +118,8 @@ export async function exportData(options: ExportOptionsSync = { type: 'full' }):
 
   // Generate filename
   const dateStr = formatDateForFilename(new Date())
-  const typeStr = options.type === 'incremental' ? '_incremental' : ''
-  const filename = `chatcentral_export_${dateStr}${typeStr}.zip`
+  const suffix = type === 'incremental' ? '_incremental' : type === 'selected' ? '_selected' : ''
+  const filename = `chatcentral_export_${dateStr}${suffix}.zip`
 
   return {
     blob,
@@ -111,81 +133,13 @@ export async function exportData(options: ExportOptionsSync = { type: 'full' }):
 }
 
 /**
- * Export specific conversations
+ * Export specific conversations (convenience wrapper)
  */
-export async function exportConversations(
+export function exportConversations(
   conversationIds: string[],
-  options: Omit<ExportOptionsSync, 'type' | 'since' | 'platforms'> = {}
+  options: Pick<ExportOptions, 'includeDeleted'> = {}
 ): Promise<ExportResult> {
-  // Get sync state for device ID
-  let syncState = await getSyncState()
-  if (!syncState) {
-    syncState = await initializeSyncState()
-  }
-
-  // Fetch specified conversations
-  const allConversations = await getAllConversationsForExport({
-    includeDeleted: options.includeDeleted,
-  })
-  const conversations = allConversations.filter((c) => conversationIds.includes(c.id))
-
-  // Fetch messages for these conversations
-  const messages = await getAllMessagesForExport(conversationIds, {
-    includeDeleted: options.includeDeleted,
-  })
-
-  // Generate JSONL content
-  const conversationsJsonl = toJsonl(conversations)
-  const messagesJsonl = toJsonl(messages)
-
-  // Calculate checksums
-  const conversationsChecksum = await sha256(conversationsJsonl)
-  const messagesChecksum = await sha256(messagesJsonl)
-
-  // Create manifest
-  const manifest: ExportManifest = {
-    version: EXPORT_VERSION,
-    exportedAt: Date.now(),
-    deviceId: syncState.deviceId,
-    counts: {
-      conversations: conversations.length,
-      messages: messages.length,
-    },
-    checksums: {
-      [FILENAME_CONVERSATIONS]: conversationsChecksum,
-      [FILENAME_MESSAGES]: messagesChecksum,
-    },
-    exportType: 'full',
-    sinceTimestamp: null,
-    encrypted: false,
-  }
-
-  // Create ZIP
-  const zip = new JSZip()
-  zip.file(FILENAME_MANIFEST, JSON.stringify(manifest, null, 2))
-  zip.file(FILENAME_CONVERSATIONS, conversationsJsonl)
-  zip.file(FILENAME_MESSAGES, messagesJsonl)
-
-  // Generate blob
-  const blob = await zip.generateAsync({
-    type: 'blob',
-    compression: 'DEFLATE',
-    compressionOptions: { level: 6 },
-  })
-
-  // Generate filename
-  const dateStr = formatDateForFilename(new Date())
-  const filename = `chatcentral_export_${dateStr}_selected.zip`
-
-  return {
-    blob,
-    filename,
-    stats: {
-      conversations: conversations.length,
-      messages: messages.length,
-      sizeBytes: blob.size,
-    },
-  }
+  return exportData({ type: 'selected', conversationIds, ...options })
 }
 
 /**
@@ -196,7 +150,7 @@ export function downloadExport(result: ExportResult): void {
 }
 
 // ============================================================================
-// Export to JSON (Simple format for debugging/viewing)
+// Simple JSON Export (for debugging)
 // ============================================================================
 
 export interface SimpleExportResult {
@@ -230,7 +184,7 @@ export async function exportToJson(options: {
   }
 
   // Build export structure
-  const exportData = {
+  const data = {
     exportedAt: new Date().toISOString(),
     version: EXPORT_VERSION,
     conversations: conversations.map((conv) => ({
@@ -239,11 +193,9 @@ export async function exportToJson(options: {
     })),
   }
 
-  const json = JSON.stringify(exportData, null, 2)
+  const json = JSON.stringify(data, null, 2)
   const blob = new Blob([json], { type: 'application/json' })
-
-  const dateStr = formatDateForFilename(new Date())
-  const filename = `chatcentral_export_${dateStr}.json`
+  const filename = `chatcentral_export_${formatDateForFilename(new Date())}.json`
 
   return { blob, filename }
 }
