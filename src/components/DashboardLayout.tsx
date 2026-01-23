@@ -6,9 +6,11 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <div className="flex h-screen bg-background">
+    <div className="dark flex h-screen bg-background text-foreground">
       <Sidebar />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main className="flex-1 overflow-auto scrollbar-thin">
+        <div className="p-6">{children}</div>
+      </main>
     </div>
   )
 }
