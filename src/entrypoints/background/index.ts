@@ -64,7 +64,6 @@ interface EventTargetLike {
   addListener?: (handler: (...args: any[]) => unknown) => void
 }
 
-// eslint-disable-next-line ts/no-explicit-any
 function safeAddListener(
   target: EventTargetLike | undefined,
   handler: (...args: any[]) => unknown
