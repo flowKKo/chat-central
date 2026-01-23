@@ -94,7 +94,7 @@ describe('MockSyncProvider', () => {
       const result = await provider.pull()
       expect(result.success).toBe(true)
       expect(result.records).toHaveLength(1)
-      expect(result.records[0].id).toBe('conv_1')
+      expect(result.records[0]?.id).toBe('conv_1')
     })
 
     it('paginates results', async () => {
@@ -165,7 +165,7 @@ describe('MockSyncProvider', () => {
       await provider.push(records)
       const serverRecords = provider.getServerRecords()
       expect(serverRecords).toHaveLength(1)
-      expect(serverRecords[0].id).toBe('conv_1')
+      expect(serverRecords[0]?.id).toBe('conv_1')
     })
 
     it('simulates conflict', async () => {
@@ -193,8 +193,8 @@ describe('MockSyncProvider', () => {
       expect(result.success).toBe(true)
       expect(result.applied).toHaveLength(0)
       expect(result.failed).toHaveLength(1)
-      expect(result.failed[0].reason).toBe('conflict')
-      expect(result.failed[0].serverVersion).toBeDefined()
+      expect(result.failed[0]?.reason).toBe('conflict')
+      expect(result.failed[0]?.serverVersion).toBeDefined()
     })
 
     it('returns error on network failure', async () => {
@@ -233,8 +233,8 @@ describe('MockSyncProvider', () => {
 
       const history = provider.getPushHistory()
       expect(history).toHaveLength(2)
-      expect(history[0][0].id).toBe('conv_1')
-      expect(history[1][0].id).toBe('conv_2')
+      expect(history[0]?.[0]?.id).toBe('conv_1')
+      expect(history[1]?.[0]?.id).toBe('conv_2')
     })
   })
 })

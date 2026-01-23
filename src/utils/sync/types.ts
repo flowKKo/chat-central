@@ -87,6 +87,9 @@ export const conflictResolutionSchema = z.enum([
 ])
 export type ConflictResolution = z.infer<typeof conflictResolutionSchema>
 
+/** Simplified resolution type for UI actions */
+export type ConflictResolutionAction = 'local' | 'remote' | 'merged'
+
 export const conflictRecordSchema = z.object({
   id: z.string(),
   entityType: entityTypeSchema,
@@ -99,6 +102,35 @@ export const conflictRecordSchema = z.object({
   createdAt: z.number(),
 })
 export type ConflictRecord = z.infer<typeof conflictRecordSchema>
+
+/**
+ * UI-friendly conflict representation
+ * Can be created from ConflictRecord for display
+ */
+export interface SyncConflict {
+  id: string
+  entityType: EntityType
+  entityId: string
+  localVersion?: SyncRecord | Record<string, unknown>
+  remoteVersion?: SyncRecord | Record<string, unknown>
+  field?: string // Most conflicting field (for summary)
+  createdAt: number
+}
+
+/**
+ * Convert ConflictRecord to UI-friendly SyncConflict
+ */
+export function toSyncConflict(record: ConflictRecord): SyncConflict {
+  return {
+    id: record.id,
+    entityType: record.entityType,
+    entityId: record.entityId,
+    localVersion: record.localVersion,
+    remoteVersion: record.remoteVersion,
+    field: record.conflictFields[0],
+    createdAt: record.createdAt,
+  }
+}
 
 // ============================================================================
 // Merge Strategies

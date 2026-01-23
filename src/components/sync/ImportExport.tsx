@@ -1,0 +1,272 @@
+import { useState, useRef } from 'react'
+import { Download, Upload, Loader2, CheckCircle, AlertCircle, FileArchive } from 'lucide-react'
+import { exportData } from '@/utils/sync/export'
+import { importData, validateImportFile } from '@/utils/sync/import'
+import { cn } from '@/utils/cn'
+import type { Platform } from '@/types'
+
+interface ImportExportProps {
+  className?: string
+}
+
+interface UIImportResult {
+  success: boolean
+  conversationsImported: number
+  messagesImported: number
+  conversationsSkipped: number
+  messagesSkipped: number
+  errors: string[]
+}
+
+export function ImportExportActions({ className }: ImportExportProps) {
+  const [isExporting, setIsExporting] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const [importResult, setImportResult] = useState<UIImportResult | null>(null)
+  const [exportError, setExportError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    setExportError(null)
+
+    try {
+      const platforms: Platform[] = ['claude', 'chatgpt', 'gemini']
+      const result = await exportData({ type: 'full', platforms })
+
+      // Create download link
+      const url = URL.createObjectURL(result.blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = result.filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : 'Export failed')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsImporting(true)
+    setImportResult(null)
+
+    try {
+      // First validate
+      const validation = await validateImportFile(file)
+
+      if (!validation.valid) {
+        setImportResult({
+          success: false,
+          conversationsImported: 0,
+          messagesImported: 0,
+          conversationsSkipped: 0,
+          messagesSkipped: 0,
+          errors: validation.errors.map((e) => e.message),
+        })
+        return
+      }
+
+      // Then import
+      const result = await importData(file)
+      setImportResult({
+        success: result.success,
+        conversationsImported: result.imported.conversations,
+        messagesImported: result.imported.messages,
+        conversationsSkipped: result.skipped.conversations,
+        messagesSkipped: result.skipped.messages,
+        errors: result.errors.map((e) => e.message),
+      })
+    } catch (error) {
+      setImportResult({
+        success: false,
+        conversationsImported: 0,
+        messagesImported: 0,
+        conversationsSkipped: 0,
+        messagesSkipped: 0,
+        errors: [error instanceof Error ? error.message : 'Import failed'],
+      })
+    } finally {
+      setIsImporting(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  return (
+    <div className={cn('space-y-4', className)}>
+      <div className="flex items-center gap-3">
+        {/* Export Button */}
+        <button
+          className="flex items-center gap-2 px-4 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50"
+          onClick={handleExport}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          Export Data
+        </button>
+
+        {/* Import Button */}
+        <button
+          className="flex items-center gap-2 px-4 py-2 text-sm border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-50"
+          onClick={handleImportClick}
+          disabled={isImporting}
+        >
+          {isImporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Upload className="w-4 h-4" />
+          )}
+          Import Data
+        </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".zip"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+      </div>
+
+      {/* Export Error */}
+      {exportError && (
+        <div className="flex items-center gap-2 p-3 text-sm bg-destructive/10 text-destructive rounded-md">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{exportError}</span>
+        </div>
+      )}
+
+      {/* Import Result */}
+      {importResult && (
+        <div
+          className={cn(
+            'p-3 rounded-md text-sm',
+            importResult.success
+              ? 'bg-green-100 text-green-800'
+              : 'bg-destructive/10 text-destructive'
+          )}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            {importResult.success ? (
+              <CheckCircle className="w-4 h-4" />
+            ) : (
+              <AlertCircle className="w-4 h-4" />
+            )}
+            <span className="font-medium">
+              {importResult.success ? 'Import successful' : 'Import failed'}
+            </span>
+          </div>
+
+          {importResult.success && (
+            <ul className="space-y-1 text-xs">
+              <li>Conversations imported: {importResult.conversationsImported}</li>
+              <li>Messages imported: {importResult.messagesImported}</li>
+              {importResult.conversationsSkipped > 0 && (
+                <li>Conversations skipped: {importResult.conversationsSkipped}</li>
+              )}
+              {importResult.messagesSkipped > 0 && (
+                <li>Messages skipped: {importResult.messagesSkipped}</li>
+              )}
+            </ul>
+          )}
+
+          {importResult.errors.length > 0 && (
+            <ul className="space-y-1 text-xs mt-2">
+              {importResult.errors.map((error: string, i: number) => (
+                <li key={i}>{error}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Compact version for toolbar/header use
+ */
+export function ImportExportButtons() {
+  const [isExporting, setIsExporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const result = await exportData({ type: 'full' })
+      const url = URL.createObjectURL(result.blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = result.filename
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      await importData(file)
+      // Reload page to reflect changes
+      window.location.reload()
+    } catch (error) {
+      console.error('Import failed:', error)
+      alert(error instanceof Error ? error.message : 'Import failed')
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        className="p-1.5 hover:bg-muted rounded-md transition-colors"
+        onClick={handleExport}
+        disabled={isExporting}
+        title="Export data"
+      >
+        {isExporting ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <FileArchive className="w-4 h-4" />
+        )}
+      </button>
+      <button
+        className="p-1.5 hover:bg-muted rounded-md transition-colors"
+        onClick={() => fileInputRef.current?.click()}
+        title="Import data"
+      >
+        <Upload className="w-4 h-4" />
+      </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".zip"
+        className="hidden"
+        onChange={handleImport}
+      />
+    </div>
+  )
+}
