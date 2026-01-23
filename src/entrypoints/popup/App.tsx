@@ -64,7 +64,7 @@ export default function App() {
           <h1 className="text-lg font-semibold">Chat Central</h1>
           <button
             className="p-2 hover:bg-muted rounded-md transition-colors"
-            onClick={() => browser.runtime.openOptionsPage()}
+            onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/settings') })}
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -147,7 +147,7 @@ export default function App() {
           <SyncStatusBar />
           <button
             className="text-primary hover:underline"
-            onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/manage.html') })}
+            onClick={() => browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/conversations') })}
           >
             Manage
           </button>
