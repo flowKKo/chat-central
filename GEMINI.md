@@ -290,12 +290,13 @@ chat-central/
 
 Recently implemented features:
 
-| Feature              | Description                                                            | Related Files                                                         |
-| -------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| **Batch Export**     | Select multiple conversations and export as ZIP (JSON) or Markdown     | `src/utils/sync/export.ts`, `src/components/ConversationsManager.tsx` |
-| **Import/Export**    | Full import/export with ZIP format, checksums, and conflict resolution | `src/utils/sync/import.ts`, `src/utils/sync/export.ts`                |
-| **Tags**             | Add/remove tags to conversations, filter by tags                       | `src/components/TagManager.tsx`, `src/utils/atoms/conversations.ts`   |
-| **Full-text Search** | Search conversations and messages with highlighting                    | `src/utils/db/search.ts`, `src/components/HighlightText.tsx`          |
+| Feature              | Description                                                                                             | Related Files                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Batch Export**     | Select multiple conversations and export as ZIP (JSON) or Markdown                                      | `src/utils/sync/export.ts`, `src/components/ConversationsManager.tsx`                      |
+| **Import/Export**    | Full import/export with ZIP format, checksums, and conflict resolution                                  | `src/utils/sync/import.ts`, `src/utils/sync/export.ts`                                     |
+| **Tags**             | Add/remove tags to conversations, filter by tags                                                        | `src/components/TagManager.tsx`, `src/utils/atoms/conversations.ts`                        |
+| **Full-text Search** | Search conversations and messages with highlighting                                                     | `src/utils/db/search.ts`, `src/components/HighlightText.tsx`                               |
+| **Advanced Search**  | Date range filter with presets, search syntax (`platform:`, `tag:`, `before:`, `after:`, `is:favorite`) | `src/utils/search-parser.ts`, `src/components/ui/DateRangePicker.tsx`, `src/utils/date.ts` |
 
 ---
 
@@ -311,11 +312,10 @@ Potential features and improvements for future development:
 
 ### 🟡 Medium Priority
 
-| Feature             | Description                                 | Related Files                                       |
-| ------------------- | ------------------------------------------- | --------------------------------------------------- |
-| **Cloud Sync**      | Google Drive / iCloud / WebDAV sync support | `src/utils/sync/providers/`                         |
-| **Advanced Search** | Date range filter, advanced search syntax   | `src/utils/db/`, `src/utils/atoms/conversations.ts` |
-| **Markdown Import** | Import conversations from .md files         | `src/utils/sync/import.ts`                          |
+| Feature             | Description                                 | Related Files               |
+| ------------------- | ------------------------------------------- | --------------------------- |
+| **Cloud Sync**      | Google Drive / iCloud / WebDAV sync support | `src/utils/sync/providers/` |
+| **Markdown Import** | Import conversations from .md files         | `src/utils/sync/import.ts`  |
 
 ### 🟢 Low Priority
 
@@ -329,6 +329,6 @@ Potential features and improvements for future development:
 ### 📝 Implementation Notes
 
 - **Cloud Sync**: Provider interface defined in `src/utils/sync/providers/`. Implement specific providers.
-- **Advanced Search**: Consider adding date range picker UI and search syntax parser.
+- **Markdown Import**: Parse .md files and convert to conversation format. Consider supporting common export formats.
 
 ---
