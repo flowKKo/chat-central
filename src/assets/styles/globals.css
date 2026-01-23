@@ -195,6 +195,84 @@
   }
 }
 
+/* Skeleton loading animation */
+.skeleton {
+  @apply bg-muted/50 animate-pulse rounded;
+}
+
+.skeleton-text {
+  @apply h-4 skeleton;
+}
+
+.skeleton-avatar {
+  @apply w-8 h-8 skeleton rounded-xl;
+}
+
+/* Subtle noise texture overlay */
+.noise-bg {
+  position: relative;
+}
+
+.noise-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.015;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* Subtle gradient mesh background */
+.gradient-mesh {
+  background:
+    radial-gradient(at 40% 20%, hsl(var(--primary) / 0.08) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsl(217 91% 60% / 0.05) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, hsl(var(--primary) / 0.05) 0px, transparent 50%),
+    radial-gradient(at 80% 100%, hsl(160 85% 35% / 0.05) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsl(16 65% 59% / 0.05) 0px, transparent 50%);
+}
+
+/* Platform icon styles */
+.platform-icon {
+  @apply w-5 h-5 object-contain;
+}
+
+/* Keyboard focus styles */
+.kbd-focus:focus-visible {
+  @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+}
+
+/* Interactive card */
+.interactive-card {
+  @apply transition-all duration-200 cursor-pointer;
+}
+
+.interactive-card:hover {
+  @apply bg-muted/60;
+  transform: translateY(-1px);
+}
+
+.interactive-card:active {
+  transform: translateY(0);
+}
+
+/* Shimmer effect for loading */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted-foreground) / 0.1) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
