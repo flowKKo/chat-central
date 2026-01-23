@@ -145,22 +145,25 @@ export interface MergeResult {
 export const exportTypeSchema = z.enum(['full', 'incremental'])
 export type ExportType = z.infer<typeof exportTypeSchema>
 
-export interface ExportManifest {
-  version: string
-  exportedAt: number
-  deviceId: string
-  counts: {
-    conversations: number
-    messages: number
-  }
-  checksums: {
-    'conversations.jsonl': string
-    'messages.jsonl': string
-  }
-  exportType: ExportType
-  sinceTimestamp: number | null
-  encrypted: boolean
-}
+/** Zod schema for validating export manifest */
+export const exportManifestSchema = z.object({
+  version: z.string(),
+  exportedAt: z.number(),
+  deviceId: z.string(),
+  counts: z.object({
+    conversations: z.number(),
+    messages: z.number(),
+  }),
+  checksums: z.object({
+    'conversations.jsonl': z.string(),
+    'messages.jsonl': z.string(),
+  }),
+  exportType: exportTypeSchema,
+  sinceTimestamp: z.number().nullable(),
+  encrypted: z.boolean(),
+})
+
+export type ExportManifest = z.infer<typeof exportManifestSchema>
 
 export interface ExportOptionsSync {
   type: ExportType
@@ -185,6 +188,41 @@ export interface ImportError {
   type: 'parse_error' | 'validation_error' | 'checksum_mismatch' | 'version_incompatible'
   message: string
   line?: number
+}
+
+/** Import status for a single entity */
+export type ImportStatus = 'imported' | 'skipped' | 'conflict'
+
+/** Entity type for import stats */
+export type ImportEntityType = 'conversations' | 'messages'
+
+/**
+ * Create an empty ImportResult object
+ */
+export function createEmptyImportResult(): ImportResult {
+  return {
+    success: true,
+    imported: { conversations: 0, messages: 0 },
+    skipped: { conversations: 0, messages: 0 },
+    conflicts: [],
+    errors: [],
+  }
+}
+
+/**
+ * Update import stats based on import status
+ */
+export function updateImportStats(
+  result: ImportResult,
+  status: ImportStatus,
+  entityType: ImportEntityType
+): void {
+  if (status === 'imported') {
+    result.imported[entityType]++
+  } else if (status === 'skipped') {
+    result.skipped[entityType]++
+  }
+  // 'conflict' status doesn't increment counters (handled separately)
 }
 
 // ============================================================================

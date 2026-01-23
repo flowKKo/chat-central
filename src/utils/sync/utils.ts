@@ -3,6 +3,26 @@
 // ============================================================================
 
 /**
+ * Simple sync logger with context prefix
+ */
+export const syncLogger = {
+  error: (msg: string, error?: unknown) => {
+    console.error(`[Sync] ${msg}`, error ?? '')
+  },
+  warn: (msg: string) => {
+    console.warn(`[Sync] ${msg}`)
+  },
+  info: (msg: string) => {
+    console.info(`[Sync] ${msg}`)
+  },
+  debug: (msg: string) => {
+    if (import.meta.env.DEV) {
+      console.log(`[Sync] ${msg}`)
+    }
+  },
+}
+
+/**
  * Calculate SHA-256 hash of a string
  */
 export async function sha256(text: string): Promise<string> {
@@ -54,16 +74,59 @@ export function parseJsonl<T>(
 
 /**
  * Download a blob as a file in the browser
+ * Returns true if download was successful, false otherwise
  */
-export function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+export function downloadBlob(blob: Blob, filename: string): boolean {
+  try {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    return true
+  } catch (error) {
+    syncLogger.error('Failed to download file', error)
+    return false
+  }
+}
+
+/**
+ * Generate a safe filename from a title
+ * Removes special characters and limits length
+ */
+export function generateSafeFilename(title: string, extension: string, maxLength = 50): string {
+  const safeTitle = title
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .slice(0, maxLength)
+  return `${safeTitle || 'untitled'}${extension}`
+}
+
+/** Maximum recommended file size for import (100MB) */
+export const MAX_IMPORT_FILE_SIZE = 100 * 1024 * 1024
+
+/**
+ * Check if file size is within safe limits
+ */
+export function isFileSizeSafe(file: File): { safe: boolean; sizeFormatted: string } {
+  const sizeFormatted = formatFileSize(file.size)
+  return {
+    safe: file.size <= MAX_IMPORT_FILE_SIZE,
+    sizeFormatted,
+  }
+}
+
+/**
+ * Format file size for display
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
 /**
@@ -77,24 +140,4 @@ export function formatDateForFilename(date: Date): string {
   const minutes = String(date.getMinutes()).padStart(2, '0')
   const seconds = String(date.getSeconds()).padStart(2, '0')
   return `${year}${month}${day}_${hours}${minutes}${seconds}`
-}
-
-/**
- * Simple sync logger with context prefix
- */
-export const syncLogger = {
-  error: (msg: string, error?: unknown) => {
-    console.error(`[Sync] ${msg}`, error ?? '')
-  },
-  warn: (msg: string) => {
-    console.warn(`[Sync] ${msg}`)
-  },
-  info: (msg: string) => {
-    console.info(`[Sync] ${msg}`)
-  },
-  debug: (msg: string) => {
-    if (import.meta.env.DEV) {
-      console.log(`[Sync] ${msg}`)
-    }
-  },
 }

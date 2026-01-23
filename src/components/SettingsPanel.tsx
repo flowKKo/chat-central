@@ -25,6 +25,7 @@ import { clearAllData, clearPlatformData } from '@/utils/db'
 import { downloadExport, exportData } from '@/utils/sync/export'
 import { importData, importFromJson, validateImportFile } from '@/utils/sync/import'
 import type { ImportResult } from '@/utils/sync/types'
+import { isFileSizeSafe } from '@/utils/sync/utils'
 
 const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', icon: Sun },
@@ -57,6 +58,7 @@ export function SettingsPanel() {
   const [isImporting, setIsImporting] = useState(false)
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [fileSizeWarning, setFileSizeWarning] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleClearAll = async () => {
@@ -102,16 +104,29 @@ export function SettingsPanel() {
     if (file) {
       setSelectedFile(file)
       setImportResult(null)
+
+      // Check file size and warn if too large
+      const { safe, sizeFormatted } = isFileSizeSafe(file)
+      if (!safe) {
+        setFileSizeWarning(
+          `Large file (${sizeFormatted}). Import may take a while and could affect browser performance.`
+        )
+      } else {
+        setFileSizeWarning(null)
+      }
     }
   }
 
   const handleImport = async () => {
-    if (!selectedFile) return
+    // Capture file reference to prevent race condition
+    // (user could select different file while import is running)
+    const fileToImport = selectedFile
+    if (!fileToImport) return
 
     setIsImporting(true)
     setImportResult(null)
     try {
-      const validation = await validateImportFile(selectedFile)
+      const validation = await validateImportFile(fileToImport)
       if (!validation.valid) {
         setImportResult({
           success: false,
@@ -123,9 +138,9 @@ export function SettingsPanel() {
         return
       }
 
-      const result = selectedFile.name.endsWith('.json')
-        ? await importFromJson(selectedFile, { conflictStrategy: 'merge' })
-        : await importData(selectedFile, { conflictStrategy: 'merge' })
+      const result = fileToImport.name.endsWith('.json')
+        ? await importFromJson(fileToImport, { conflictStrategy: 'merge' })
+        : await importData(fileToImport, { conflictStrategy: 'merge' })
 
       setImportResult(result)
       if (result.success) {
@@ -293,6 +308,14 @@ export function SettingsPanel() {
                     )}
                   </button>
                 </div>
+
+                {/* File Size Warning */}
+                {fileSizeWarning && !importResult && (
+                  <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
+                    <p className="text-sm text-amber-200">{fileSizeWarning}</p>
+                  </div>
+                )}
 
                 {/* Import Result */}
                 {importResult && (

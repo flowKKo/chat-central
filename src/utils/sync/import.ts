@@ -1,16 +1,20 @@
-import type {
-  ExportManifest,
-  ImportOptions,
-  ImportResult,
-  ImportError,
-  ConflictRecord,
+import {
+  type ConflictRecord,
+  type ExportManifest,
+  type ImportError,
+  type ImportOptions,
+  type ImportResult,
+  type ImportStatus,
+  createEmptyImportResult,
+  exportManifestSchema,
+  updateImportStats,
 } from './types'
 import type { Conversation, Message } from '@/types'
 import JSZip from 'jszip'
 import { conversationSchema, messageSchema } from '@/types'
 import { addConflict, db } from '@/utils/db'
 import { mergeConversation, mergeMessage } from './merge'
-import { parseJsonl, sha256 } from './utils'
+import { parseJsonl, sha256, syncLogger } from './utils'
 
 // ============================================================================
 // Constants
@@ -32,13 +36,7 @@ export async function importData(
   file: File,
   options: ImportOptions = { conflictStrategy: 'merge' }
 ): Promise<ImportResult> {
-  const result: ImportResult = {
-    success: true,
-    imported: { conversations: 0, messages: 0 },
-    skipped: { conversations: 0, messages: 0 },
-    conflicts: [],
-    errors: [],
-  }
+  const result = createEmptyImportResult()
 
   try {
     // Load and parse ZIP
@@ -56,7 +54,29 @@ export async function importData(
     }
 
     const manifestRaw = await manifestFile.async('string')
-    const manifest = JSON.parse(manifestRaw) as ExportManifest
+
+    // Validate manifest with Zod schema
+    let manifest: ExportManifest
+    try {
+      const parsed = JSON.parse(manifestRaw)
+      const validated = exportManifestSchema.safeParse(parsed)
+      if (!validated.success) {
+        result.errors.push({
+          type: 'validation_error',
+          message: `Invalid manifest format: ${validated.error.message}`,
+        })
+        result.success = false
+        return result
+      }
+      manifest = validated.data
+    } catch {
+      result.errors.push({
+        type: 'parse_error',
+        message: 'Failed to parse manifest.json',
+      })
+      result.success = false
+      return result
+    }
 
     // Validate version
     if (!SUPPORTED_VERSIONS.includes(manifest.version)) {
@@ -121,22 +141,14 @@ export async function importData(
     await db.transaction('rw', [db.conversations, db.messages, db.conflicts], async () => {
       // Import conversations
       for (const conv of conversations) {
-        const importStatus = await importConversation(conv, options, result)
-        if (importStatus === 'imported') {
-          result.imported.conversations++
-        } else if (importStatus === 'skipped') {
-          result.skipped.conversations++
-        }
+        const status = await importConversation(conv, options, result)
+        updateImportStats(result, status, 'conversations')
       }
 
       // Import messages
       for (const msg of messages) {
-        const importStatus = await importMessage(msg, options, result)
-        if (importStatus === 'imported') {
-          result.imported.messages++
-        } else if (importStatus === 'skipped') {
-          result.skipped.messages++
-        }
+        const status = await importMessage(msg, options, result)
+        updateImportStats(result, status, 'messages')
       }
     })
 
@@ -179,7 +191,7 @@ async function importEntity<T extends { id: string }>(
   mergeFn: (existing: T, record: T) => ImportMergeResult<T>,
   options: ImportOptions,
   result: ImportResult
-): Promise<'imported' | 'skipped' | 'conflict'> {
+): Promise<ImportStatus> {
   const existing = await table.get(record.id)
 
   if (!existing) {
@@ -277,13 +289,7 @@ export async function importFromJson(
   file: File,
   options: ImportOptions = { conflictStrategy: 'merge' }
 ): Promise<ImportResult> {
-  const result: ImportResult = {
-    success: true,
-    imported: { conversations: 0, messages: 0 },
-    skipped: { conversations: 0, messages: 0 },
-    conflicts: [],
-    errors: [],
-  }
+  const result = createEmptyImportResult()
 
   try {
     const text = await file.text()
@@ -295,21 +301,13 @@ export async function importFromJson(
 
         // Import conversation
         const convStatus = await importConversation(conv, options, result)
-        if (convStatus === 'imported') {
-          result.imported.conversations++
-        } else if (convStatus === 'skipped') {
-          result.skipped.conversations++
-        }
+        updateImportStats(result, convStatus, 'conversations')
 
         // Import messages
         if (messages) {
           for (const msg of messages) {
             const msgStatus = await importMessage(msg, options, result)
-            if (msgStatus === 'imported') {
-              result.imported.messages++
-            } else if (msgStatus === 'skipped') {
-              result.skipped.messages++
-            }
+            updateImportStats(result, msgStatus, 'messages')
           }
         }
       }
@@ -317,6 +315,7 @@ export async function importFromJson(
 
     return result
   } catch (error) {
+    syncLogger.error('Failed to import JSON file', error)
     result.success = false
     result.errors.push({
       type: 'parse_error',

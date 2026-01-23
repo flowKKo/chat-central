@@ -10,7 +10,14 @@ import {
   getSyncState,
   initializeSyncState,
 } from '@/utils/db'
-import { downloadBlob, formatDateForFilename, sha256, toJsonl } from './utils'
+import {
+  downloadBlob,
+  formatDateForFilename,
+  generateSafeFilename,
+  sha256,
+  syncLogger,
+  toJsonl,
+} from './utils'
 
 // ============================================================================
 // Constants
@@ -107,22 +114,28 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
     encrypted: false,
   }
 
-  // Create ZIP
-  const zip = new JSZip()
-  zip.file(FILENAME_MANIFEST, JSON.stringify(manifest, null, 2))
-  zip.file(FILENAME_CONVERSATIONS, conversationsJsonl)
-  zip.file(FILENAME_MESSAGES, messagesJsonl)
+  // Create ZIP with error handling
+  let blob: Blob
+  try {
+    const zip = new JSZip()
+    zip.file(FILENAME_MANIFEST, JSON.stringify(manifest, null, 2))
+    zip.file(FILENAME_CONVERSATIONS, conversationsJsonl)
+    zip.file(FILENAME_MESSAGES, messagesJsonl)
 
-  const blob = await zip.generateAsync({
-    type: 'blob',
-    compression: 'DEFLATE',
-    compressionOptions: { level: 6 },
-  })
+    blob = await zip.generateAsync({
+      type: 'blob',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 },
+    })
+  } catch (error) {
+    syncLogger.error('Failed to generate ZIP file', error)
+    throw new Error('Failed to generate export file. Please try again.')
+  }
 
-  // Generate filename
+  // Generate filename with metadata
   const dateStr = formatDateForFilename(new Date())
   const suffix = type === 'incremental' ? '_incremental' : type === 'selected' ? '_selected' : ''
-  const filename = `chatcentral_export_${dateStr}${suffix}.zip`
+  const filename = `chatcentral_${conversations.length}conv_${messages.length}msg_${dateStr}${suffix}.zip`
 
   return {
     blob,
@@ -248,8 +261,7 @@ export async function exportToMarkdown(conversationId: string): Promise<Markdown
   }
 
   const content = lines.join('\n')
-  const safeTitle = conversation.title.replace(/[^\w\s-]/g, '').slice(0, 50)
-  const filename = `${safeTitle || 'conversation'}.md`
+  const filename = generateSafeFilename(conversation.title, '.md')
 
   return { content, filename }
 }
@@ -277,8 +289,7 @@ export async function exportConversationToJson(
   }
 
   const content = JSON.stringify(data, null, 2)
-  const safeTitle = conversation.title.replace(/[^\w\s-]/g, '').slice(0, 50)
-  const filename = `${safeTitle || 'conversation'}.json`
+  const filename = generateSafeFilename(conversation.title, '.json')
 
   return { content, filename }
 }
