@@ -285,3 +285,40 @@ chat-central/
 - **Dev Reload Not Connecting**: Ensure `pnpm dev:reload` is running, check WebSocket connection on port 3717.
 
 ---
+
+## 11. Future Roadmap
+
+Potential features and improvements for future development:
+
+### 🔴 High Priority
+
+| Feature                  | Description                                                | Related Files              |
+| ------------------------ | ---------------------------------------------------------- | -------------------------- |
+| **Export Enhancement**   | Markdown export, batch export multiple conversations       | `src/utils/sync/export.ts` |
+| **Import Functionality** | Import from JSON/Markdown, data migration from other tools | `src/utils/sync/import.ts` |
+| **Chrome Web Store**     | Prepare and publish to Chrome Web Store                    | `wxt.config.ts`, assets    |
+
+### 🟡 Medium Priority
+
+| Feature                       | Description                                 | Related Files                                       |
+| ----------------------------- | ------------------------------------------- | --------------------------------------------------- |
+| **Cloud Sync**                | Google Drive / iCloud / WebDAV sync support | `src/utils/sync/providers/`                         |
+| **Conversation Organization** | Tags, folders, archive functionality        | `src/types/`, `src/utils/db/`                       |
+| **Advanced Search**           | Date range filter, advanced search syntax   | `src/utils/db/`, `src/utils/atoms/conversations.ts` |
+
+### 🟢 Low Priority
+
+| Feature                | Description                                   | Related Files                             |
+| ---------------------- | --------------------------------------------- | ----------------------------------------- |
+| **Firefox Support**    | Full Firefox compatibility                    | `wxt.config.ts`, manifest                 |
+| **Test Coverage**      | Increase unit test and E2E test coverage      | `src/**/*.test.ts`                        |
+| **Keyboard Shortcuts** | Implement all shortcuts mentioned in Settings | `src/components/`, `src/hooks/`           |
+| **Batch Operations**   | Batch delete, batch favorite, batch export    | `src/components/ConversationsManager.tsx` |
+
+### 📝 Implementation Notes
+
+- **Export/Import**: Core logic exists in `src/utils/sync/`. UI integration needed.
+- **Cloud Sync**: Provider interface defined in `src/utils/sync/providers/`. Implement specific providers.
+- **Organization**: Requires schema changes in Dexie DB. Plan migration carefully.
+
+---
