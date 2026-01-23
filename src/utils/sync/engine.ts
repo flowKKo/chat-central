@@ -455,6 +455,10 @@ async function pushChanges(
       return result
     }
 
+    // Create Sets for O(1) lookup
+    const conversationIdSet = new Set(conversationRecords.map(r => r.id))
+    const messageIdSet = new Set(messageRecords.map(r => r.id))
+
     // Push in batches
     for (let i = 0; i < allRecords.length; i += batchSize) {
       const batch = allRecords.slice(i, i + batchSize)
@@ -466,13 +470,10 @@ async function pushChanges(
         return result
       }
 
-      // Track successful pushes
-      const appliedConvIds = pushResult.applied.filter(id =>
-        conversationRecords.some(r => r.id === id)
-      )
-      const appliedMsgIds = pushResult.applied.filter(id =>
-        messageRecords.some(r => r.id === id)
-      )
+      // Track successful pushes (O(n) with Set lookup)
+      const appliedSet = new Set(pushResult.applied)
+      const appliedConvIds = pushResult.applied.filter(id => conversationIdSet.has(id))
+      const appliedMsgIds = pushResult.applied.filter(id => messageIdSet.has(id))
 
       result.counts.conversations += appliedConvIds.length
       result.counts.messages += appliedMsgIds.length
@@ -480,10 +481,10 @@ async function pushChanges(
       // Clear dirty flags for successful records
       await clearDirtyFlags(appliedConvIds, appliedMsgIds)
 
-      // Mark operations as synced
+      // Mark operations as synced (O(n) with Set lookup)
       const pendingOps = await getPendingOperations()
       const syncedOpIds = pendingOps
-        .filter(op => pushResult.applied.includes(op.entityId))
+        .filter(op => appliedSet.has(op.entityId))
         .map(op => op.id)
       if (syncedOpIds.length > 0) {
         await markOperationsSynced(syncedOpIds)
