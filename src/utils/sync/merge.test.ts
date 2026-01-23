@@ -3,8 +3,6 @@ import {
   mergeRecords,
   mergeConversation,
   mergeMessage,
-  conversationMergeStrategies,
-  messageMergeStrategies,
 } from './merge'
 import type { Conversation, Message } from '@/types'
 

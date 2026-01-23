@@ -54,3 +54,32 @@ export {
   importFromJson,
   validateImportFile,
 } from './import'
+
+// Sync engine
+export {
+  syncCycle,
+  pullOnly,
+  pushOnly,
+  applyConflictResolution,
+  type SyncCycleResult,
+  type SyncEngineOptions,
+} from './engine'
+
+// Sync manager
+export {
+  syncManager,
+  SyncManagerImpl,
+  type SyncManagerConfig,
+  type SyncManagerState,
+  type SyncEventType,
+  type SyncEventListener,
+} from './manager'
+
+// Providers
+export {
+  RestSyncProvider,
+  createRestProvider,
+  MockSyncProvider,
+  createMockProvider,
+  type RestProviderConfig,
+} from './providers'
