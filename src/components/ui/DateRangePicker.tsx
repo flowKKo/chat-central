@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { daysAgo, formatDateString, MS_PER_DAY, parseDateString, startOfDay } from '@/utils/date'
 
@@ -10,9 +11,9 @@ interface DateRangePickerProps {
 
 const PRESETS = [
   { label: 'Today', days: 0 },
-  { label: 'Last 7 days', days: 7 },
-  { label: 'Last 30 days', days: 30 },
-  { label: 'Last 90 days', days: 90 },
+  { label: '7 days', days: 7 },
+  { label: '30 days', days: 30 },
+  { label: '90 days', days: 90 },
 ] as const
 
 export function DateRangePicker({ startDate, endDate, onChange, className }: DateRangePickerProps) {
@@ -49,18 +50,36 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
   }
 
   const activePreset = getActivePreset()
+  const hasFilter = startDate !== null || endDate !== null
 
   return (
-    <div className={cn('space-y-2', className)}>
-      {/* Quick presets */}
-      <div className="flex flex-wrap gap-1">
+    <div className={cn('space-y-3', className)}>
+      {/* Header with title and clear button */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-foreground">Date Range</span>
+        {hasFilter && (
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={handleClear}
+          >
+            <X className="h-3 w-3" />
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Quick presets - grid layout for consistent sizing */}
+      <div className="grid grid-cols-4 gap-1.5">
         {PRESETS.map((preset) => (
           <button
             key={preset.label}
             type="button"
             className={cn(
-              'cursor-pointer rounded-lg px-2 py-1 text-xs transition-colors hover:bg-muted',
-              activePreset === preset.days && 'bg-primary/10 font-medium text-primary'
+              'cursor-pointer whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-medium transition-all',
+              activePreset === preset.days
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
             onClick={() => handlePreset(preset.days)}
           >
@@ -69,35 +88,42 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
         ))}
       </div>
 
-      {/* Custom range inputs */}
+      {/* Divider */}
       <div className="flex items-center gap-2">
-        <input
-          type="date"
-          value={startDate ? formatDateString(startDate) : ''}
-          onChange={(e) => onChange({ start: parseDateString(e.target.value), end: endDate })}
-          className="flex-1 rounded-lg border border-border bg-muted/50 px-2 py-1.5 text-xs"
-          aria-label="Start date"
-        />
-        <span className="text-xs text-muted-foreground">to</span>
-        <input
-          type="date"
-          value={endDate ? formatDateString(endDate) : ''}
-          onChange={(e) => onChange({ start: startDate, end: parseDateString(e.target.value) })}
-          className="flex-1 rounded-lg border border-border bg-muted/50 px-2 py-1.5 text-xs"
-          aria-label="End date"
-        />
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
+          Custom
+        </span>
+        <div className="h-px flex-1 bg-border" />
       </div>
 
-      {/* Clear button */}
-      {(startDate || endDate) && (
-        <button
-          type="button"
-          className="cursor-pointer text-xs text-muted-foreground hover:text-foreground"
-          onClick={handleClear}
-        >
-          Clear date filter
-        </button>
-      )}
+      {/* Custom range inputs - stacked layout */}
+      <div className="space-y-2">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="date-start" className="text-[10px] font-medium text-muted-foreground">
+            From
+          </label>
+          <input
+            id="date-start"
+            type="date"
+            value={startDate ? formatDateString(startDate) : ''}
+            onChange={(e) => onChange({ start: parseDateString(e.target.value), end: endDate })}
+            className="w-full cursor-pointer rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs transition-colors hover:bg-muted/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="date-end" className="text-[10px] font-medium text-muted-foreground">
+            To
+          </label>
+          <input
+            id="date-end"
+            type="date"
+            value={endDate ? formatDateString(endDate) : ''}
+            onChange={(e) => onChange({ start: startDate, end: parseDateString(e.target.value) })}
+            className="w-full cursor-pointer rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs transition-colors hover:bg-muted/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+      </div>
     </div>
   )
 }

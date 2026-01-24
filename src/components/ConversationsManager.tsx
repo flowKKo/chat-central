@@ -366,7 +366,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                   <div
                     role="dialog"
                     aria-label="Date range filter"
-                    className="absolute left-0 top-full z-10 mt-1 w-64 animate-scale-in rounded-xl border border-border bg-card p-3 shadow-lg"
+                    className="absolute right-0 top-full z-10 mt-1 w-72 animate-scale-in rounded-xl border border-border bg-card p-4 shadow-lg"
                   >
                     <DateRangePicker
                       startDate={filters.dateRange.start}
