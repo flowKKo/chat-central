@@ -16,7 +16,6 @@ import { PLATFORM_CONFIG, type Platform } from '@/types'
 import {
   conversationsAtom,
   loadConversationsAtom,
-  conversationCountsAtom,
   selectedConversationAtom,
   selectedMessagesAtom,
   loadConversationDetailAtom,
@@ -24,7 +23,6 @@ import {
   isLoadingConversationsAtom,
   favoritesConversationsAtom,
   loadFavoritesAtom,
-  favoriteCountsAtom,
   favoritesPaginationAtom,
   isLoadingFavoritesAtom,
   loadFavoriteDetailAtom,
@@ -44,6 +42,8 @@ import {
   selectAllVisibleAtom,
   currentPlatformFilterAtom,
   setPlatformFilterAtom,
+  filteredConversationCountsAtom,
+  filteredFavoriteCountsAtom,
 } from '@/utils/atoms'
 import { DateRangePicker } from './ui/DateRangePicker'
 import { cn } from '@/utils/cn'
@@ -54,7 +54,9 @@ import { downloadBlob } from '@/utils/sync/utils'
 export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 'favorites' }) {
   const isFavorites = mode === 'favorites'
   const [conversations] = useAtom(isFavorites ? favoritesConversationsAtom : conversationsAtom)
-  const [counts] = useAtom(isFavorites ? favoriteCountsAtom : conversationCountsAtom)
+  const [counts] = useAtom(
+    isFavorites ? filteredFavoriteCountsAtom : filteredConversationCountsAtom
+  )
   const [, loadConversations] = useAtom(isFavorites ? loadFavoritesAtom : loadConversationsAtom)
   const [selectedConversation] = useAtom(selectedConversationAtom)
   const [selectedMessages] = useAtom(selectedMessagesAtom)

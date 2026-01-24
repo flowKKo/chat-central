@@ -237,6 +237,73 @@ export const favoriteCountsAtom = atom<Record<Platform | 'total', number>>({
   total: 0,
 })
 
+/**
+ * Filtered conversation counts per platform (respects date filter)
+ * When a date filter is active, these counts reflect the filtered results
+ */
+export const filteredConversationCountsAtom = atom((get) => {
+  const baseCounts = get(conversationCountsAtom)
+  const { dateRange } = get(filtersAtom)
+
+  // If no date filter, return the original counts
+  if (!dateRange.start && !dateRange.end) {
+    return baseCounts
+  }
+
+  // When date filter is active, calculate counts from loaded conversations
+  const conversations = get(conversationsAtom)
+  const counts: Record<Platform | 'total', number> = {
+    claude: 0,
+    chatgpt: 0,
+    gemini: 0,
+    total: 0,
+  }
+
+  for (const conv of conversations) {
+    // Apply date filter
+    if (dateRange.start && conv.updatedAt < dateRange.start) continue
+    if (dateRange.end && conv.updatedAt > dateRange.end) continue
+
+    counts[conv.platform]++
+    counts.total++
+  }
+
+  return counts
+})
+
+/**
+ * Filtered favorite counts per platform (respects date filter)
+ */
+export const filteredFavoriteCountsAtom = atom((get) => {
+  const baseCounts = get(favoriteCountsAtom)
+  const { dateRange } = get(filtersAtom)
+
+  // If no date filter, return the original counts
+  if (!dateRange.start && !dateRange.end) {
+    return baseCounts
+  }
+
+  // When date filter is active, calculate counts from loaded favorites
+  const favorites = get(favoritesConversationsAtom)
+  const counts: Record<Platform | 'total', number> = {
+    claude: 0,
+    chatgpt: 0,
+    gemini: 0,
+    total: 0,
+  }
+
+  for (const conv of favorites) {
+    // Apply date filter
+    if (dateRange.start && conv.updatedAt < dateRange.start) continue
+    if (dateRange.end && conv.updatedAt > dateRange.end) continue
+
+    counts[conv.platform]++
+    counts.total++
+  }
+
+  return counts
+})
+
 // ============================================================================
 // Derived Atoms
 // ============================================================================
