@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from 'react'
 import {
   autoSyncEnabledAtom,
+  autoSyncIntervalAtom,
   cloudSyncErrorAtom,
   cloudSyncStatusAtom,
   connectCloudAtom,
@@ -55,6 +56,7 @@ export function CloudSyncPanel() {
   const isSyncing = useAtomValue(isSyncingAtom)
   const lastResult = useAtomValue(lastSyncResultAtom)
   const autoSyncEnabled = useAtomValue(autoSyncEnabledAtom)
+  const autoSyncInterval = useAtomValue(autoSyncIntervalAtom)
 
   // Actions
   const connect = useSetAtom(connectCloudAtom)
@@ -196,7 +198,10 @@ export function CloudSyncPanel() {
                   Connected to Google Drive
                 </p>
                 {lastSyncTimeAgo && (
-                  <p className="text-sm text-muted-foreground">Last synced: {lastSyncTimeAgo}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Last synced:
+                    {lastSyncTimeAgo}
+                  </p>
                 )}
               </div>
             </div>
@@ -206,7 +211,18 @@ export function CloudSyncPanel() {
           {syncError && (
             <div className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3">
               <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
-              <p className="text-sm text-red-600 dark:text-red-400">{syncError}</p>
+              <div className="text-sm text-red-600 dark:text-red-400">
+                <p>{syncError}</p>
+                {lastResult?.errorCategory === 'auth' && (
+                  <button
+                    type="button"
+                    onClick={handleDisconnect}
+                    className="mt-2 text-xs underline hover:no-underline"
+                  >
+                    Reconnect account
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -265,7 +281,10 @@ export function CloudSyncPanel() {
           <div className="flex items-center justify-between rounded-xl bg-muted/30 p-4">
             <div>
               <p className="font-medium">Auto-sync</p>
-              <p className="text-sm text-muted-foreground">Automatically sync every 5 minutes</p>
+              <p className="text-sm text-muted-foreground">
+                Automatically sync every {autoSyncInterval} minute
+                {autoSyncInterval === 1 ? '' : 's'}
+              </p>
             </div>
             <label className="relative inline-flex cursor-pointer items-center">
               <input

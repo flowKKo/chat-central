@@ -8,7 +8,11 @@ import {
 } from '@/utils/db'
 import { importFromJson } from './import'
 import type { CloudStorageProvider, CloudSyncResult, CloudSyncState } from './providers/cloud-types'
-import { createEmptyCloudSyncResult, DEFAULT_CLOUD_SYNC_STATE } from './providers/cloud-types'
+import {
+  CloudSyncError,
+  createEmptyCloudSyncResult,
+  DEFAULT_CLOUD_SYNC_STATE,
+} from './providers/cloud-types'
 import { createGoogleDriveProvider } from './providers/google-drive'
 import { syncLogger } from './utils'
 
@@ -163,20 +167,22 @@ export async function syncToCloud(): Promise<CloudSyncResult> {
     syncLogger.info('Cloud sync completed successfully', result.stats)
     return result
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    syncLogger.error('Cloud sync failed', error)
+    const syncError = CloudSyncError.fromError(error)
+    syncLogger.error('Cloud sync failed', syncError)
 
     // Update state with error
     const state = await loadCloudSyncState()
     await saveCloudSyncState({
       ...state,
-      error: message,
+      error: syncError.userMessage,
     })
 
     return {
       ...result,
       success: false,
-      error: message,
+      error: syncError.message,
+      errorCategory: syncError.category,
+      userMessage: syncError.userMessage,
     }
   }
 }
@@ -223,11 +229,13 @@ async function downloadAndMerge(): Promise<CloudSyncResult> {
 
     return result
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
+    const syncError = CloudSyncError.fromError(error)
     return {
       ...result,
       success: false,
-      error: message,
+      error: syncError.message,
+      errorCategory: syncError.category,
+      userMessage: syncError.userMessage,
     }
   }
 }

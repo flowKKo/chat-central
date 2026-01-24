@@ -142,7 +142,8 @@ export const performSyncAtom = atom(null, async (get, set) => {
         set(cloudSyncStatusAtom, 'idle')
       }, 3000)
     } else {
-      set(cloudSyncErrorAtom, result.error ?? 'Sync failed')
+      // Use userMessage for display, fallback to error or generic message
+      set(cloudSyncErrorAtom, result.userMessage ?? result.error ?? 'Sync failed')
       set(cloudSyncStatusAtom, 'error')
     }
   } catch (error) {

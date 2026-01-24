@@ -2,6 +2,72 @@ import type { CloudStorageProvider, DriveFileListResponse, DriveFileMetadata } f
 import { syncLogger } from '../utils'
 
 // ============================================================================
+// Retry Utilities
+// ============================================================================
+
+interface RetryOptions {
+  maxRetries: number
+  baseDelayMs: number
+  maxDelayMs: number
+}
+
+const DEFAULT_RETRY_OPTIONS: RetryOptions = {
+  maxRetries: 3,
+  baseDelayMs: 1000,
+  maxDelayMs: 30000,
+}
+
+/**
+ * Check if an error is retryable based on HTTP status or error type
+ */
+function isRetryableError(error: unknown): boolean {
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase()
+    // Network errors
+    if (message.includes('network') || message.includes('fetch')) return true
+    // Timeout errors
+    if (message.includes('timeout')) return true
+    // Server errors (5xx)
+    if (/status[:\s]*5\d{2}/.test(message)) return true
+    // Rate limiting
+    if (message.includes('429') || message.includes('rate limit')) return true
+  }
+  return false
+}
+
+/**
+ * Execute a function with exponential backoff retry
+ */
+async function withRetry<T>(fn: () => Promise<T>, options: Partial<RetryOptions> = {}): Promise<T> {
+  const { maxRetries, baseDelayMs, maxDelayMs } = { ...DEFAULT_RETRY_OPTIONS, ...options }
+
+  let lastError: Error | undefined
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error))
+
+      // Don't retry if not retryable or last attempt
+      if (!isRetryableError(error) || attempt === maxRetries) {
+        throw lastError
+      }
+
+      // Calculate delay with exponential backoff and jitter
+      const exponentialDelay = baseDelayMs * 2 ** attempt
+      const jitter = Math.random() * 0.3 * exponentialDelay // 0-30% jitter
+      const delay = Math.min(exponentialDelay + jitter, maxDelayMs)
+
+      syncLogger.info(`Retry attempt ${attempt + 1}/${maxRetries} after ${Math.round(delay)}ms`)
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+  }
+
+  throw lastError ?? new Error('Retry failed')
+}
+
+// ============================================================================
 // Chrome Identity API Types
 // ============================================================================
 
@@ -46,6 +112,8 @@ export class GoogleDriveProvider implements CloudStorageProvider {
 
   private accessToken: string | null = null
   private cachedFileId: string | null = null
+  // Prevent concurrent token refresh requests (race condition fix)
+  private tokenRefreshPromise: Promise<string> | null = null
 
   // ===========================================================================
   // Connection Management
@@ -95,68 +163,74 @@ export class GoogleDriveProvider implements CloudStorageProvider {
   // ===========================================================================
 
   async upload(data: string, filename: string = SYNC_FILENAME): Promise<void> {
-    const token = await this.ensureToken()
+    await withRetry(async () => {
+      const token = await this.ensureToken()
 
-    // Check if file already exists
-    const existingFileId = await this.findFile(filename)
+      // Check if file already exists
+      const existingFileId = await this.findFile(filename)
 
-    if (existingFileId) {
-      // Update existing file
-      await this.updateFile(existingFileId, data, token)
-      syncLogger.info('Updated existing sync file in Google Drive')
-    } else {
-      // Create new file
-      await this.createFile(filename, data, token)
-      syncLogger.info('Created new sync file in Google Drive')
-    }
+      if (existingFileId) {
+        // Update existing file
+        await this.updateFile(existingFileId, data, token)
+        syncLogger.info('Updated existing sync file in Google Drive')
+      } else {
+        // Create new file
+        await this.createFile(filename, data, token)
+        syncLogger.info('Created new sync file in Google Drive')
+      }
+    })
   }
 
   async download(filename: string = SYNC_FILENAME): Promise<string | null> {
-    const token = await this.ensureToken()
+    return withRetry(async () => {
+      const token = await this.ensureToken()
 
-    const fileId = await this.findFile(filename)
-    if (!fileId) {
-      syncLogger.info('Sync file not found in Google Drive')
-      return null
-    }
+      const fileId = await this.findFile(filename)
+      if (!fileId) {
+        syncLogger.info('Sync file not found in Google Drive')
+        return null
+      }
 
-    const response = await fetch(`${DRIVE_FILES_ENDPOINT}/${fileId}?alt=media`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      const response = await fetch(`${DRIVE_FILES_ENDPOINT}/${fileId}?alt=media`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to download file: ${response.status} ${response.statusText}`)
+      }
+
+      return response.text()
     })
-
-    if (!response.ok) {
-      throw new Error(`Failed to download file: ${response.status} ${response.statusText}`)
-    }
-
-    return response.text()
   }
 
   async getLastModified(filename: string = SYNC_FILENAME): Promise<number | null> {
-    const token = await this.ensureToken()
+    return withRetry(async () => {
+      const token = await this.ensureToken()
 
-    const fileId = await this.findFile(filename)
-    if (!fileId) {
+      const fileId = await this.findFile(filename)
+      if (!fileId) {
+        return null
+      }
+
+      const response = await fetch(`${DRIVE_FILES_ENDPOINT}/${fileId}?fields=modifiedTime`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to get file metadata: ${response.status}`)
+      }
+
+      const data = (await response.json()) as { modifiedTime?: string }
+      if (data.modifiedTime) {
+        return new Date(data.modifiedTime).getTime()
+      }
+
       return null
-    }
-
-    const response = await fetch(`${DRIVE_FILES_ENDPOINT}/${fileId}?fields=modifiedTime`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     })
-
-    if (!response.ok) {
-      throw new Error(`Failed to get file metadata: ${response.status}`)
-    }
-
-    const data = (await response.json()) as { modifiedTime?: string }
-    if (data.modifiedTime) {
-      return new Date(data.modifiedTime).getTime()
-    }
-
-    return null
   }
 
   // ===========================================================================
@@ -188,25 +262,47 @@ export class GoogleDriveProvider implements CloudStorageProvider {
   }
 
   private async ensureToken(): Promise<string> {
+    // If token exists, validate it first
     if (this.accessToken) {
-      // Try to use existing token, refresh if needed
       try {
         await this.validateToken(this.accessToken)
         return this.accessToken
       } catch {
-        // Token invalid, try to get a new one
         syncLogger.info('Token expired, refreshing...')
+        // Clear invalid token
+        this.accessToken = null
       }
     }
 
-    // Get a new token (non-interactive first, then interactive if needed)
-    try {
-      this.accessToken = await this.getAuthToken(false)
-    } catch {
-      this.accessToken = await this.getAuthToken(true)
+    // If a token refresh is already in progress, wait for it (prevents race condition)
+    if (this.tokenRefreshPromise) {
+      return this.tokenRefreshPromise
     }
 
-    return this.accessToken
+    // Start a new token refresh
+    this.tokenRefreshPromise = this.refreshToken()
+
+    try {
+      const token = await this.tokenRefreshPromise
+      this.accessToken = token
+      return token
+    } finally {
+      // Clear the promise so next call can start fresh if needed
+      this.tokenRefreshPromise = null
+    }
+  }
+
+  /**
+   * Refresh the access token (non-interactive first, then interactive)
+   */
+  private async refreshToken(): Promise<string> {
+    try {
+      // Try non-interactive first (uses cached credentials)
+      return await this.getAuthToken(false)
+    } catch {
+      // Fall back to interactive (shows OAuth popup)
+      return await this.getAuthToken(true)
+    }
   }
 
   private async validateToken(token: string): Promise<void> {
