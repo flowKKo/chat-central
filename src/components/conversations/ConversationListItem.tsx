@@ -108,6 +108,21 @@ export function ConversationListItem({
             </span>
           </div>
 
+          {/* Summary or preview */}
+          {(conversation.summary || conversation.preview) && (
+            <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/80">
+              {searchQuery ? (
+                <HighlightText
+                  text={conversation.summary || conversation.preview}
+                  query={searchQuery}
+                  maxLength={120}
+                />
+              ) : (
+                conversation.summary || conversation.preview
+              )}
+            </p>
+          )}
+
           {/* Tags display */}
           {conversation.tags.length > 0 && (
             <div className="mt-1.5 flex flex-wrap items-center gap-1">
