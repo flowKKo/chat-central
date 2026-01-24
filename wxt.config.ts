@@ -19,7 +19,22 @@ export default defineConfig({
         // Can generate fixed dev key later
       }),
 
-    permissions: ['storage', 'unlimitedStorage', 'tabs', 'contextMenus'],
+    permissions: ['storage', 'unlimitedStorage', 'tabs', 'contextMenus', 'identity', 'alarms'],
+
+    // OAuth2 configuration for Google Drive cloud sync
+    // NOTE: Replace with your own client ID from Google Cloud Console
+    // 1. Create a project at https://console.cloud.google.com/
+    // 2. Enable Google Drive API
+    // 3. Create OAuth 2.0 credentials (Chrome extension type)
+    // 4. Set the client ID below
+    oauth2: {
+      client_id: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+      scopes: ['https://www.googleapis.com/auth/drive.appdata'],
+    },
+
+    // Extension key for consistent extension ID during development
+    // Generate with: openssl rand -base64 32 | head -c 32
+    // key: 'YOUR_EXTENSION_KEY',
 
     host_permissions: [
       'https://claude.ai/*',

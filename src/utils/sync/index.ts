@@ -44,12 +44,37 @@ export {
 
 // Providers
 export {
+  // Cloud storage providers
+  type CloudProviderType,
+  cloudProviderTypeSchema,
+  type CloudStorageProvider,
+  type CloudSyncOperationStatus,
+  cloudSyncOperationStatusSchema,
+  type CloudSyncResult,
+  type CloudSyncState,
+  createEmptyCloudSyncResult,
+  createGoogleDriveProvider,
   createMockProvider,
   createRestProvider,
+  DEFAULT_CLOUD_SYNC_STATE,
+  GoogleDriveProvider,
   MockSyncProvider,
   type RestProviderConfig,
   RestSyncProvider,
 } from './providers'
+
+// Cloud sync
+export {
+  connectCloudProvider,
+  disconnectCloudProvider,
+  getActiveProvider,
+  initializeCloudSync,
+  isCloudConnected,
+  loadCloudSyncState,
+  saveCloudSyncState,
+  syncToCloud,
+  updateAutoSyncSettings,
+} from './cloud-sync'
 
 // Types
 export type {

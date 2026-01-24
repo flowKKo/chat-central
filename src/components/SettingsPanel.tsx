@@ -22,6 +22,7 @@ import { downloadExport, exportData } from '@/utils/sync/export'
 import { importData, importFromJson, validateImportFile } from '@/utils/sync/import'
 import type { ImportResult } from '@/utils/sync/types'
 import { isFileSizeSafe } from '@/utils/sync/utils'
+import { CloudSyncPanel } from './CloudSyncPanel'
 
 const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', icon: Sun },
@@ -332,6 +333,9 @@ export function SettingsPanel() {
             </div>
           </div>
         </section>
+
+        {/* Cloud Sync */}
+        <CloudSyncPanel />
 
         {/* Platform Data */}
         <section className="rounded-2xl border border-border bg-card/50 p-6">

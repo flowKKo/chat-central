@@ -9,15 +9,23 @@ export const syncLogger = {
   error: (msg: string, error?: unknown) => {
     console.error(`[Sync] ${msg}`, error ?? '')
   },
-  warn: (msg: string) => {
-    console.warn(`[Sync] ${msg}`)
+  warn: (msg: string, data?: unknown) => {
+    console.warn(`[Sync] ${msg}`, data ?? '')
   },
-  info: (msg: string) => {
-    console.info(`[Sync] ${msg}`)
+  info: (msg: string, data?: unknown) => {
+    if (data !== undefined) {
+      console.info(`[Sync] ${msg}`, data)
+    } else {
+      console.info(`[Sync] ${msg}`)
+    }
   },
-  debug: (msg: string) => {
+  debug: (msg: string, data?: unknown) => {
     if (import.meta.env.DEV) {
-      console.log(`[Sync] ${msg}`)
+      if (data !== undefined) {
+        console.log(`[Sync] ${msg}`, data)
+      } else {
+        console.log(`[Sync] ${msg}`)
+      }
     }
   },
 }
