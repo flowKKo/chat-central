@@ -340,7 +340,7 @@ describe('googleDriveProvider', () => {
   describe('token refresh', () => {
     it('should refresh token when validation fails', async () => {
       let callCount = 0
-      mockChrome.identity.getAuthToken.mockImplementation((options, callback) => {
+      mockChrome.identity.getAuthToken.mockImplementation((_options, callback) => {
         callCount++
         if (callCount === 1) {
           // First connect
