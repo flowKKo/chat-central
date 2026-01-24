@@ -95,7 +95,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <div className="flex max-h-[600px] min-h-[520px] w-[400px] flex-col bg-background text-foreground">
+      <div className="flex max-h-[600px] min-h-[520px] w-[420px] flex-col bg-background text-foreground">
         {/* Header */}
         <header className="relative bg-card px-4 pb-3 pt-4">
           <div className="mb-4 flex items-center justify-between">
@@ -172,32 +172,39 @@ export default function App() {
             <PlatformTab
               label="All"
               count={counts.total}
-              isActive={selectedPlatform === 'all'}
-              onClick={() => setPlatformFilter('all')}
+              isActive={selectedPlatform === 'all' && !showFavoritesOnly}
+              onClick={() => {
+                setShowFavoritesOnly(false)
+                setPlatformFilter('all')
+              }}
             />
             {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
               <PlatformTab
                 key={platform}
                 platform={platform}
                 count={counts[platform]}
-                isActive={selectedPlatform === platform}
-                onClick={() => setPlatformFilter(platform)}
+                isActive={selectedPlatform === platform && !showFavoritesOnly}
+                onClick={() => {
+                  setShowFavoritesOnly(false)
+                  setPlatformFilter(platform)
+                }}
               />
             ))}
             <div className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
             <button
               type="button"
+              role="tab"
+              aria-selected={showFavoritesOnly}
               className={cn(
-                'kbd-focus flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
+                'kbd-focus flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
                 showFavoritesOnly
                   ? 'bg-amber-500/20 text-amber-400'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
-              onClick={() => setShowFavoritesOnly((value) => !value)}
-              aria-label={showFavoritesOnly ? 'Show all conversations' : 'Show favorites only'}
-              aria-pressed={showFavoritesOnly}
+              onClick={() => setShowFavoritesOnly(true)}
             >
               <Star className={cn('h-3.5 w-3.5', showFavoritesOnly && 'fill-amber-400')} />
+              <span>Favorites</span>
             </button>
           </div>
         </div>
@@ -367,7 +374,7 @@ function ConversationItem({
     <div
       role="listitem"
       tabIndex={0}
-      className="kbd-focus group relative animate-slide-in cursor-pointer rounded-xl p-3 transition-all hover:bg-muted"
+      className="kbd-focus group relative animate-fade-in cursor-pointer rounded-xl p-3 transition-all hover:bg-muted"
       style={style}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
@@ -381,8 +388,8 @@ function ConversationItem({
 
       <div className="flex items-start gap-3 pl-2">
         <div className="min-w-0 flex-1">
-          <div className="mb-1 flex items-center gap-2">
-            <h3 className="truncate text-sm font-medium text-foreground">
+          <div className="mb-1 flex min-w-0 items-center gap-2">
+            <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
               {searchQuery ? (
                 <HighlightText text={conversation.title} query={searchQuery} />
               ) : (
@@ -395,17 +402,21 @@ function ConversationItem({
             />
           </div>
 
-          {/* Show message match snippet if available, otherwise show preview */}
+          {/* Show message match snippet if available, otherwise show summary/preview */}
           {hasMessageMatch && searchQuery ? (
             <div className="mb-2 line-clamp-2 rounded-md bg-muted/50 px-2 py-1 text-xs leading-relaxed text-muted-foreground">
               <HighlightText text={messageMatch.text} query={searchQuery} maxLength={80} />
             </div>
-          ) : conversation.preview ? (
+          ) : conversation.summary || conversation.preview ? (
             <p className="mb-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
               {searchQuery ? (
-                <HighlightText text={conversation.preview} query={searchQuery} maxLength={100} />
+                <HighlightText
+                  text={conversation.summary || conversation.preview}
+                  query={searchQuery}
+                  maxLength={100}
+                />
               ) : (
-                conversation.preview
+                conversation.summary || conversation.preview
               )}
             </p>
           ) : null}
@@ -423,7 +434,7 @@ function ConversationItem({
                 <span className="opacity-50" aria-hidden="true">
                   ·
                 </span>
-                <span>{conversation.messageCount} msgs</span>
+                <span>{conversation.messageCount} messages</span>
               </>
             )}
           </div>

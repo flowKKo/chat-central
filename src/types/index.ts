@@ -65,6 +65,8 @@ export const conversationSchema = z.object({
   messageCount: z.number(),
   // First message preview
   preview: z.string(),
+  // AI-generated conversation summary (Claude only for now)
+  summary: z.string().optional(),
   tags: z.array(z.string()),
   // Last synced time (from platform)
   syncedAt: z.number(),
