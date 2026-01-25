@@ -21,22 +21,22 @@ describe('dateRangePicker', () => {
       render(<DateRangePicker startDate={null} endDate={null} onChange={mockOnChange} />)
 
       expect(screen.getByText('Today')).toBeInTheDocument()
-      expect(screen.getByText('Last 7 days')).toBeInTheDocument()
-      expect(screen.getByText('Last 30 days')).toBeInTheDocument()
-      expect(screen.getByText('Last 90 days')).toBeInTheDocument()
+      expect(screen.getByText('7 days')).toBeInTheDocument()
+      expect(screen.getByText('30 days')).toBeInTheDocument()
+      expect(screen.getByText('90 days')).toBeInTheDocument()
     })
 
-    it('should render date inputs', () => {
+    it('should render date inputs with From/To labels', () => {
       render(<DateRangePicker startDate={null} endDate={null} onChange={mockOnChange} />)
 
-      expect(screen.getByLabelText('Start date')).toBeInTheDocument()
-      expect(screen.getByLabelText('End date')).toBeInTheDocument()
+      expect(screen.getByLabelText('From')).toBeInTheDocument()
+      expect(screen.getByLabelText('To')).toBeInTheDocument()
     })
 
     it('should not show clear button when no dates selected', () => {
       render(<DateRangePicker startDate={null} endDate={null} onChange={mockOnChange} />)
 
-      expect(screen.queryByText('Clear date filter')).not.toBeInTheDocument()
+      expect(screen.queryByText('Clear')).not.toBeInTheDocument()
     })
 
     it('should show clear button when dates are selected', () => {
@@ -44,7 +44,7 @@ describe('dateRangePicker', () => {
       const endDate = new Date('2024-06-15').getTime()
       render(<DateRangePicker startDate={startDate} endDate={endDate} onChange={mockOnChange} />)
 
-      expect(screen.getByText('Clear date filter')).toBeInTheDocument()
+      expect(screen.getByText('Clear')).toBeInTheDocument()
     })
 
     it('should apply custom className', () => {
@@ -75,10 +75,10 @@ describe('dateRangePicker', () => {
       expect(call.end).toBe(Date.now())
     })
 
-    it('should call onChange with 7 day range when Last 7 days clicked', () => {
+    it('should call onChange with 7 day range when 7 days clicked', () => {
       render(<DateRangePicker startDate={null} endDate={null} onChange={mockOnChange} />)
 
-      fireEvent.click(screen.getByText('Last 7 days'))
+      fireEvent.click(screen.getByText('7 days'))
 
       expect(mockOnChange).toHaveBeenCalledTimes(1)
       const call = mockOnChange.mock.calls[0]![0] as { start: number; end: number }
@@ -86,20 +86,20 @@ describe('dateRangePicker', () => {
       expect(call.end).toBe(Date.now())
     })
 
-    it('should call onChange with 30 day range when Last 30 days clicked', () => {
+    it('should call onChange with 30 day range when 30 days clicked', () => {
       render(<DateRangePicker startDate={null} endDate={null} onChange={mockOnChange} />)
 
-      fireEvent.click(screen.getByText('Last 30 days'))
+      fireEvent.click(screen.getByText('30 days'))
 
       expect(mockOnChange).toHaveBeenCalledTimes(1)
       const call = mockOnChange.mock.calls[0]![0] as { start: number | null; end: number | null }
       expect(call.start).toBe(daysAgo(30))
     })
 
-    it('should call onChange with 90 day range when Last 90 days clicked', () => {
+    it('should call onChange with 90 day range when 90 days clicked', () => {
       render(<DateRangePicker startDate={null} endDate={null} onChange={mockOnChange} />)
 
-      fireEvent.click(screen.getByText('Last 90 days'))
+      fireEvent.click(screen.getByText('90 days'))
 
       expect(mockOnChange).toHaveBeenCalledTimes(1)
       const call = mockOnChange.mock.calls[0]![0] as { start: number | null; end: number | null }
@@ -114,8 +114,9 @@ describe('dateRangePicker', () => {
 
       render(<DateRangePicker startDate={sevenDaysAgo} endDate={now} onChange={mockOnChange} />)
 
-      const button = screen.getByText('Last 7 days')
-      expect(button).toHaveClass('bg-primary/10')
+      const button = screen.getByText('7 days')
+      // New UI uses 'bg-primary' for active preset
+      expect(button).toHaveClass('bg-primary')
     })
 
     it('should not highlight preset when dates do not match', () => {
@@ -126,11 +127,11 @@ describe('dateRangePicker', () => {
         <DateRangePicker startDate={customStart} endDate={customEnd} onChange={mockOnChange} />
       )
 
-      const buttons = screen
-        .getAllByRole('button')
-        .filter((b) => b.textContent !== 'Clear date filter')
-      buttons.forEach((button) => {
-        expect(button).not.toHaveClass('bg-primary/10')
+      // All preset buttons should have the inactive style
+      const presetButtons = ['Today', '7 days', '30 days', '90 days']
+      presetButtons.forEach((label) => {
+        const button = screen.getByText(label)
+        expect(button).not.toHaveClass('bg-primary')
       })
     })
   })
@@ -141,7 +142,7 @@ describe('dateRangePicker', () => {
       const startDate = parseDateString('2024-06-01')!
       render(<DateRangePicker startDate={startDate} endDate={null} onChange={mockOnChange} />)
 
-      const startInput = screen.getByLabelText('Start date') as HTMLInputElement
+      const startInput = screen.getByLabelText('From') as HTMLInputElement
       expect(startInput.value).toBe('2024-06-01')
     })
 
@@ -149,14 +150,14 @@ describe('dateRangePicker', () => {
       const endDate = parseDateString('2024-06-15')!
       render(<DateRangePicker startDate={null} endDate={endDate} onChange={mockOnChange} />)
 
-      const endInput = screen.getByLabelText('End date') as HTMLInputElement
+      const endInput = screen.getByLabelText('To') as HTMLInputElement
       expect(endInput.value).toBe('2024-06-15')
     })
 
     it('should call onChange when start date changes', () => {
       render(<DateRangePicker startDate={null} endDate={null} onChange={mockOnChange} />)
 
-      const startInput = screen.getByLabelText('Start date')
+      const startInput = screen.getByLabelText('From')
       fireEvent.change(startInput, { target: { value: '2024-06-01' } })
 
       expect(mockOnChange).toHaveBeenCalledTimes(1)
@@ -169,7 +170,7 @@ describe('dateRangePicker', () => {
       const startDate = parseDateString('2024-06-01')!
       render(<DateRangePicker startDate={startDate} endDate={null} onChange={mockOnChange} />)
 
-      const endInput = screen.getByLabelText('End date')
+      const endInput = screen.getByLabelText('To')
       fireEvent.change(endInput, { target: { value: '2024-06-15' } })
 
       expect(mockOnChange).toHaveBeenCalledTimes(1)
@@ -185,7 +186,7 @@ describe('dateRangePicker', () => {
       const endDate = new Date('2024-06-15').getTime()
       render(<DateRangePicker startDate={startDate} endDate={endDate} onChange={mockOnChange} />)
 
-      fireEvent.click(screen.getByText('Clear date filter'))
+      fireEvent.click(screen.getByText('Clear'))
 
       expect(mockOnChange).toHaveBeenCalledWith({ start: null, end: null })
     })
