@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 import { browser } from 'wxt/browser'
-import type { Conversation, Message, Platform, SearchFilters, SyncState } from '@/types'
+import type { Conversation, Message, Platform } from '@/types'
 import {
   deleteMessagesByConversationId,
   getAllTags,
@@ -9,53 +9,32 @@ import {
   getFavoriteConversationCount,
   getMessagesByConversationId,
   searchConversationsWithMatches,
-  type SearchResultWithMatches,
   upsertMessages,
 } from '@/utils/db'
 import { parseSearchQuery } from '@/utils/search-parser'
+import {
+  allTagsAtom,
+  filtersAtom,
+  conversationsAtom,
+  isLoadingConversationsAtom,
+  paginationAtom,
+  conversationCountsAtom,
+  favoritesPaginationAtom,
+  activeSearchQueryAtom,
+  searchResultsAtom,
+  favoritesConversationsAtom,
+  isLoadingFavoritesAtom,
+  favoriteCountsAtom,
+  isLoadingDetailAtom,
+  selectedConversationIdAtom,
+  scrollToMessageIdAtom,
+  selectedConversationAtom,
+  selectedMessagesAtom,
+} from './state'
 
 // ============================================================================
-// Conversation List State
+// Filter Actions
 // ============================================================================
-
-/**
- * Currently displayed conversation list
- */
-export const conversationsAtom = atom<Conversation[]>([])
-
-/**
- * Whether conversations are loading
- */
-export const isLoadingConversationsAtom = atom(false)
-
-/**
- * Favorite conversation list
- */
-export const favoritesConversationsAtom = atom<Conversation[]>([])
-
-/**
- * Whether favorite conversations are loading
- */
-export const isLoadingFavoritesAtom = atom(false)
-
-/**
- * Conversation list filters
- */
-export const filtersAtom = atom<SearchFilters>({
-  platforms: [],
-  dateRange: { start: null, end: null },
-  tags: [],
-})
-
-/**
- * All unique tags from database
- */
-export const allTagsAtom = atom<string[]>([])
-
-/**
- * Currently selected filter tags (derived from filtersAtom)
- */
-export const selectedFilterTagsAtom = atom((get) => get(filtersAtom).tags)
 
 /**
  * Load all tags from database
@@ -101,14 +80,6 @@ export const setDateRangeAtom = atom(
 )
 
 /**
- * Check if date filter is active
- */
-export const hasDateFilterAtom = atom((get) => {
-  const { dateRange } = get(filtersAtom)
-  return dateRange.start !== null || dateRange.end !== null
-})
-
-/**
  * Clear all filters
  */
 export const clearAllFiltersAtom = atom(null, (_get, set) => {
@@ -119,214 +90,8 @@ export const clearAllFiltersAtom = atom(null, (_get, set) => {
   })
 })
 
-/**
- * Get current platform filter (single or 'all')
- */
-export const currentPlatformFilterAtom = atom((get): Platform | 'all' => {
-  const { platforms } = get(filtersAtom)
-  // When platforms has exactly one element, return it; otherwise return 'all'
-  const firstPlatform = platforms[0]
-  return platforms.length === 1 && firstPlatform ? firstPlatform : 'all'
-})
-
-/**
- * Search query
- */
-export const searchQueryAtom = atom('')
-
-/**
- * Active search query (the query that was actually searched)
- */
-export const activeSearchQueryAtom = atom('')
-
-/**
- * Search results with match information
- */
-export const searchResultsAtom = atom<SearchResultWithMatches[]>([])
-
-/**
- * Get match info for a conversation by ID
- */
-export const getMatchInfoAtom = atom((get) => {
-  const results = get(searchResultsAtom)
-  return (conversationId: string) => results.find((r) => r.conversation.id === conversationId)
-})
-
-/**
- * Pagination state
- */
-export const paginationAtom = atom({
-  offset: 0,
-  limit: 20,
-  hasMore: true,
-})
-
-/**
- * Favorites pagination state
- */
-export const favoritesPaginationAtom = atom({
-  offset: 0,
-  limit: 20,
-  hasMore: true,
-})
-
 // ============================================================================
-// Selected Conversation State
-// ============================================================================
-
-/**
- * Currently selected conversation ID
- */
-export const selectedConversationIdAtom = atom<string | null>(null)
-
-/**
- * Currently selected conversation details
- */
-export const selectedConversationAtom = atom<Conversation | null>(null)
-
-/**
- * Message list of the currently selected conversation
- */
-export const selectedMessagesAtom = atom<Message[]>([])
-
-/**
- * Whether conversation details are loading
- */
-export const isLoadingDetailAtom = atom(false)
-
-/**
- * Message ID to scroll to in detail view (for search results)
- */
-export const scrollToMessageIdAtom = atom<string | null>(null)
-
-// ============================================================================
-// Sync State
-// ============================================================================
-
-/**
- * Sync state
- */
-export const syncStateAtom = atom<SyncState>({
-  status: 'idle',
-  lastSyncAt: null,
-  error: null,
-  platform: null,
-})
-
-// ============================================================================
-// Stats
-// ============================================================================
-
-/**
- * Conversation counts per platform
- */
-export const conversationCountsAtom = atom<Record<Platform | 'total', number>>({
-  claude: 0,
-  chatgpt: 0,
-  gemini: 0,
-  total: 0,
-})
-
-/**
- * Favorite conversation counts per platform
- */
-export const favoriteCountsAtom = atom<Record<Platform | 'total', number>>({
-  claude: 0,
-  chatgpt: 0,
-  gemini: 0,
-  total: 0,
-})
-
-/**
- * Count conversations by platform, applying an optional date range filter
- */
-function countByPlatform(
-  conversations: Conversation[],
-  dateRange: { start: number | null; end: number | null }
-): Record<Platform | 'total', number> {
-  const counts: Record<Platform | 'total', number> = {
-    claude: 0,
-    chatgpt: 0,
-    gemini: 0,
-    total: 0,
-  }
-
-  for (const conv of conversations) {
-    if (dateRange.start && conv.updatedAt < dateRange.start) continue
-    if (dateRange.end && conv.updatedAt > dateRange.end) continue
-
-    counts[conv.platform]++
-    counts.total++
-  }
-
-  return counts
-}
-
-/**
- * Filtered conversation counts per platform (respects date filter)
- * When a date filter is active, these counts reflect the filtered results
- */
-export const filteredConversationCountsAtom = atom((get) => {
-  const { dateRange } = get(filtersAtom)
-  if (!dateRange.start && !dateRange.end) return get(conversationCountsAtom)
-  return countByPlatform(get(conversationsAtom), dateRange)
-})
-
-/**
- * Filtered favorite counts per platform (respects date filter)
- */
-export const filteredFavoriteCountsAtom = atom((get) => {
-  const { dateRange } = get(filtersAtom)
-  if (!dateRange.start && !dateRange.end) return get(favoriteCountsAtom)
-  return countByPlatform(get(favoritesConversationsAtom), dateRange)
-})
-
-// ============================================================================
-// Derived Atoms
-// ============================================================================
-
-/**
- * Filtered conversation list
- */
-export const filteredConversationsAtom = atom((get) => {
-  const conversations = get(conversationsAtom)
-  const filters = get(filtersAtom)
-  const query = get(searchQueryAtom).toLowerCase()
-
-  let result = conversations
-
-  // Platform filtering
-  if (filters.platforms.length > 0) {
-    result = result.filter((c) => filters.platforms.includes(c.platform))
-  }
-
-  // Date range filtering
-  if (filters.dateRange.start) {
-    result = result.filter((c) => c.updatedAt >= filters.dateRange.start!)
-  }
-  if (filters.dateRange.end) {
-    result = result.filter((c) => c.updatedAt <= filters.dateRange.end!)
-  }
-
-  // Tag filtering (OR logic - conversation must have at least one selected tag)
-  // Use Set for O(1) lookup instead of O(n) includes()
-  if (filters.tags.length > 0) {
-    const filterTagSet = new Set(filters.tags)
-    result = result.filter((c) => c.tags.some((tag) => filterTagSet.has(tag)))
-  }
-
-  // Search filtering
-  if (query) {
-    result = result.filter(
-      (c) => c.title.toLowerCase().includes(query) || c.preview.toLowerCase().includes(query)
-    )
-  }
-
-  return result
-})
-
-// ============================================================================
-// Action Atoms
+// Conversation Loading
 // ============================================================================
 
 /**
@@ -408,6 +173,10 @@ export const setPlatformFilterAtom = atom(null, async (get, set, platform: Platf
   // Reload conversations with new filter
   await set(loadConversationsAtom, { reset: true })
 })
+
+// ============================================================================
+// Search
+// ============================================================================
 
 /**
  * Perform search with advanced syntax support
@@ -507,6 +276,10 @@ export const clearSearchAtom = atom(null, async (_get, set) => {
   await set(loadConversationsAtom, { reset: true })
 })
 
+// ============================================================================
+// Favorites
+// ============================================================================
+
 /**
  * Load favorite conversation list
  */
@@ -567,6 +340,70 @@ export const loadFavoritesAtom = atom(null, async (get, set, options?: { reset?:
     set(isLoadingFavoritesAtom, false)
   }
 })
+
+/**
+ * Toggle favorite status
+ */
+export const toggleFavoriteAtom = atom(
+  null,
+  async (get, set, conversationId: string, value?: boolean) => {
+    try {
+      const response = (await browser.runtime.sendMessage({
+        action: 'TOGGLE_FAVORITE',
+        conversationId,
+        value,
+      })) as { conversation?: Conversation | null } | undefined
+
+      const updated: Conversation | null = response?.conversation ?? null
+      if (!updated) return
+
+      const applyUpdate = (list: Conversation[]) =>
+        list.map((item) => (item.id === updated.id ? updated : item))
+
+      set(conversationsAtom, applyUpdate(get(conversationsAtom)))
+
+      const favoriteList = get(favoritesConversationsAtom)
+      if (updated.isFavorite) {
+        const exists = favoriteList.some((item) => item.id === updated.id)
+        if (exists) {
+          set(favoritesConversationsAtom, applyUpdate(favoriteList))
+        } else {
+          set(favoritesConversationsAtom, [updated, ...favoriteList])
+        }
+      } else {
+        set(
+          favoritesConversationsAtom,
+          favoriteList.filter((item) => item.id !== updated.id)
+        )
+      }
+
+      const selected = get(selectedConversationAtom)
+      if (selected?.id === updated.id) {
+        set(selectedConversationAtom, updated)
+      }
+
+      const [claudeCount, chatgptCount, geminiCount, totalCount] = await Promise.all([
+        getFavoriteConversationCount('claude'),
+        getFavoriteConversationCount('chatgpt'),
+        getFavoriteConversationCount('gemini'),
+        getFavoriteConversationCount(),
+      ])
+
+      set(favoriteCountsAtom, {
+        claude: claudeCount,
+        chatgpt: chatgptCount,
+        gemini: geminiCount,
+        total: totalCount,
+      })
+    } catch (e) {
+      console.error('[ChatCentral] Failed to toggle favorite:', e)
+    }
+  }
+)
+
+// ============================================================================
+// Conversation Detail
+// ============================================================================
 
 /**
  * Load conversation details
@@ -637,65 +474,9 @@ export const clearSelectionAtom = atom(null, (_get, set) => {
   set(selectedMessagesAtom, [])
 })
 
-/**
- * Toggle favorite status
- */
-export const toggleFavoriteAtom = atom(
-  null,
-  async (get, set, conversationId: string, value?: boolean) => {
-    try {
-      const response = (await browser.runtime.sendMessage({
-        action: 'TOGGLE_FAVORITE',
-        conversationId,
-        value,
-      })) as { conversation?: Conversation | null } | undefined
-
-      const updated: Conversation | null = response?.conversation ?? null
-      if (!updated) return
-
-      const applyUpdate = (list: Conversation[]) =>
-        list.map((item) => (item.id === updated.id ? updated : item))
-
-      set(conversationsAtom, applyUpdate(get(conversationsAtom)))
-
-      const favoriteList = get(favoritesConversationsAtom)
-      if (updated.isFavorite) {
-        const exists = favoriteList.some((item) => item.id === updated.id)
-        if (exists) {
-          set(favoritesConversationsAtom, applyUpdate(favoriteList))
-        } else {
-          set(favoritesConversationsAtom, [updated, ...favoriteList])
-        }
-      } else {
-        set(
-          favoritesConversationsAtom,
-          favoriteList.filter((item) => item.id !== updated.id)
-        )
-      }
-
-      const selected = get(selectedConversationAtom)
-      if (selected?.id === updated.id) {
-        set(selectedConversationAtom, updated)
-      }
-
-      const [claudeCount, chatgptCount, geminiCount, totalCount] = await Promise.all([
-        getFavoriteConversationCount('claude'),
-        getFavoriteConversationCount('chatgpt'),
-        getFavoriteConversationCount('gemini'),
-        getFavoriteConversationCount(),
-      ])
-
-      set(favoriteCountsAtom, {
-        claude: claudeCount,
-        chatgpt: chatgptCount,
-        gemini: geminiCount,
-        total: totalCount,
-      })
-    } catch (e) {
-      console.error('[ChatCentral] Failed to toggle favorite:', e)
-    }
-  }
-)
+// ============================================================================
+// Conversation Updates
+// ============================================================================
 
 /**
  * Update a conversation in all relevant atoms
@@ -715,7 +496,6 @@ export const updateConversationAtom = atom(null, (get, set, updated: Conversatio
 
 /**
  * Update tags for a conversation
- * Follows the same pattern as toggleFavoriteAtom
  */
 export const updateTagsAtom = atom(
   null,
@@ -730,7 +510,7 @@ export const updateTagsAtom = atom(
       const updated: Conversation | null = response?.conversation ?? null
       if (!updated) return null
 
-      // Update all relevant atoms (same pattern as toggleFavoriteAtom)
+      // Update all relevant atoms
       const applyUpdate = (list: Conversation[]) =>
         list.map((item) => (item.id === updated.id ? updated : item))
 
@@ -752,53 +532,6 @@ export const updateTagsAtom = atom(
     }
   }
 )
-
-// ============================================================================
-// Batch Selection State
-// ============================================================================
-
-/**
- * Set of selected conversation IDs for batch operations
- */
-export const batchSelectedIdsAtom = atom<Set<string>>(new Set<string>())
-
-/**
- * Whether batch selection mode is active
- */
-export const isBatchModeAtom = atom((get) => get(batchSelectedIdsAtom).size > 0)
-
-/**
- * Number of selected conversations
- */
-export const batchSelectedCountAtom = atom((get) => get(batchSelectedIdsAtom).size)
-
-/**
- * Toggle batch selection for a single conversation
- */
-export const toggleBatchSelectAtom = atom(null, (get, set, id: string) => {
-  const current = get(batchSelectedIdsAtom)
-  const newSet = new Set(current)
-  if (newSet.has(id)) {
-    newSet.delete(id)
-  } else {
-    newSet.add(id)
-  }
-  set(batchSelectedIdsAtom, newSet)
-})
-
-/**
- * Select all conversations from a given list
- */
-export const selectAllVisibleAtom = atom(null, (_get, set, ids: string[]) => {
-  set(batchSelectedIdsAtom, new Set(ids))
-})
-
-/**
- * Clear all batch selections
- */
-export const clearBatchSelectionAtom = atom(null, (_get, set) => {
-  set(batchSelectedIdsAtom, new Set<string>())
-})
 
 // ============================================================================
 // Internal Helpers
