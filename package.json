@@ -27,22 +27,22 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.60.0",
+    "@tanstack/react-query": "^5.90.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "deepmerge-ts": "^7.1.3",
     "dexie": "^4.0.9",
-    "dexie-react-hooks": "^1.1.7",
+    "dexie-react-hooks": "^4.2.0",
     "jotai": "^2.10.0",
     "jszip": "^3.10.1",
-    "lucide-react": "^0.468.0",
+    "lucide-react": "^0.563.0",
     "minisearch": "^7.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.1.0",
-    "sonner": "^1.7.0",
-    "tailwind-merge": "^2.6.0",
+    "react-router-dom": "^7.13.0",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.4.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
@@ -63,7 +63,7 @@
     "eslint-plugin-react-refresh": "^0.4.26",
     "fake-indexeddb": "^6.2.5",
     "husky": "^9.1.7",
-    "jsdom": "^25.0.1",
+    "jsdom": "^27.4.0",
     "lint-staged": "^16.2.7",
     "postcss": "^8.4.47",
     "prettier": "^3.8.1",
@@ -73,7 +73,7 @@
     "typescript": "^5.7.0",
     "vitest": "^2.1.0",
     "ws": "^8.18.0",
-    "wxt": "^0.19.0"
+    "wxt": "^0.19.29"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
