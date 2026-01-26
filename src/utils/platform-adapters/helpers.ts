@@ -3,6 +3,8 @@
  * New code should import from './common' directly
  */
 export {
+  extractSsePayloads,
+  normalizeListPayload,
   parseJsonCandidates,
   parseJsonIfString,
   parseJsonSafe,

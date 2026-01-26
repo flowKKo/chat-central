@@ -1,6 +1,7 @@
 import type { PlatformAdapter } from './types'
 import type { Conversation, Message } from '@/types'
-import { parseJsonIfString, parseSseData } from './helpers'
+import { extractSsePayloads, normalizeListPayload, parseJsonIfString } from './helpers'
+import { extractRole } from './common'
 
 /**
  * Claude API Endpoint Patterns
@@ -88,31 +89,6 @@ function extractClaudeMessageContent(message: unknown): string {
   return ''
 }
 
-function normalizeListPayload(payload: unknown): unknown[] | null {
-  if (Array.isArray(payload)) return payload
-  if (!payload || typeof payload !== 'object') return null
-
-  const obj = payload as Record<string, unknown>
-  const data = obj.data as Record<string, unknown> | undefined
-
-  const candidates = [
-    obj.chat_conversations,
-    obj.conversations,
-    obj.items,
-    data?.chat_conversations,
-    data?.conversations,
-    data?.items,
-    data,
-    obj.results,
-  ]
-
-  for (const candidate of candidates) {
-    if (Array.isArray(candidate)) return candidate
-  }
-
-  return null
-}
-
 function normalizeMessageList(payload: unknown): unknown[] | null {
   if (Array.isArray(payload)) return payload
   if (!payload || typeof payload !== 'object') return null
@@ -128,16 +104,6 @@ function normalizeMessageList(payload: unknown): unknown[] | null {
     return values
   }
 
-  return null
-}
-
-function extractClaudeRole(message: unknown): 'user' | 'assistant' | null {
-  if (!message || typeof message !== 'object') return null
-  const msg = message as Record<string, unknown>
-  const sender = msg.sender || msg.author || msg.role
-  if (!sender || typeof sender !== 'string') return null
-  if (sender === 'human' || sender === 'user') return 'user'
-  if (sender === 'assistant' || sender === 'model') return 'assistant'
   return null
 }
 
@@ -171,7 +137,12 @@ export const claudeAdapter: PlatformAdapter = {
     // Claude returned conversation list format
     // [{ uuid, name, created_at, updated_at, ... }, ...]
     const parsed = parseJsonIfString(data)
-    const items = normalizeListPayload(parsed)
+    const items = normalizeListPayload(parsed, [
+      'chat_conversations',
+      'conversations',
+      'items',
+      'results',
+    ])
     if (!items) {
       console.warn('[ChatCentral] Claude: Expected array for conversation list')
       return []
@@ -272,7 +243,7 @@ export const claudeAdapter: PlatformAdapter = {
         const msgObj = msg as Record<string, unknown>
         const messageId =
           (msgObj.uuid as string) || (msgObj.id as string) || (msgObj.message_id as string)
-        const role = extractClaudeRole(msg)
+        const role = extractRole(msg)
         const content = extractClaudeMessageContent(msg)
         if (!role || !content) continue
 
@@ -357,22 +328,8 @@ export const claudeAdapter: PlatformAdapter = {
     data: unknown,
     url: string
   ): { conversation: Conversation; messages: Message[] } | null {
-    let raw = ''
-    if (typeof data === 'string') {
-      raw = data
-    } else if (data && typeof data === 'object') {
-      const dataObj = data as Record<string, unknown>
-      if (Array.isArray(dataObj.events)) {
-        raw = dataObj.events.map((event: unknown) => JSON.stringify(event)).join('\n\n')
-      } else {
-        return null
-      }
-    } else {
-      return null
-    }
-
-    const payloads = parseSseData(raw)
-    if (payloads.length === 0) return null
+    const payloads = extractSsePayloads(data)
+    if (!payloads) return null
 
     const now = Date.now()
     let conversationId = this.extractConversationId(url) || ''

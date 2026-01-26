@@ -3,6 +3,8 @@ export { extractMessageContent, extractRole, truncateText } from './content'
 
 // JSON parsing utilities
 export {
+  extractSsePayloads,
+  normalizeListPayload,
   parseJsonCandidates,
   parseJsonIfString,
   parseJsonSafe,

@@ -1,5 +1,5 @@
 import type { PlatformAdapter } from './types'
-import { parseJsonIfString, parseSseData } from './helpers'
+import { extractSsePayloads, normalizeListPayload, parseJsonIfString } from './helpers'
 import type { Conversation, Message } from '@/types'
 
 /**
@@ -27,16 +27,6 @@ function parseChatGptTimestamp(value: unknown, fallback: number): number {
     if (!Number.isNaN(parsed)) return parsed
   }
   return fallback
-}
-
-function normalizeConversationItems(payload: unknown): unknown[] | null {
-  if (!payload || typeof payload !== 'object') return null
-  const obj = payload as Record<string, unknown>
-  if (Array.isArray(obj.items)) return obj.items
-  if (Array.isArray(obj.conversations)) return obj.conversations
-  const data = obj.data as Record<string, unknown> | undefined
-  if (Array.isArray(data?.items)) return data.items
-  return null
 }
 
 function extractContent(msg: unknown): string {
@@ -71,7 +61,7 @@ export const chatgptAdapter: PlatformAdapter = {
     // ChatGPT returned format
     // { items: [{ id, title, create_time, update_time, ... }], ... }
     const parsed = parseJsonIfString(data)
-    const items = normalizeConversationItems(parsed)
+    const items = normalizeListPayload(parsed)
     if (!items) {
       console.warn('[ChatCentral] ChatGPT: Invalid conversation list data')
       return []
@@ -238,22 +228,8 @@ export const chatgptAdapter: PlatformAdapter = {
     data: unknown,
     url: string
   ): { conversation: Conversation; messages: Message[] } | null {
-    let raw = ''
-    if (typeof data === 'string') {
-      raw = data
-    } else if (data && typeof data === 'object') {
-      const dataObj = data as Record<string, unknown>
-      if (Array.isArray(dataObj.events)) {
-        raw = dataObj.events.map((event: unknown) => JSON.stringify(event)).join('\n\n')
-      } else {
-        return null
-      }
-    } else {
-      return null
-    }
-
-    const payloads = parseSseData(raw)
-    if (payloads.length === 0) return null
+    const payloads = extractSsePayloads(data)
+    if (!payloads) return null
 
     const now = Date.now()
     const messagesById = new Map<string, Message>()
