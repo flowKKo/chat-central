@@ -42,9 +42,11 @@ export function ImportExportActions({ className }: ImportExportProps) {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-    } catch (error) {
+    }
+    catch (error) {
       setExportError(error instanceof Error ? error.message : 'Export failed')
-    } finally {
+    }
+    finally {
       setIsExporting(false)
     }
   }
@@ -86,7 +88,8 @@ export function ImportExportActions({ className }: ImportExportProps) {
         messagesSkipped: result.skipped.messages,
         errors: result.errors.map((e) => e.message),
       })
-    } catch (error) {
+    }
+    catch (error) {
       setImportResult({
         success: false,
         conversationsImported: 0,
@@ -95,7 +98,8 @@ export function ImportExportActions({ className }: ImportExportProps) {
         messagesSkipped: 0,
         errors: [error instanceof Error ? error.message : 'Import failed'],
       })
-    } finally {
+    }
+    finally {
       setIsImporting(false)
       // Reset file input
       if (fileInputRef.current) {
@@ -114,11 +118,13 @@ export function ImportExportActions({ className }: ImportExportProps) {
           onClick={handleExport}
           disabled={isExporting}
         >
-          {isExporting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="h-4 w-4" />
-          )}
+          {isExporting
+            ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )
+            : (
+                <Download className="h-4 w-4" />
+              )}
           Export Data
         </button>
 
@@ -129,11 +135,13 @@ export function ImportExportActions({ className }: ImportExportProps) {
           onClick={handleImportClick}
           disabled={isImporting}
         >
-          {isImporting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Upload className="h-4 w-4" />
-          )}
+          {isImporting
+            ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )
+            : (
+                <Upload className="h-4 w-4" />
+              )}
           Import Data
         </button>
 
@@ -161,15 +169,17 @@ export function ImportExportActions({ className }: ImportExportProps) {
             'rounded-md p-3 text-sm',
             importResult.success
               ? 'bg-green-100 text-green-800'
-              : 'bg-destructive/10 text-destructive'
+              : 'bg-destructive/10 text-destructive',
           )}
         >
           <div className="mb-2 flex items-center gap-2">
-            {importResult.success ? (
-              <CheckCircle className="h-4 w-4" />
-            ) : (
-              <AlertCircle className="h-4 w-4" />
-            )}
+            {importResult.success
+              ? (
+                  <CheckCircle className="h-4 w-4" />
+                )
+              : (
+                  <AlertCircle className="h-4 w-4" />
+                )}
             <span className="font-medium">
               {importResult.success ? 'Import successful' : 'Import failed'}
             </span>
@@ -230,7 +240,8 @@ export function ImportExportButtons() {
       a.download = result.filename
       a.click()
       URL.revokeObjectURL(url)
-    } finally {
+    }
+    finally {
       setIsExporting(false)
     }
   }
@@ -243,10 +254,12 @@ export function ImportExportButtons() {
       await importData(file)
       // Reload page to reflect changes
       window.location.reload()
-    } catch (error) {
+    }
+    catch (error) {
       console.error('Import failed:', error)
       alert(error instanceof Error ? error.message : 'Import failed')
-    } finally {
+    }
+    finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -262,11 +275,13 @@ export function ImportExportButtons() {
         disabled={isExporting}
         title="Export data"
       >
-        {isExporting ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <FileArchive className="h-4 w-4" />
-        )}
+        {isExporting
+          ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )
+          : (
+              <FileArchive className="h-4 w-4" />
+            )}
       </button>
       <button
         type="button"

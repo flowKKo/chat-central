@@ -2,7 +2,7 @@ import type { Message } from '@/types'
 
 export function dedupeMessagesByContent(
   messages: Message[],
-  existing: Map<string, Message>
+  existing: Map<string, Message>,
 ): Message[] {
   if (messages.length === 0) return messages
 

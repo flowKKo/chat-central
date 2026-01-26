@@ -9,8 +9,8 @@ const log = createLogger('ChatCentral')
  * Handle captured API response from content script
  */
 export async function handleCapturedResponse(
-  rawMessage: unknown
-): Promise<{ success: boolean; count?: number; error?: string }> {
+  rawMessage: unknown,
+): Promise<{ success: boolean, count?: number, error?: string }> {
   const parseResult = CaptureApiResponseSchema.safeParse(rawMessage)
   if (!parseResult.success) {
     log.warn('Invalid capture message:', parseResult.error.message)
@@ -44,7 +44,8 @@ export async function handleCapturedResponse(
         log.warn('Unknown endpoint type:', endpointType)
         return await processUnknownResponse(adapter, data, url)
     }
-  } catch (e) {
+  }
+  catch (e) {
     log.error('Failed to process response:', e)
     return { success: false }
   }
@@ -55,8 +56,8 @@ export async function handleCapturedResponse(
  */
 async function processConversationList(
   adapter: PlatformAdapter,
-  data: unknown
-): Promise<{ success: boolean; count: number }> {
+  data: unknown,
+): Promise<{ success: boolean, count: number }> {
   const conversations = adapter.parseConversationList(data)
 
   if (conversations.length === 0) {
@@ -78,8 +79,8 @@ async function processConversationList(
  */
 async function processConversationDetail(
   adapter: PlatformAdapter,
-  data: unknown
-): Promise<{ success: boolean; count: number }> {
+  data: unknown,
+): Promise<{ success: boolean, count: number }> {
   const result = adapter.parseConversationDetail(data)
 
   if (!result) {
@@ -102,8 +103,8 @@ async function processConversationDetail(
 async function processStreamResponse(
   adapter: PlatformAdapter,
   data: unknown,
-  url: string
-): Promise<{ success: boolean; count: number }> {
+  url: string,
+): Promise<{ success: boolean, count: number }> {
   if (!adapter.parseStreamResponse) {
     log.info('Stream response not supported for adapter')
     return { success: false, count: 0 }
@@ -127,8 +128,8 @@ async function processStreamResponse(
 async function processUnknownResponse(
   adapter: PlatformAdapter,
   data: unknown,
-  url: string
-): Promise<{ success: boolean; count: number }> {
+  url: string,
+): Promise<{ success: boolean, count: number }> {
   let handled = false
   let count = 0
 

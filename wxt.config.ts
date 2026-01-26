@@ -13,9 +13,9 @@ export default defineConfig({
     version: '0.1.0',
 
     // Chrome/Edge fixed dev ID (development environment)
-    ...(mode === 'development' &&
-      (browser === 'chrome' || browser === 'edge') &&
-      {
+    ...(mode === 'development'
+      && (browser === 'chrome' || browser === 'edge')
+      && {
         // Can generate fixed dev key later
       }),
 

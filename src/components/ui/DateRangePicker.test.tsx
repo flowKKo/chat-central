@@ -54,7 +54,7 @@ describe('dateRangePicker', () => {
           endDate={null}
           onChange={mockOnChange}
           className="custom-class"
-        />
+        />,
       )
 
       expect(container.querySelector('.custom-class')).toBeInTheDocument()
@@ -68,7 +68,7 @@ describe('dateRangePicker', () => {
       fireEvent.click(screen.getByText('Today'))
 
       expect(mockOnChange).toHaveBeenCalledTimes(1)
-      const call = mockOnChange.mock.calls[0]![0] as { start: number; end: number }
+      const call = mockOnChange.mock.calls[0]![0] as { start: number, end: number }
       // Start should be start of today
       expect(call.start).toBe(new Date('2024-06-15T00:00:00').getTime())
       // End should be now
@@ -81,7 +81,7 @@ describe('dateRangePicker', () => {
       fireEvent.click(screen.getByText('7 days'))
 
       expect(mockOnChange).toHaveBeenCalledTimes(1)
-      const call = mockOnChange.mock.calls[0]![0] as { start: number; end: number }
+      const call = mockOnChange.mock.calls[0]![0] as { start: number, end: number }
       expect(call.start).toBe(daysAgo(7))
       expect(call.end).toBe(Date.now())
     })
@@ -92,7 +92,7 @@ describe('dateRangePicker', () => {
       fireEvent.click(screen.getByText('30 days'))
 
       expect(mockOnChange).toHaveBeenCalledTimes(1)
-      const call = mockOnChange.mock.calls[0]![0] as { start: number | null; end: number | null }
+      const call = mockOnChange.mock.calls[0]![0] as { start: number | null, end: number | null }
       expect(call.start).toBe(daysAgo(30))
     })
 
@@ -102,7 +102,7 @@ describe('dateRangePicker', () => {
       fireEvent.click(screen.getByText('90 days'))
 
       expect(mockOnChange).toHaveBeenCalledTimes(1)
-      const call = mockOnChange.mock.calls[0]![0] as { start: number | null; end: number | null }
+      const call = mockOnChange.mock.calls[0]![0] as { start: number | null, end: number | null }
       expect(call.start).toBe(daysAgo(90))
     })
   })
@@ -124,7 +124,7 @@ describe('dateRangePicker', () => {
       const customEnd = new Date('2024-01-15').getTime()
 
       render(
-        <DateRangePicker startDate={customStart} endDate={customEnd} onChange={mockOnChange} />
+        <DateRangePicker startDate={customStart} endDate={customEnd} onChange={mockOnChange} />,
       )
 
       // All preset buttons should have the inactive style
@@ -161,7 +161,7 @@ describe('dateRangePicker', () => {
       fireEvent.change(startInput, { target: { value: '2024-06-01' } })
 
       expect(mockOnChange).toHaveBeenCalledTimes(1)
-      const call = mockOnChange.mock.calls[0]![0] as { start: number | null; end: number | null }
+      const call = mockOnChange.mock.calls[0]![0] as { start: number | null, end: number | null }
       expect(call.start).toBe(parseDateString('2024-06-01'))
       expect(call.end).toBeNull()
     })
@@ -174,7 +174,7 @@ describe('dateRangePicker', () => {
       fireEvent.change(endInput, { target: { value: '2024-06-15' } })
 
       expect(mockOnChange).toHaveBeenCalledTimes(1)
-      const call = mockOnChange.mock.calls[0]![0] as { start: number | null; end: number | null }
+      const call = mockOnChange.mock.calls[0]![0] as { start: number | null, end: number | null }
       expect(call.start).toBe(startDate)
       expect(call.end).toBe(parseDateString('2024-06-15'))
     })

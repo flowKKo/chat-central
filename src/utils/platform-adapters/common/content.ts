@@ -50,7 +50,7 @@ export function extractMessageContent(item: unknown): string {
 
   // Blocks array (Claude format)
   if (Array.isArray(record.blocks)) {
-    return (record.blocks as Array<{ type?: string; text?: string }>)
+    return (record.blocks as Array<{ type?: string, text?: string }>)
       .map((part) => (part?.type === 'text' ? part.text : ''))
       .filter(Boolean)
       .join('\n')

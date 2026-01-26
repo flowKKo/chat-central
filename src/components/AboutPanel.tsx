@@ -108,7 +108,9 @@ export function AboutPanel() {
           {/* Footer */}
           <div className="flex items-center justify-between rounded-xl border border-border bg-card/30 p-4">
             <p className="text-sm text-muted-foreground">
-              Version <span className="font-medium text-foreground">0.1.0</span>
+              Version
+              {' '}
+              <span className="font-medium text-foreground">0.1.0</span>
             </p>
 
             <div className="flex items-center gap-4">
@@ -123,7 +125,9 @@ export function AboutPanel() {
               </a>
               <span className="text-muted-foreground/30">·</span>
               <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                Made with <Heart className="h-3.5 w-3.5 fill-red-400 text-red-400" />
+                Made with
+                {' '}
+                <Heart className="h-3.5 w-3.5 fill-red-400 text-red-400" />
               </span>
             </div>
           </div>

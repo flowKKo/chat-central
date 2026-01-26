@@ -66,7 +66,7 @@ export async function getConversationById(id: string): Promise<Conversation | un
  */
 export async function getConversationByOriginalId(
   platform: Platform,
-  originalId: string
+  originalId: string,
 ): Promise<Conversation | undefined> {
   const id = `${platform}_${originalId}`
   return db.conversations.get(id)
@@ -91,7 +91,7 @@ export async function upsertConversations(conversations: Conversation[]): Promis
  */
 export async function updateConversationFavorite(
   id: string,
-  isFavorite: boolean
+  isFavorite: boolean,
 ): Promise<Conversation | null> {
   const existing = await db.conversations.get(id)
   if (!existing) return null
@@ -227,7 +227,7 @@ export async function getAllTags(): Promise<string[]> {
 
   // Filter out empty strings and ensure all values are strings
   const validTags = uniqueTags.filter(
-    (tag): tag is string => typeof tag === 'string' && tag.length > 0
+    (tag): tag is string => typeof tag === 'string' && tag.length > 0,
   )
 
   return validTags.sort()
@@ -238,7 +238,7 @@ export async function getAllTags(): Promise<string[]> {
  */
 export async function updateConversationTags(
   id: string,
-  tags: string[]
+  tags: string[],
 ): Promise<Conversation | null> {
   const existing = await db.conversations.get(id)
   if (!existing) return null

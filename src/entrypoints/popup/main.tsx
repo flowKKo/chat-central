@@ -21,5 +21,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <App />
       </JotaiProvider>
     </QueryClientProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 )

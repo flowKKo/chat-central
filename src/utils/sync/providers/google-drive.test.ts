@@ -48,7 +48,7 @@ describe('googleDriveProvider', () => {
       expect(provider.isConnected()).toBe(true)
       expect(mockChrome.identity.getAuthToken).toHaveBeenCalledWith(
         { interactive: true },
-        expect.any(Function)
+        expect.any(Function),
       )
     })
 
@@ -100,7 +100,7 @@ describe('googleDriveProvider', () => {
       expect(provider.isConnected()).toBe(false)
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('accounts.google.com/o/oauth2/revoke'),
-        expect.objectContaining({ method: 'POST' })
+        expect.objectContaining({ method: 'POST' }),
       )
     })
 
@@ -146,7 +146,7 @@ describe('googleDriveProvider', () => {
       // Last call should be POST to create file
       expect(mockFetch).toHaveBeenLastCalledWith(
         expect.stringContaining('upload/drive/v3/files'),
-        expect.objectContaining({ method: 'POST' })
+        expect.objectContaining({ method: 'POST' }),
       )
     })
 
@@ -177,7 +177,7 @@ describe('googleDriveProvider', () => {
       // Last call should be PATCH to update file
       expect(mockFetch).toHaveBeenLastCalledWith(
         expect.stringContaining('existing-file-id'),
-        expect.objectContaining({ method: 'PATCH' })
+        expect.objectContaining({ method: 'PATCH' }),
       )
     })
 
@@ -201,7 +201,7 @@ describe('googleDriveProvider', () => {
       })
 
       await expect(provider.upload('{"test": true}', 'test-file.json')).rejects.toThrow(
-        'Failed to create file'
+        'Failed to create file',
       )
     })
   })
@@ -345,12 +345,14 @@ describe('googleDriveProvider', () => {
         if (callCount === 1) {
           // First connect
           callback('old-token')
-        } else if (callCount === 2) {
+        }
+        else if (callCount === 2) {
           // Non-interactive refresh attempt fails
           mockChrome.runtime.lastError = { message: 'Token expired' }
           callback(undefined)
           mockChrome.runtime.lastError = undefined
-        } else {
+        }
+        else {
           // Interactive refresh succeeds
           callback('new-token')
         }

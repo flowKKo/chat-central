@@ -44,7 +44,8 @@ export function isSupportedPlatform(url: string): boolean {
   try {
     const hostname = new URL(url).hostname
     return getPlatformFromHost(hostname) !== null
-  } catch {
+  }
+  catch {
     return false
   }
 }

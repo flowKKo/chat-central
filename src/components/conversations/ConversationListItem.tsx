@@ -48,7 +48,7 @@ export function ConversationListItem({
       tabIndex={0}
       className={cn(
         'kbd-focus group relative animate-fade-in cursor-pointer p-3.5 transition-all',
-        isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'
+        isSelected ? 'bg-primary/10' : 'hover:bg-muted/50',
       )}
       style={style}
       onClick={onClick}
@@ -78,7 +78,7 @@ export function ConversationListItem({
         <div
           className={cn(
             'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-all',
-            isSelected ? 'scale-105' : 'group-hover:scale-105'
+            isSelected ? 'scale-105' : 'group-hover:scale-105',
           )}
           style={{ backgroundColor: `${platformConfig.color}15` }}
         >
@@ -90,11 +90,13 @@ export function ConversationListItem({
 
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-medium">
-            {searchQuery ? (
-              <HighlightText text={conversation.title} query={searchQuery} />
-            ) : (
-              conversation.title
-            )}
+            {searchQuery
+              ? (
+                  <HighlightText text={conversation.title} query={searchQuery} />
+                )
+              : (
+                  conversation.title
+                )}
           </h3>
           <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
             <span className="font-medium" style={{ color: platformConfig.color }}>
@@ -111,15 +113,17 @@ export function ConversationListItem({
           {/* Summary or preview */}
           {(conversation.summary || conversation.preview) && (
             <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/80">
-              {searchQuery ? (
-                <HighlightText
-                  text={conversation.summary || conversation.preview}
-                  query={searchQuery}
-                  maxLength={120}
-                />
-              ) : (
-                conversation.summary || conversation.preview
-              )}
+              {searchQuery
+                ? (
+                    <HighlightText
+                      text={conversation.summary || conversation.preview}
+                      query={searchQuery}
+                      maxLength={120}
+                    />
+                  )
+                : (
+                    conversation.summary || conversation.preview
+                  )}
             </p>
           )}
 
@@ -131,7 +135,8 @@ export function ConversationListItem({
               ))}
               {conversation.tags.length > 3 && (
                 <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  +{conversation.tags.length - 3}
+                  +
+                  {conversation.tags.length - 3}
                 </span>
               )}
             </div>
@@ -166,7 +171,7 @@ export function ConversationListItem({
             type="button"
             className={cn(
               'kbd-focus cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-muted',
-              conversation.isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              conversation.isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
             )}
             onClick={(event) => {
               event.stopPropagation()
@@ -178,7 +183,7 @@ export function ConversationListItem({
             <Star
               className={cn(
                 'h-4 w-4 transition-colors',
-                conversation.isFavorite ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'
+                conversation.isFavorite ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground',
               )}
             />
           </button>

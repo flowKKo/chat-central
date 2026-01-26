@@ -2,9 +2,9 @@ import { Check } from 'lucide-react'
 import { cn } from '@/utils/cn'
 
 interface CheckboxProps {
-  checked?: boolean
-  onChange?: (checked: boolean) => void
-  className?: string
+  'checked'?: boolean
+  'onChange'?: (checked: boolean) => void
+  'className'?: string
   'aria-label'?: string
 }
 
@@ -29,7 +29,7 @@ export function Checkbox({
         checked
           ? 'border-primary bg-primary text-primary-foreground'
           : 'border-muted-foreground/30 hover:border-primary',
-        className
+        className,
       )}
     >
       {checked && <Check className="h-3 w-3" />}

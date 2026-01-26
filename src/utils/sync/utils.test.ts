@@ -86,7 +86,7 @@ describe('sync/utils', () => {
     })
 
     it('should skip invalid JSON lines', () => {
-      const errors: Array<{ line: number; message: string }> = []
+      const errors: Array<{ line: number, message: string }> = []
       const content = '{"id":1}\ninvalid json\n{"id":3}'
       const result = parseJsonl(content, mockSchema, (line, msg) => {
         errors.push({ line, message: msg })
@@ -98,7 +98,7 @@ describe('sync/utils', () => {
     })
 
     it('should skip lines that fail schema validation', () => {
-      const errors: Array<{ line: number; message: string }> = []
+      const errors: Array<{ line: number, message: string }> = []
       const content = '{"id":1}\n{"invalid":"data"}\n{"id":3}'
       const result = parseJsonl(content, mockSchema, (line, msg) => {
         errors.push({ line, message: msg })

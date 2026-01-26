@@ -232,7 +232,7 @@ describe('cloud-sync', () => {
 
     it('should throw error for WebDAV provider (not implemented)', async () => {
       await expect(connectCloudProvider('webdav')).rejects.toThrow(
-        'WebDAV provider not implemented'
+        'WebDAV provider not implemented',
       )
     })
 
@@ -293,7 +293,7 @@ describe('cloud-sync', () => {
           exportedAt: new Date().toISOString(),
           deviceId: 'other-device',
           conversations: [],
-        })
+        }),
       )
 
       const result = await syncToCloud()

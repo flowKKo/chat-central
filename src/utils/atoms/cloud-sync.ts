@@ -111,7 +111,8 @@ export const initializeCloudSyncAtom = atom(null, async (_get, set) => {
     set(autoSyncEnabledAtom, state.autoSyncEnabled)
     set(autoSyncIntervalAtom, state.autoSyncIntervalMinutes)
     set(cloudSyncErrorAtom, state.error)
-  } catch (error) {
+  }
+  catch (error) {
     log.error('Failed to initialize:', error)
   }
 })
@@ -145,12 +146,14 @@ export const performSyncAtom = atom(null, async (get, set) => {
       setTimeout(() => {
         set(cloudSyncStatusAtom, 'idle')
       }, 3000)
-    } else {
+    }
+    else {
       // Use userMessage for display, fallback to error or generic message
       set(cloudSyncErrorAtom, result.userMessage ?? result.error ?? 'Sync failed')
       set(cloudSyncStatusAtom, 'error')
     }
-  } catch (error) {
+  }
+  catch (error) {
     set(cloudSyncErrorAtom, getErrorMessage(error, 'Sync failed'))
     set(cloudSyncStatusAtom, 'error')
   }
@@ -172,7 +175,8 @@ export const connectCloudAtom = atom(null, async (_get, set, provider: CloudProv
 
     // Trigger initial sync after connecting
     await set(performSyncAtom)
-  } catch (error) {
+  }
+  catch (error) {
     set(cloudSyncErrorAtom, getErrorMessage(error, 'Failed to connect'))
     set(cloudSyncStatusAtom, 'error')
     throw error
@@ -193,7 +197,8 @@ export const disconnectCloudAtom = atom(null, async (_get, set) => {
     set(cloudSyncErrorAtom, null)
     set(cloudSyncStatusAtom, 'idle')
     set(lastSyncResultAtom, null)
-  } catch (error) {
+  }
+  catch (error) {
     log.error('Failed to disconnect:', error)
   }
 })
@@ -216,7 +221,8 @@ export const toggleAutoSyncAtom = atom(null, async (get, set, enabled?: boolean)
       autoSyncEnabled: newValue,
       autoSyncIntervalMinutes: interval,
     })
-  } catch (error) {
+  }
+  catch (error) {
     log.error('Failed to update auto-sync settings:', error)
   }
 })
@@ -235,7 +241,8 @@ export const setAutoSyncIntervalAtom = atom(null, async (get, set, minutes: numb
       autoSyncEnabled: get(autoSyncEnabledAtom),
       autoSyncIntervalMinutes: minutes,
     })
-  } catch (error) {
+  }
+  catch (error) {
     log.error('Failed to update auto-sync interval:', error)
   }
 })

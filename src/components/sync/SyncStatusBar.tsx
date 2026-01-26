@@ -105,7 +105,7 @@ export function SyncStatusBar() {
         <RefreshCw
           className={cn(
             'h-3.5 w-3.5 text-muted-foreground',
-            uiState.isSyncing && 'animate-spin text-blue-400'
+            uiState.isSyncing && 'animate-spin text-blue-400',
           )}
         />
       </button>

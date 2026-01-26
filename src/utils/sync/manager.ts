@@ -96,7 +96,8 @@ class SyncManagerImpl {
     // Create and connect provider
     if (config.type === 'rest') {
       this.provider = createRestProvider()
-    } else {
+    }
+    else {
       throw new Error(`Unsupported provider type: ${config.type}`)
     }
 
@@ -159,13 +160,15 @@ class SyncManagerImpl {
         if (result.conflicts.length > 0) {
           this.emit('conflict_detected', result.conflicts)
         }
-      } else {
+      }
+      else {
         await this.handleSyncError(result.errors[0])
         this.emit('sync_failed', result.errors[0])
       }
 
       return result
-    } finally {
+    }
+    finally {
       this.isSyncing = false
     }
   }
@@ -173,7 +176,7 @@ class SyncManagerImpl {
   /**
    * Quick pull from server
    */
-  async pull(): Promise<{ success: boolean; pulled: number; error?: SyncError }> {
+  async pull(): Promise<{ success: boolean, pulled: number, error?: SyncError }> {
     if (!this.provider) {
       throw new Error('Sync not initialized')
     }
@@ -184,7 +187,7 @@ class SyncManagerImpl {
   /**
    * Quick push to server
    */
-  async push(): Promise<{ success: boolean; pushed: number; error?: SyncError }> {
+  async push(): Promise<{ success: boolean, pushed: number, error?: SyncError }> {
     if (!this.provider) {
       throw new Error('Sync not initialized')
     }
@@ -206,7 +209,8 @@ class SyncManagerImpl {
       if (!this.isSyncing && this.isOnline()) {
         try {
           await this.sync()
-        } catch (error) {
+        }
+        catch (error) {
           syncLogger.error('Auto sync failed', error)
         }
       }
@@ -275,7 +279,8 @@ class SyncManagerImpl {
     for (const listener of this.listeners) {
       try {
         listener(event, data)
-      } catch (error) {
+      }
+      catch (error) {
         syncLogger.error('Event listener error', error)
       }
     }
@@ -337,7 +342,8 @@ class SyncManagerImpl {
       if (this.isOnline() && this.provider) {
         try {
           await this.sync()
-        } catch (error) {
+        }
+        catch (error) {
           syncLogger.error('Retry failed', error)
         }
       }

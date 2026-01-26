@@ -53,7 +53,7 @@ export async function getMessagesByIds(ids: string[]): Promise<Map<string, Messa
  */
 export async function getAllMessagesForExport(
   conversationIds: string[],
-  options?: { includeDeleted?: boolean }
+  options?: { includeDeleted?: boolean },
 ): Promise<Message[]> {
   if (conversationIds.length === 0) return []
 

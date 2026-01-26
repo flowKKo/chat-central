@@ -178,8 +178,8 @@ export interface ImportOptions {
 
 export interface ImportResult {
   success: boolean
-  imported: { conversations: number; messages: number }
-  skipped: { conversations: number; messages: number }
+  imported: { conversations: number, messages: number }
+  skipped: { conversations: number, messages: number }
   conflicts: ConflictRecord[]
   errors: ImportError[]
 }
@@ -215,11 +215,12 @@ export function createEmptyImportResult(): ImportResult {
 export function updateImportStats(
   result: ImportResult,
   status: ImportStatus,
-  entityType: ImportEntityType
+  entityType: ImportEntityType,
 ): void {
   if (status === 'imported') {
     result.imported[entityType]++
-  } else if (status === 'skipped') {
+  }
+  else if (status === 'skipped') {
     result.skipped[entityType]++
   }
   // 'conflict' status doesn't increment counters (handled separately)

@@ -25,7 +25,7 @@ export function TagPill({ tag, onRemove, readOnly, compact, className }: TagPill
         'inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary transition-colors',
         compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs',
         !readOnly && 'group hover:bg-primary/20',
-        className
+        className,
       )}
     >
       <Tag className={cn('flex-shrink-0', compact ? 'h-2.5 w-2.5' : 'h-3 w-3')} />

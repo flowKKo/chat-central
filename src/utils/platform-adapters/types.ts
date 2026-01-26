@@ -27,7 +27,7 @@ export interface PlatformAdapter {
    */
   parseConversationDetail: (
     data: unknown
-  ) => { conversation: Conversation; messages: Message[] } | null
+  ) => { conversation: Conversation, messages: Message[] } | null
 
   /**
    * Parse streaming response (SSE / batchexecute etc.)
@@ -35,7 +35,7 @@ export interface PlatformAdapter {
   parseStreamResponse?: (
     data: unknown,
     url: string
-  ) => { conversation: Conversation; messages: Message[] } | null
+  ) => { conversation: Conversation, messages: Message[] } | null
 
   /**
    * Extract conversation ID from URL

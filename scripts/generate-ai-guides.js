@@ -39,13 +39,14 @@ const main = async () => {
         .replace(/\{\{DATE\}\}/g, date)
 
       return writeFile(resolve(rootDir, outputFile), output, 'utf8')
-    })
+    }),
   )
 }
 
 try {
   await main()
-} catch (error) {
+}
+catch (error) {
   console.error(error instanceof Error ? error.message : error)
   process.exitCode = 1
 }

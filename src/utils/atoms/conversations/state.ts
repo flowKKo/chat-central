@@ -175,7 +175,7 @@ export const favoriteCountsAtom = atom<Record<Platform | 'total', number>>({
  */
 function countByPlatform(
   conversations: Conversation[],
-  dateRange: { start: number | null; end: number | null }
+  dateRange: { start: number | null, end: number | null },
 ): Record<Platform | 'total', number> {
   const counts: Record<Platform | 'total', number> = {
     claude: 0,
@@ -251,7 +251,7 @@ export const filteredConversationsAtom = atom((get) => {
   // Search filtering
   if (query) {
     result = result.filter(
-      (c) => c.title.toLowerCase().includes(query) || c.preview.toLowerCase().includes(query)
+      (c) => c.title.toLowerCase().includes(query) || c.preview.toLowerCase().includes(query),
     )
   }
 

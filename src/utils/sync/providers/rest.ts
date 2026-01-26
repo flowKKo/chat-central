@@ -53,10 +53,11 @@ export class RestSyncProvider implements SyncProvider {
         throw new Error(`Server returned ${response.status}`)
       }
       this.connected = true
-    } catch (error) {
+    }
+    catch (error) {
       this.connected = false
       throw new Error(
-        `Failed to connect to sync server: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to connect to sync server: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
     }
   }
@@ -116,7 +117,8 @@ export class RestSyncProvider implements SyncProvider {
         cursor: data.cursor,
         hasMore: data.hasMore,
       }
-    } catch (error) {
+    }
+    catch (error) {
       return {
         success: false,
         records: [],
@@ -124,7 +126,7 @@ export class RestSyncProvider implements SyncProvider {
         hasMore: false,
         error: this.createError(
           'network_error',
-          error instanceof Error ? error.message : 'Network error during pull'
+          error instanceof Error ? error.message : 'Network error during pull',
         ),
       }
     }
@@ -183,14 +185,15 @@ export class RestSyncProvider implements SyncProvider {
         applied: data.applied,
         failed: data.failed,
       }
-    } catch (error) {
+    }
+    catch (error) {
       return {
         success: false,
         applied: [],
         failed: [],
         error: this.createError(
           'network_error',
-          error instanceof Error ? error.message : 'Network error during push'
+          error instanceof Error ? error.message : 'Network error during push',
         ),
       }
     }
@@ -212,11 +215,13 @@ export class RestSyncProvider implements SyncProvider {
         options.headers.forEach((value, key) => {
           headers[key] = value
         })
-      } else if (Array.isArray(options.headers)) {
+      }
+      else if (Array.isArray(options.headers)) {
         for (const [key, value] of options.headers) {
           headers[key] = value
         }
-      } else {
+      }
+      else {
         Object.assign(headers, options.headers)
       }
     }
@@ -234,7 +239,8 @@ export class RestSyncProvider implements SyncProvider {
         headers,
         signal: controller.signal,
       })
-    } finally {
+    }
+    finally {
       clearTimeout(timeoutId)
     }
   }
@@ -249,7 +255,7 @@ export class RestSyncProvider implements SyncProvider {
 
   private async parseErrorResponse(response: Response): Promise<SyncError> {
     try {
-      const data = (await response.json()) as { error?: string; code?: string }
+      const data = (await response.json()) as { error?: string, code?: string }
 
       if (response.status === 401 || response.status === 403) {
         return this.createError('auth_failed', data.error ?? 'Authentication failed')
@@ -269,7 +275,8 @@ export class RestSyncProvider implements SyncProvider {
       }
 
       return this.createError('server_error', data.error ?? `Server error: ${response.status}`)
-    } catch {
+    }
+    catch {
       return this.createError('server_error', `Server error: ${response.status}`)
     }
   }

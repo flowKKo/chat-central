@@ -29,7 +29,8 @@ export function createLogger(prefix: string): Logger {
     info(msg: string, data?: unknown) {
       if (data !== undefined) {
         console.info(`${tag} ${msg}`, data)
-      } else {
+      }
+      else {
         console.info(`${tag} ${msg}`)
       }
     },
@@ -37,7 +38,8 @@ export function createLogger(prefix: string): Logger {
       if (import.meta.env.DEV) {
         if (data !== undefined) {
           console.log(`${tag} ${msg}`, data)
-        } else {
+        }
+        else {
           console.log(`${tag} ${msg}`)
         }
       }

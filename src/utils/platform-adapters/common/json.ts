@@ -9,7 +9,7 @@
 export function stripXssiPrefix(text: string): string {
   const trimmed = text.trim()
   // Match various XSSI prefix patterns
-  if (trimmed.startsWith(")]}'") || trimmed.startsWith("))}'") || trimmed.startsWith(")))}'")) {
+  if (trimmed.startsWith(')]}\'') || trimmed.startsWith('))}\'') || trimmed.startsWith(')))}\'')) {
     const newlineIndex = trimmed.indexOf('\n')
     if (newlineIndex === -1) return ''
     return trimmed.slice(newlineIndex + 1).trimStart()
@@ -23,7 +23,8 @@ export function stripXssiPrefix(text: string): string {
 export function parseJsonSafe(text: string): unknown | null {
   try {
     return JSON.parse(text)
-  } catch {
+  }
+  catch {
     return null
   }
 }
@@ -84,7 +85,7 @@ export function parseSseData(raw: string): string[] {
         .filter((line) => line.startsWith('data:'))
         .map((line) => line.slice(5).trimStart())
         .join('\n')
-        .trim()
+        .trim(),
     )
     .filter((data) => data.length > 0)
 }
@@ -98,14 +99,17 @@ export function extractSsePayloads(data: unknown): string[] | null {
   let raw = ''
   if (typeof data === 'string') {
     raw = data
-  } else if (data && typeof data === 'object') {
+  }
+  else if (data && typeof data === 'object') {
     const dataObj = data as Record<string, unknown>
     if (Array.isArray(dataObj.events)) {
       raw = dataObj.events.map((event: unknown) => JSON.stringify(event)).join('\n\n')
-    } else {
+    }
+    else {
       return null
     }
-  } else {
+  }
+  else {
     return null
   }
 
@@ -120,7 +124,7 @@ export function extractSsePayloads(data: unknown): string[] | null {
  */
 export function normalizeListPayload(
   payload: unknown,
-  fieldCandidates: string[] = ['items', 'conversations', 'results']
+  fieldCandidates: string[] = ['items', 'conversations', 'results'],
 ): unknown[] | null {
   if (Array.isArray(payload)) return payload
   if (!payload || typeof payload !== 'object') return null

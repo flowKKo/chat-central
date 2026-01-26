@@ -5,23 +5,23 @@ describe('claudeAdapter', () => {
   describe('shouldCapture', () => {
     it('should return true for conversation list URL', () => {
       expect(
-        claudeAdapter.shouldCapture('https://claude.ai/api/organizations/123/chat_conversations')
+        claudeAdapter.shouldCapture('https://claude.ai/api/organizations/123/chat_conversations'),
       ).toBe(true)
     })
 
     it('should return true for conversation detail URL', () => {
       expect(
         claudeAdapter.shouldCapture(
-          'https://claude.ai/api/organizations/123/chat_conversations/abc-def-123'
-        )
+          'https://claude.ai/api/organizations/123/chat_conversations/abc-def-123',
+        ),
       ).toBe(true)
     })
 
     it('should return true for completion URL', () => {
       expect(
         claudeAdapter.shouldCapture(
-          'https://claude.ai/api/organizations/123/chat_conversations/abc-def/completion'
-        )
+          'https://claude.ai/api/organizations/123/chat_conversations/abc-def/completion',
+        ),
       ).toBe(true)
     })
 
@@ -34,28 +34,28 @@ describe('claudeAdapter', () => {
   describe('getEndpointType', () => {
     it('should detect list endpoint', () => {
       expect(
-        claudeAdapter.getEndpointType('https://claude.ai/api/organizations/123/chat_conversations')
+        claudeAdapter.getEndpointType('https://claude.ai/api/organizations/123/chat_conversations'),
       ).toBe('list')
       expect(
         claudeAdapter.getEndpointType(
-          'https://claude.ai/api/organizations/123/chat_conversations?limit=20'
-        )
+          'https://claude.ai/api/organizations/123/chat_conversations?limit=20',
+        ),
       ).toBe('list')
     })
 
     it('should detect detail endpoint', () => {
       expect(
         claudeAdapter.getEndpointType(
-          'https://claude.ai/api/organizations/123/chat_conversations/abc-def-123'
-        )
+          'https://claude.ai/api/organizations/123/chat_conversations/abc-def-123',
+        ),
       ).toBe('detail')
     })
 
     it('should detect stream endpoint', () => {
       expect(
         claudeAdapter.getEndpointType(
-          'https://claude.ai/api/organizations/123/chat_conversations/abc-def-123/completion'
-        )
+          'https://claude.ai/api/organizations/123/chat_conversations/abc-def-123/completion',
+        ),
       ).toBe('stream')
     })
 
@@ -68,24 +68,24 @@ describe('claudeAdapter', () => {
     it('should extract ID from detail URL', () => {
       expect(
         claudeAdapter.extractConversationId(
-          'https://claude.ai/api/organizations/123/chat_conversations/abc-def-456'
-        )
+          'https://claude.ai/api/organizations/123/chat_conversations/abc-def-456',
+        ),
       ).toBe('abc-def-456')
     })
 
     it('should extract ID from stream URL', () => {
       expect(
         claudeAdapter.extractConversationId(
-          'https://claude.ai/api/organizations/123/chat_conversations/abc-def-789/completion'
-        )
+          'https://claude.ai/api/organizations/123/chat_conversations/abc-def-789/completion',
+        ),
       ).toBe('abc-def-789')
     })
 
     it('should return null for list URL', () => {
       expect(
         claudeAdapter.extractConversationId(
-          'https://claude.ai/api/organizations/123/chat_conversations'
-        )
+          'https://claude.ai/api/organizations/123/chat_conversations',
+        ),
       ).toBe(null)
     })
   })
@@ -253,7 +253,7 @@ data: [DONE]`
 
       const result = claudeAdapter.parseStreamResponse!(
         sseData,
-        'https://claude.ai/api/organizations/123/chat_conversations/conv-123/completion'
+        'https://claude.ai/api/organizations/123/chat_conversations/conv-123/completion',
       )
 
       expect(result).not.toBeNull()
@@ -272,7 +272,7 @@ data: [DONE]`
 
       const result = claudeAdapter.parseStreamResponse!(
         data,
-        'https://claude.ai/api/organizations/123/chat_conversations/conv-456/completion'
+        'https://claude.ai/api/organizations/123/chat_conversations/conv-456/completion',
       )
 
       // Currently returns null because the events don't have "data:" prefix after JSON.stringify
@@ -282,7 +282,7 @@ data: [DONE]`
     it('should return null for empty content', () => {
       const result = claudeAdapter.parseStreamResponse!(
         'data: {"conversation_id":"conv-1"}\n\n',
-        'https://claude.ai/api/organizations/123/chat_conversations/conv-1/completion'
+        'https://claude.ai/api/organizations/123/chat_conversations/conv-1/completion',
       )
       expect(result).toBeNull()
     })

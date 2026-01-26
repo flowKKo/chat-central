@@ -46,7 +46,8 @@ async function withRetry<T>(fn: () => Promise<T>, options: Partial<RetryOptions>
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn()
-    } catch (error) {
+    }
+    catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
 
       // Don't retry if not retryable or last attempt
@@ -124,7 +125,8 @@ export class GoogleDriveProvider implements CloudStorageProvider {
       const token = await this.getAuthToken(true)
       this.accessToken = token
       syncLogger.info('Connected to Google Drive')
-    } catch (error) {
+    }
+    catch (error) {
       syncLogger.error('Failed to connect to Google Drive', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to connect to Google Drive')
     }
@@ -135,7 +137,8 @@ export class GoogleDriveProvider implements CloudStorageProvider {
       try {
         // Revoke the token
         await this.revokeToken(this.accessToken)
-      } catch (error) {
+      }
+      catch (error) {
         syncLogger.warn('Failed to revoke token', error)
       }
     }
@@ -147,7 +150,8 @@ export class GoogleDriveProvider implements CloudStorageProvider {
     // Clear cached auth token in Chrome
     try {
       await this.removeCachedAuthToken()
-    } catch (error) {
+    }
+    catch (error) {
       syncLogger.warn('Failed to remove cached auth token', error)
     }
 
@@ -173,7 +177,8 @@ export class GoogleDriveProvider implements CloudStorageProvider {
         // Update existing file
         await this.updateFile(existingFileId, data, token)
         syncLogger.info('Updated existing sync file in Google Drive')
-      } else {
+      }
+      else {
         // Create new file
         await this.createFile(filename, data, token)
         syncLogger.info('Created new sync file in Google Drive')
@@ -267,7 +272,8 @@ export class GoogleDriveProvider implements CloudStorageProvider {
       try {
         await this.validateToken(this.accessToken)
         return this.accessToken
-      } catch {
+      }
+      catch {
         syncLogger.info('Token expired, refreshing...')
         // Clear invalid token
         this.accessToken = null
@@ -286,7 +292,8 @@ export class GoogleDriveProvider implements CloudStorageProvider {
       const token = await this.tokenRefreshPromise
       this.accessToken = token
       return token
-    } finally {
+    }
+    finally {
       // Clear the promise so next call can start fresh if needed
       this.tokenRefreshPromise = null
     }
@@ -299,7 +306,8 @@ export class GoogleDriveProvider implements CloudStorageProvider {
     try {
       // Try non-interactive first (uses cached credentials)
       return await this.getAuthToken(false)
-    } catch {
+    }
+    catch {
       // Fall back to interactive (shows OAuth popup)
       return await this.getAuthToken(true)
     }
@@ -307,7 +315,7 @@ export class GoogleDriveProvider implements CloudStorageProvider {
 
   private async validateToken(token: string): Promise<void> {
     const response = await fetch(
-      `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${token}`
+      `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${token}`,
     )
 
     if (!response.ok) {
@@ -363,7 +371,7 @@ export class GoogleDriveProvider implements CloudStorageProvider {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     )
 
     if (!response.ok) {
@@ -414,7 +422,7 @@ export class GoogleDriveProvider implements CloudStorageProvider {
     const response = await fetch(`${DRIVE_UPLOAD_ENDPOINT}/${fileId}?uploadType=media`, {
       method: 'PATCH',
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: content,

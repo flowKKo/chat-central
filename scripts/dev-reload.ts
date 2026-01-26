@@ -109,7 +109,8 @@ function build(): Promise<boolean> {
       if (code === 0) {
         logSuccess(`Build completed in ${duration}s`)
         resolve(true)
-      } else {
+      }
+      else {
         logError(`Build failed (exit code: ${code})`)
         if (stderr) {
           console.log(colors.dim + stderr + colors.reset)

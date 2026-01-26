@@ -32,7 +32,7 @@ export interface ConversationSortOptions {
  */
 export function filterConversations(
   conversations: Conversation[],
-  options: ConversationFilterOptions = {}
+  options: ConversationFilterOptions = {},
 ): Conversation[] {
   const { platform = 'all', favoritesOnly = false, searchQuery, tags = [], dateRange } = options
 
@@ -86,7 +86,7 @@ export function filterConversations(
  */
 export function sortConversations(
   conversations: Conversation[],
-  options: ConversationSortOptions = {}
+  options: ConversationSortOptions = {},
 ): Conversation[] {
   const { byFavoriteTime = false } = options
 
@@ -110,7 +110,7 @@ export function sortConversations(
 export function filterAndSortConversations(
   conversations: Conversation[],
   filterOptions: ConversationFilterOptions = {},
-  sortOptions: ConversationSortOptions = {}
+  sortOptions: ConversationSortOptions = {},
 ): Conversation[] {
   const filtered = filterConversations(conversations, filterOptions)
   return sortConversations(filtered, sortOptions)

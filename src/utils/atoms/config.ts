@@ -38,7 +38,8 @@ export const writeConfigAtom = atom(null, async (get, set, patch: Partial<Config
     }
 
     await storage.setItem(`local:${CONFIG_STORAGE_KEY}`, parsed.data)
-  } catch (e) {
+  }
+  catch (e) {
     log.error('Failed to save config:', e)
     // If save fails and version is still the current version, rollback
     if (writeVersion === currentVersion) {
@@ -59,7 +60,8 @@ export async function loadConfig(): Promise<Config> {
         return parsed.data
       }
     }
-  } catch (e) {
+  }
+  catch (e) {
     log.error('Failed to load config:', e)
   }
   return DEFAULT_CONFIG

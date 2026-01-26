@@ -32,8 +32,8 @@ export function toJsonl<T>(items: T[]): string {
  */
 export function parseJsonl<T>(
   content: string,
-  schema: { safeParse: (data: unknown) => { success: boolean; data?: T; error?: unknown } },
-  onError?: (line: number, message: string) => void
+  schema: { safeParse: (data: unknown) => { success: boolean, data?: T, error?: unknown } },
+  onError?: (line: number, message: string) => void,
 ): T[] {
   const items: T[] = []
   const lines = content.split('\n').filter((line) => line.trim())
@@ -48,10 +48,12 @@ export function parseJsonl<T>(
 
       if (validated.success && validated.data) {
         items.push(validated.data)
-      } else {
+      }
+      else {
         onError?.(i + 1, 'Invalid data format')
       }
-    } catch {
+    }
+    catch {
       onError?.(i + 1, 'Invalid JSON')
     }
   }
@@ -74,7 +76,8 @@ export function downloadBlob(blob: Blob, filename: string): boolean {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
     return true
-  } catch (error) {
+  }
+  catch (error) {
     syncLogger.error('Failed to download file', error)
     return false
   }
@@ -98,7 +101,7 @@ export const MAX_IMPORT_FILE_SIZE = 100 * 1024 * 1024
 /**
  * Check if file size is within safe limits
  */
-export function isFileSizeSafe(file: File): { safe: boolean; sizeFormatted: string } {
+export function isFileSizeSafe(file: File): { safe: boolean, sizeFormatted: string } {
   const sizeFormatted = formatFileSize(file.size)
   return {
     safe: file.size <= MAX_IMPORT_FILE_SIZE,

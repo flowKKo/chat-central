@@ -37,7 +37,7 @@ export async function searchConversationsAndMessages(query: string): Promise<Con
  * Search conversations and messages with match details
  */
 export async function searchConversationsWithMatches(
-  query: string
+  query: string,
 ): Promise<SearchResultWithMatches[]> {
   const lowerQuery = query.toLowerCase()
 
@@ -45,8 +45,8 @@ export async function searchConversationsWithMatches(
   const titleMatchConvs = await db.conversations
     .filter(
       (conv) =>
-        conv.title.toLowerCase().includes(lowerQuery) ||
-        conv.preview.toLowerCase().includes(lowerQuery)
+        conv.title.toLowerCase().includes(lowerQuery)
+        || conv.preview.toLowerCase().includes(lowerQuery),
     )
     .toArray()
 
@@ -99,7 +99,8 @@ export async function searchConversationsWithMatches(
           messageId: msg.id,
         })
       }
-    } else {
+    }
+    else {
       // Create new result with message matches
       resultMap.set(conv.id, {
         conversation: conv,
@@ -114,7 +115,7 @@ export async function searchConversationsWithMatches(
 
   // Sort by updatedAt desc
   return Array.from(resultMap.values()).sort(
-    (a, b) => (b.conversation.updatedAt ?? 0) - (a.conversation.updatedAt ?? 0)
+    (a, b) => (b.conversation.updatedAt ?? 0) - (a.conversation.updatedAt ?? 0),
   )
 }
 

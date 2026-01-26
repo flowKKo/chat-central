@@ -5,22 +5,22 @@ describe('chatgptAdapter', () => {
   describe('shouldCapture', () => {
     it('should return true for conversation list URL', () => {
       expect(chatgptAdapter.shouldCapture('https://chatgpt.com/backend-api/conversations')).toBe(
-        true
+        true,
       )
       expect(
-        chatgptAdapter.shouldCapture('https://chatgpt.com/backend-api/conversations?limit=20')
+        chatgptAdapter.shouldCapture('https://chatgpt.com/backend-api/conversations?limit=20'),
       ).toBe(true)
     })
 
     it('should return true for conversation detail URL', () => {
       expect(
-        chatgptAdapter.shouldCapture('https://chatgpt.com/backend-api/conversation/abc-def-123')
+        chatgptAdapter.shouldCapture('https://chatgpt.com/backend-api/conversation/abc-def-123'),
       ).toBe(true)
     })
 
     it('should return true for stream URL', () => {
       expect(chatgptAdapter.shouldCapture('https://chatgpt.com/backend-api/conversation')).toBe(
-        true
+        true,
       )
     })
 
@@ -33,22 +33,22 @@ describe('chatgptAdapter', () => {
   describe('getEndpointType', () => {
     it('should detect list endpoint', () => {
       expect(chatgptAdapter.getEndpointType('https://chatgpt.com/backend-api/conversations')).toBe(
-        'list'
+        'list',
       )
       expect(
-        chatgptAdapter.getEndpointType('https://chatgpt.com/backend-api/conversations?offset=0')
+        chatgptAdapter.getEndpointType('https://chatgpt.com/backend-api/conversations?offset=0'),
       ).toBe('list')
     })
 
     it('should detect detail endpoint', () => {
       expect(
-        chatgptAdapter.getEndpointType('https://chatgpt.com/backend-api/conversation/abc-def-123')
+        chatgptAdapter.getEndpointType('https://chatgpt.com/backend-api/conversation/abc-def-123'),
       ).toBe('detail')
     })
 
     it('should detect stream endpoint', () => {
       expect(chatgptAdapter.getEndpointType('https://chatgpt.com/backend-api/conversation')).toBe(
-        'stream'
+        'stream',
       )
     })
 
@@ -61,20 +61,20 @@ describe('chatgptAdapter', () => {
     it('should extract ID from detail URL', () => {
       expect(
         chatgptAdapter.extractConversationId(
-          'https://chatgpt.com/backend-api/conversation/abc-def-456'
-        )
+          'https://chatgpt.com/backend-api/conversation/abc-def-456',
+        ),
       ).toBe('abc-def-456')
     })
 
     it('should return null for list URL', () => {
       expect(
-        chatgptAdapter.extractConversationId('https://chatgpt.com/backend-api/conversations')
+        chatgptAdapter.extractConversationId('https://chatgpt.com/backend-api/conversations'),
       ).toBe(null)
     })
 
     it('should return null for stream URL', () => {
       expect(
-        chatgptAdapter.extractConversationId('https://chatgpt.com/backend-api/conversation')
+        chatgptAdapter.extractConversationId('https://chatgpt.com/backend-api/conversation'),
       ).toBe(null)
     })
   })
@@ -262,7 +262,7 @@ data: [DONE]`
 
       const result = chatgptAdapter.parseStreamResponse!(
         sseData,
-        'https://chatgpt.com/backend-api/conversation'
+        'https://chatgpt.com/backend-api/conversation',
       )
 
       expect(result).not.toBeNull()
@@ -291,7 +291,7 @@ data: [DONE]`
 
       const result = chatgptAdapter.parseStreamResponse!(
         data,
-        'https://chatgpt.com/backend-api/conversation'
+        'https://chatgpt.com/backend-api/conversation',
       )
 
       // Currently returns null because the events don't have "data:" prefix after JSON.stringify
@@ -307,7 +307,7 @@ data: {"conversation_id":"conv-123","message":{"id":"msg-2","author":{"role":"us
 
       const result = chatgptAdapter.parseStreamResponse!(
         sseData,
-        'https://chatgpt.com/backend-api/conversation'
+        'https://chatgpt.com/backend-api/conversation',
       )
 
       expect(result!.messages).toHaveLength(2)
@@ -317,7 +317,7 @@ data: {"conversation_id":"conv-123","message":{"id":"msg-2","author":{"role":"us
 
     it('should return null for empty stream', () => {
       expect(
-        chatgptAdapter.parseStreamResponse!('', 'https://chatgpt.com/backend-api/conversation')
+        chatgptAdapter.parseStreamResponse!('', 'https://chatgpt.com/backend-api/conversation'),
       ).toBeNull()
     })
   })

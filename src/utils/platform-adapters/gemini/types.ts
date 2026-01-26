@@ -20,5 +20,5 @@ export interface DetailState {
   lastProducedTimestamp: number | null
   tieBreaker: number
   messages: Map<string, Message>
-  earliestUserMessage: { content: string; timestamp: number } | null
+  earliestUserMessage: { content: string, timestamp: number } | null
 }

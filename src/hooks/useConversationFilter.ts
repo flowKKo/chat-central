@@ -15,10 +15,10 @@ const DEFAULT_SORT_OPTIONS: ConversationSortOptions = {}
 export function useConversationFilter(
   conversations: Conversation[],
   filterOptions: ConversationFilterOptions = DEFAULT_FILTER_OPTIONS,
-  sortOptions: ConversationSortOptions = DEFAULT_SORT_OPTIONS
+  sortOptions: ConversationSortOptions = DEFAULT_SORT_OPTIONS,
 ): Conversation[] {
   return useMemo(
     () => filterAndSortConversations(conversations, filterOptions, sortOptions),
-    [conversations, filterOptions, sortOptions]
+    [conversations, filterOptions, sortOptions],
   )
 }

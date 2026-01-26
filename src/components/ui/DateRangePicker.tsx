@@ -5,7 +5,7 @@ import { daysAgo, formatDateString, MS_PER_DAY, parseDateString, startOfDay } fr
 interface DateRangePickerProps {
   startDate: number | null
   endDate: number | null
-  onChange: (range: { start: number | null; end: number | null }) => void
+  onChange: (range: { start: number | null, end: number | null }) => void
   className?: string
 }
 
@@ -79,7 +79,7 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
               'cursor-pointer whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-medium transition-all',
               activePreset === preset.days
                 ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground',
             )}
             onClick={() => handlePreset(preset.days)}
           >

@@ -51,11 +51,13 @@ export function SyncSettingsModal() {
 
       if (response.ok) {
         setTestStatus('success')
-      } else {
+      }
+      else {
         setTestError(`Server returned ${response.status}`)
         setTestStatus('error')
       }
-    } catch (error) {
+    }
+    catch (error) {
       setTestError(error instanceof Error ? error.message : 'Connection failed')
       setTestStatus('error')
     }
@@ -66,7 +68,8 @@ export function SyncSettingsModal() {
     try {
       await updateSettings(formData)
       setIsOpen(false)
-    } finally {
+    }
+    finally {
       setIsSaving(false)
     }
   }
@@ -109,14 +112,14 @@ export function SyncSettingsModal() {
               type="button"
               className={cn(
                 'relative h-6 w-11 rounded-full transition-colors',
-                formData.enabled ? 'bg-primary' : 'bg-muted'
+                formData.enabled ? 'bg-primary' : 'bg-muted',
               )}
               onClick={() => handleChange('enabled', !formData.enabled)}
             >
               <span
                 className={cn(
                   'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform',
-                  formData.enabled && 'translate-x-5'
+                  formData.enabled && 'translate-x-5',
                 )}
               />
             </button>
@@ -156,11 +159,13 @@ export function SyncSettingsModal() {
                   onClick={handleTest}
                   disabled={testStatus === 'testing' || !formData.endpoint}
                 >
-                  {testStatus === 'testing' ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <TestTube className="h-4 w-4" />
-                  )}
+                  {testStatus === 'testing'
+                    ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )
+                    : (
+                        <TestTube className="h-4 w-4" />
+                      )}
                   Test Connection
                 </button>
                 {testStatus === 'success' && (
@@ -189,14 +194,14 @@ export function SyncSettingsModal() {
                   type="button"
                   className={cn(
                     'relative h-6 w-11 rounded-full transition-colors',
-                    formData.autoSync ? 'bg-primary' : 'bg-muted'
+                    formData.autoSync ? 'bg-primary' : 'bg-muted',
                   )}
                   onClick={() => handleChange('autoSync', !formData.autoSync)}
                 >
                   <span
                     className={cn(
                       'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform',
-                      formData.autoSync && 'translate-x-5'
+                      formData.autoSync && 'translate-x-5',
                     )}
                   />
                 </button>
@@ -231,16 +236,15 @@ export function SyncSettingsModal() {
                   type="button"
                   className={cn(
                     'relative h-6 w-11 rounded-full transition-colors',
-                    formData.autoResolveConflicts ? 'bg-primary' : 'bg-muted'
+                    formData.autoResolveConflicts ? 'bg-primary' : 'bg-muted',
                   )}
                   onClick={() =>
-                    handleChange('autoResolveConflicts', !formData.autoResolveConflicts)
-                  }
+                    handleChange('autoResolveConflicts', !formData.autoResolveConflicts)}
                 >
                   <span
                     className={cn(
                       'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform',
-                      formData.autoResolveConflicts && 'translate-x-5'
+                      formData.autoResolveConflicts && 'translate-x-5',
                     )}
                   />
                 </button>

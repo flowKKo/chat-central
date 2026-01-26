@@ -27,14 +27,15 @@ export function BatchActionBar({
   useClickOutside(
     exportMenuRef,
     isExportMenuOpen,
-    useCallback(() => setIsExportMenuOpen(false), [])
+    useCallback(() => setIsExportMenuOpen(false), []),
   )
 
   const handleExport = async (exportFn: () => Promise<void>) => {
     setIsExporting(true)
     try {
       await exportFn()
-    } finally {
+    }
+    finally {
       setIsExporting(false)
       setIsExportMenuOpen(false)
     }
@@ -42,7 +43,11 @@ export function BatchActionBar({
 
   return (
     <div className="mb-3 flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5">
-      <span className="text-sm font-medium">{selectedCount} selected</span>
+      <span className="text-sm font-medium">
+        {selectedCount}
+        {' '}
+        selected
+      </span>
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -65,7 +70,7 @@ export function BatchActionBar({
             type="button"
             className={cn(
               'flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50',
-              isExporting && 'opacity-50'
+              isExporting && 'opacity-50',
             )}
             onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
             disabled={selectedCount === 0 || isExporting}

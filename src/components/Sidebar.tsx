@@ -87,16 +87,15 @@ export function Sidebar() {
                       'kbd-focus group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
                       isActive
                         ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
-                    )
-                  }
+                        : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+                    )}
                 >
                   {({ isActive }) => (
                     <>
                       <item.icon
                         className={cn(
                           'h-4 w-4 transition-transform',
-                          isActive ? 'scale-110' : 'group-hover:scale-105'
+                          isActive ? 'scale-110' : 'group-hover:scale-105',
                         )}
                       />
                       <span>{item.label}</span>
@@ -106,7 +105,7 @@ export function Sidebar() {
                             'ml-auto min-w-[1.5rem] rounded-full px-2 py-0.5 text-center text-[10px] font-semibold tabular-nums',
                             isActive
                               ? 'bg-primary-foreground/20 text-primary-foreground'
-                              : 'bg-muted text-muted-foreground'
+                              : 'bg-muted text-muted-foreground',
                           )}
                         >
                           {badgeCount > 999 ? '999+' : badgeCount}
@@ -141,7 +140,7 @@ export function Sidebar() {
               <ChevronDown
                 className={cn(
                   'h-3 w-3 transition-transform duration-200',
-                  isTagsExpanded && 'rotate-180'
+                  isTagsExpanded && 'rotate-180',
                 )}
               />
             </button>
@@ -169,7 +168,7 @@ export function Sidebar() {
                           'flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition-colors',
                           isSelected
                             ? 'bg-primary/10 text-primary'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                         )}
                         onClick={() => toggleTagFilter(tag)}
                         aria-pressed={isSelected}

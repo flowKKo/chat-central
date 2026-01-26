@@ -92,7 +92,7 @@ describe('highlightText', () => {
 
     it('should apply custom highlight className', () => {
       render(
-        <HighlightText text="Hello world" query="world" highlightClassName="custom-highlight" />
+        <HighlightText text="Hello world" query="world" highlightClassName="custom-highlight" />,
       )
       expect(screen.getByText('world')).toHaveClass('custom-highlight')
     })
@@ -102,7 +102,7 @@ describe('highlightText', () => {
     it('should render with fade edges when truncated', () => {
       const longText = 'This is a very long text with keyword somewhere in the middle of it all'
       const { container } = render(
-        <HighlightText text={longText} query="keyword" maxLength={30} fadeEdges />
+        <HighlightText text={longText} query="keyword" maxLength={30} fadeEdges />,
       )
       // With fadeEdges, it uses gradient spans instead of ellipsis
       expect(container.querySelector('.relative')).toBeInTheDocument()

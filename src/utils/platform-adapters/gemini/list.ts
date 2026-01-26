@@ -15,7 +15,7 @@ export function buildConversation(
   id: string,
   title: string,
   createdAt: number,
-  now: number
+  now: number,
 ): Conversation {
   const normalizedId = normalizeConversationId(id)
   const timestamp = createdAt || now
@@ -48,9 +48,9 @@ function parseConversationListItem(value: unknown, now: number): Conversation | 
   const title = value[1]
   if (typeof title !== 'string' || !title) return null
   if (
-    CONVERSATION_ID_RE.test(title) ||
-    RESPONSE_ID_RE.test(title) ||
-    RESPONSE_ID_SHORT_RE.test(title)
+    CONVERSATION_ID_RE.test(title)
+    || RESPONSE_ID_RE.test(title)
+    || RESPONSE_ID_SHORT_RE.test(title)
   ) {
     return null
   }
@@ -71,9 +71,9 @@ function parseConversationObject(obj: Record<string, unknown>, now: number): Con
   const id = idValue
   const title = titleValue
   if (
-    CONVERSATION_ID_RE.test(title) ||
-    RESPONSE_ID_RE.test(title) ||
-    RESPONSE_ID_SHORT_RE.test(title)
+    CONVERSATION_ID_RE.test(title)
+    || RESPONSE_ID_RE.test(title)
+    || RESPONSE_ID_SHORT_RE.test(title)
   ) {
     return null
   }

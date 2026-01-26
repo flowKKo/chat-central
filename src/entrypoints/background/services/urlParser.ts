@@ -50,7 +50,8 @@ export function parseConversationFromUrl(rawUrl: string): ParsedConversation | n
         url: rawUrl,
       }
     }
-  } catch {
+  }
+  catch {
     return null
   }
 
@@ -62,7 +63,7 @@ export function parseConversationFromUrl(rawUrl: string): ParsedConversation | n
  */
 export function buildPlaceholderConversation(
   parsed: ParsedConversation,
-  now: number
+  now: number,
 ): Conversation {
   return {
     id: parsed.conversationId,

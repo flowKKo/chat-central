@@ -24,7 +24,7 @@ import type { ImportResult } from '@/utils/sync/types'
 import { isFileSizeSafe } from '@/utils/sync/utils'
 import { CloudSyncPanel } from './CloudSyncPanel'
 
-const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
+const themeOptions: { value: ThemePreference, label: string, icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', icon: Sun },
   { value: 'dark', label: 'Dark', icon: Moon },
   { value: 'system', label: 'System', icon: Monitor },
@@ -50,7 +50,8 @@ export function SettingsPanel() {
     try {
       await clearAllData()
       window.location.reload()
-    } finally {
+    }
+    finally {
       setIsClearing(false)
     }
   }
@@ -63,7 +64,8 @@ export function SettingsPanel() {
     try {
       await clearPlatformData(platform)
       window.location.reload()
-    } finally {
+    }
+    finally {
       setIsClearing(false)
     }
   }
@@ -73,7 +75,8 @@ export function SettingsPanel() {
     try {
       const result = await exportData({ type: 'full' })
       downloadExport(result)
-    } finally {
+    }
+    finally {
       setIsExporting(false)
     }
   }
@@ -88,9 +91,10 @@ export function SettingsPanel() {
       const { safe, sizeFormatted } = isFileSizeSafe(file)
       if (!safe) {
         setFileSizeWarning(
-          `Large file (${sizeFormatted}). Import may take a while and could affect browser performance.`
+          `Large file (${sizeFormatted}). Import may take a while and could affect browser performance.`,
         )
-      } else {
+      }
+      else {
         setFileSizeWarning(null)
       }
     }
@@ -128,7 +132,8 @@ export function SettingsPanel() {
           fileInputRef.current.value = ''
         }
       }
-    } finally {
+    }
+    finally {
       setIsImporting(false)
     }
   }
@@ -169,7 +174,7 @@ export function SettingsPanel() {
                     'flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all',
                     isSelected
                       ? 'border-primary bg-primary/10'
-                      : 'border-transparent bg-muted/50 hover:bg-muted'
+                      : 'border-transparent bg-muted/50 hover:bg-muted',
                   )}
                   onClick={() => setThemePreference(option.value)}
                 >
@@ -179,7 +184,7 @@ export function SettingsPanel() {
                   <span
                     className={cn(
                       'text-sm font-medium',
-                      isSelected ? 'text-primary' : 'text-muted-foreground'
+                      isSelected ? 'text-primary' : 'text-muted-foreground',
                     )}
                   >
                     {option.label}
@@ -216,19 +221,21 @@ export function SettingsPanel() {
                 type="button"
                 className={cn(
                   'flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90',
-                  isExporting && 'cursor-not-allowed opacity-50'
+                  isExporting && 'cursor-not-allowed opacity-50',
                 )}
                 onClick={handleExport}
                 disabled={isExporting}
               >
-                {isExporting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Exporting...
-                  </>
-                ) : (
-                  'Export'
-                )}
+                {isExporting
+                  ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Exporting...
+                      </>
+                    )
+                  : (
+                      'Export'
+                    )}
               </button>
             </div>
 
@@ -255,32 +262,36 @@ export function SettingsPanel() {
                     htmlFor="import-file"
                     className={cn(
                       'cursor-pointer rounded-lg border border-dashed border-border px-3 py-2 text-sm transition-colors hover:bg-muted/50',
-                      selectedFile && 'border-primary bg-primary/5 text-primary'
+                      selectedFile && 'border-primary bg-primary/5 text-primary',
                     )}
                   >
-                    {selectedFile ? (
-                      <span className="max-w-32 truncate">{selectedFile.name}</span>
-                    ) : (
-                      'Choose file'
-                    )}
+                    {selectedFile
+                      ? (
+                          <span className="max-w-32 truncate">{selectedFile.name}</span>
+                        )
+                      : (
+                          'Choose file'
+                        )}
                   </label>
                   <button
                     type="button"
                     className={cn(
                       'flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90',
-                      (!selectedFile || isImporting) && 'cursor-not-allowed opacity-50'
+                      (!selectedFile || isImporting) && 'cursor-not-allowed opacity-50',
                     )}
                     onClick={handleImport}
                     disabled={!selectedFile || isImporting}
                   >
-                    {isImporting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Importing...
-                      </>
-                    ) : (
-                      'Import'
-                    )}
+                    {isImporting
+                      ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Importing...
+                          </>
+                        )
+                      : (
+                          'Import'
+                        )}
                   </button>
                 </div>
               </div>
@@ -298,35 +309,44 @@ export function SettingsPanel() {
                 <div
                   className={cn(
                     'mt-3 flex items-start gap-2 rounded-lg p-3',
-                    importResult.success ? 'bg-emerald-500/10' : 'bg-red-500/10'
+                    importResult.success ? 'bg-emerald-500/10' : 'bg-red-500/10',
                   )}
                 >
-                  {importResult.success ? (
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
-                  ) : (
-                    <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
-                  )}
+                  {importResult.success
+                    ? (
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+                      )
+                    : (
+                        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+                      )}
                   <div className="text-sm">
-                    {importResult.success ? (
-                      <>
-                        <p className="font-medium text-emerald-600 dark:text-emerald-400">
-                          Import successful
-                        </p>
-                        <p className="text-muted-foreground">
-                          {importResult.imported.conversations} conversations,{' '}
-                          {importResult.imported.messages} messages imported
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="font-medium text-red-600 dark:text-red-400">Import failed</p>
-                        {importResult.errors.map((error, i) => (
-                          <p key={i} className="text-muted-foreground">
-                            {error.message}
-                          </p>
-                        ))}
-                      </>
-                    )}
+                    {importResult.success
+                      ? (
+                          <>
+                            <p className="font-medium text-emerald-600 dark:text-emerald-400">
+                              Import successful
+                            </p>
+                            <p className="text-muted-foreground">
+                              {importResult.imported.conversations}
+                              {' '}
+                              conversations,
+                              {' '}
+                              {importResult.imported.messages}
+                              {' '}
+                              messages imported
+                            </p>
+                          </>
+                        )
+                      : (
+                          <>
+                            <p className="font-medium text-red-600 dark:text-red-400">Import failed</p>
+                            {importResult.errors.map((error, i) => (
+                              <p key={i} className="text-muted-foreground">
+                                {error.message}
+                              </p>
+                            ))}
+                          </>
+                        )}
                   </div>
                 </div>
               )}
@@ -380,7 +400,7 @@ export function SettingsPanel() {
                   type="button"
                   className={cn(
                     'cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10',
-                    isClearing && 'cursor-not-allowed opacity-50'
+                    isClearing && 'cursor-not-allowed opacity-50',
                   )}
                   onClick={() => handleClearPlatform(platform)}
                   disabled={isClearing}
@@ -430,19 +450,21 @@ export function SettingsPanel() {
               type="button"
               className={cn(
                 'flex cursor-pointer items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600',
-                isClearing && 'cursor-not-allowed opacity-50'
+                isClearing && 'cursor-not-allowed opacity-50',
               )}
               onClick={handleClearAll}
               disabled={isClearing}
             >
-              {isClearing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete All'
-              )}
+              {isClearing
+                ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Deleting...
+                    </>
+                  )
+                : (
+                    'Delete All'
+                  )}
             </button>
           </div>
         </section>

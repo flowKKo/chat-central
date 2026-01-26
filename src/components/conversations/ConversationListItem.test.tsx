@@ -78,7 +78,7 @@ describe('conversationListItem', () => {
         conversation={conversation}
         {...defaultProps}
         onToggleFavorite={onToggleFavorite}
-      />
+      />,
     )
 
     const favoriteButton = screen.getByRole('button', { name: /add to favorites/i })
@@ -96,7 +96,7 @@ describe('conversationListItem', () => {
   it('should have selected indicator when isSelected is true', () => {
     const conversation = createConversation()
     const { container } = render(
-      <ConversationListItem conversation={conversation} {...defaultProps} isSelected />
+      <ConversationListItem conversation={conversation} {...defaultProps} isSelected />,
     )
 
     // Check for selected state class
@@ -107,7 +107,7 @@ describe('conversationListItem', () => {
   it('should highlight search query in title', () => {
     const conversation = createConversation({ title: 'Hello World Chat' })
     render(
-      <ConversationListItem conversation={conversation} {...defaultProps} searchQuery="World" />
+      <ConversationListItem conversation={conversation} {...defaultProps} searchQuery="World" />,
     )
 
     expect(screen.getByText(/World/i)).toBeInTheDocument()

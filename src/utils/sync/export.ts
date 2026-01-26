@@ -127,7 +127,8 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
       compression: 'DEFLATE',
       compressionOptions: { level: 6 },
     })
-  } catch (error) {
+  }
+  catch (error) {
     syncLogger.error('Failed to generate ZIP file', error)
     throw new Error('Failed to generate export file. Please try again.')
   }
@@ -153,7 +154,7 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
  */
 export function exportConversations(
   conversationIds: string[],
-  options: Pick<ExportOptions, 'includeDeleted'> = {}
+  options: Pick<ExportOptions, 'includeDeleted'> = {},
 ): Promise<ExportResult> {
   return exportData({ type: 'selected', conversationIds, ...options })
 }
@@ -181,7 +182,7 @@ export async function exportToJson(
   options: {
     platforms?: Platform[]
     includeDeleted?: boolean
-  } = {}
+  } = {},
 ): Promise<SimpleExportResult> {
   const conversations = await getAllConversationsForExport({
     platforms: options.platforms,
@@ -271,8 +272,8 @@ export async function exportToMarkdown(conversationId: string): Promise<Markdown
  * Export a conversation to JSON format (single conversation)
  */
 export async function exportConversationToJson(
-  conversationId: string
-): Promise<{ content: string; filename: string }> {
+  conversationId: string,
+): Promise<{ content: string, filename: string }> {
   const conversation = await getConversationById(conversationId)
   if (!conversation) {
     throw new Error(`Conversation not found: ${conversationId}`)
@@ -314,7 +315,7 @@ export interface BatchMarkdownExportResult {
  * Each conversation becomes a separate .md file
  */
 export async function exportBatchMarkdown(
-  conversationIds: string[]
+  conversationIds: string[],
 ): Promise<BatchMarkdownExportResult> {
   const zip = new JSZip()
   let totalMessages = 0
@@ -336,7 +337,8 @@ export async function exportBatchMarkdown(
 
       zip.file(filename, result.content)
       totalMessages += result.messageCount
-    } catch (error) {
+    }
+    catch (error) {
       syncLogger.warn(`Failed to export conversation ${id}: ${String(error)}`)
     }
   }

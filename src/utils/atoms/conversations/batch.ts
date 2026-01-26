@@ -27,7 +27,8 @@ export const toggleBatchSelectAtom = atom(null, (get, set, id: string) => {
   const newSet = new Set(current)
   if (newSet.has(id)) {
     newSet.delete(id)
-  } else {
+  }
+  else {
     newSet.add(id)
   }
   set(batchSelectedIdsAtom, newSet)

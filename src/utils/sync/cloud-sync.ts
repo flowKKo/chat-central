@@ -154,7 +154,7 @@ export async function syncToCloud(): Promise<CloudSyncResult> {
     result.stats.conversationsUploaded = exportData.conversations.length
     result.stats.messagesUploaded = exportData.conversations.reduce(
       (sum, c) => sum + (c.messages?.length ?? 0),
-      0
+      0,
     )
 
     // Update last sync time
@@ -166,7 +166,8 @@ export async function syncToCloud(): Promise<CloudSyncResult> {
 
     syncLogger.info('Cloud sync completed successfully', result.stats)
     return result
-  } catch (error) {
+  }
+  catch (error) {
     const syncError = CloudSyncError.fromError(error)
     syncLogger.error('Cloud sync failed', syncError)
 
@@ -228,7 +229,8 @@ async function downloadAndMerge(): Promise<CloudSyncResult> {
     }
 
     return result
-  } catch (error) {
+  }
+  catch (error) {
     const syncError = CloudSyncError.fromError(error)
     return {
       ...result,
@@ -305,7 +307,8 @@ export async function loadCloudSyncState(): Promise<CloudSyncState> {
     const result = await browser.storage.local.get(STORAGE_KEY)
     const state = result[STORAGE_KEY] as CloudSyncState | undefined
     return state ?? DEFAULT_CLOUD_SYNC_STATE
-  } catch (error) {
+  }
+  catch (error) {
     syncLogger.error('Failed to load cloud sync state', error)
     return DEFAULT_CLOUD_SYNC_STATE
   }
@@ -317,7 +320,8 @@ export async function loadCloudSyncState(): Promise<CloudSyncState> {
 export async function saveCloudSyncState(state: CloudSyncState): Promise<void> {
   try {
     await browser.storage.local.set({ [STORAGE_KEY]: state })
-  } catch (error) {
+  }
+  catch (error) {
     syncLogger.error('Failed to save cloud sync state', error)
   }
 }
@@ -327,7 +331,7 @@ export async function saveCloudSyncState(state: CloudSyncState): Promise<void> {
  */
 export async function updateAutoSyncSettings(
   enabled: boolean,
-  intervalMinutes?: number
+  intervalMinutes?: number,
 ): Promise<void> {
   const state = await loadCloudSyncState()
   await saveCloudSyncState({
@@ -352,7 +356,8 @@ export async function initializeCloudSync(): Promise<void> {
       // Try to reconnect
       await connectCloudProvider(state.provider)
       syncLogger.info('Restored cloud connection')
-    } catch (error) {
+    }
+    catch (error) {
       syncLogger.warn('Failed to restore cloud connection', error)
       // Clear connected state
       await saveCloudSyncState({

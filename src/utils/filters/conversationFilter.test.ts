@@ -177,7 +177,7 @@ describe('filterAndSortConversations', () => {
     const result = filterAndSortConversations(
       conversations,
       { platform: 'claude' },
-      { byFavoriteTime: false }
+      { byFavoriteTime: false },
     )
     expect(result).toHaveLength(2)
     expect(result.map((c) => c.id)).toEqual(['3', '1']) // sorted by updatedAt desc

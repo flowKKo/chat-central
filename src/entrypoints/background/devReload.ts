@@ -37,7 +37,8 @@ export function connectDevReloadServer() {
             log.info('Reload signal received, reloading extension...')
             browser.runtime.reload()
           }
-        } catch (e) {
+        }
+        catch (e) {
           log.warn('Failed to parse dev reload message:', e)
         }
       }
@@ -50,7 +51,8 @@ export function connectDevReloadServer() {
       ws.onerror = () => {
         // Error will be followed by close event, no need to handle here
       }
-    } catch (e) {
+    }
+    catch (e) {
       log.warn('Failed to connect to dev reload server:', e)
       scheduleReconnect()
     }

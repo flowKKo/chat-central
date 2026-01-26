@@ -21,7 +21,7 @@ export function PlatformFilterDropdown({
   useClickOutside(
     ref,
     isOpen,
-    useCallback(() => setIsOpen(false), [])
+    useCallback(() => setIsOpen(false), []),
   )
 
   const handleSelect = (platform: Platform | 'all') => {
@@ -50,7 +50,7 @@ export function PlatformFilterDropdown({
         <ChevronDown
           className={cn(
             'h-4 w-4 text-muted-foreground transition-transform duration-200',
-            isOpen && 'rotate-180'
+            isOpen && 'rotate-180',
           )}
         />
       </button>
@@ -66,11 +66,13 @@ export function PlatformFilterDropdown({
             aria-selected={selectedPlatform === 'all'}
             className={cn(
               'w-full cursor-pointer px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80',
-              selectedPlatform === 'all' && 'bg-primary/10 text-primary'
+              selectedPlatform === 'all' && 'bg-primary/10 text-primary',
             )}
             onClick={() => handleSelect('all')}
           >
-            All Platforms ({counts.total})
+            All Platforms (
+            {counts.total}
+            )
           </button>
           {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
             <button
@@ -80,7 +82,7 @@ export function PlatformFilterDropdown({
               aria-selected={selectedPlatform === platform}
               className={cn(
                 'flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80',
-                selectedPlatform === platform && 'bg-primary/10 text-primary'
+                selectedPlatform === platform && 'bg-primary/10 text-primary',
               )}
               onClick={() => handleSelect(platform)}
             >
@@ -88,7 +90,11 @@ export function PlatformFilterDropdown({
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: PLATFORM_CONFIG[platform].color }}
               />
-              {PLATFORM_CONFIG[platform].name} ({counts[platform]})
+              {PLATFORM_CONFIG[platform].name}
+              {' '}
+              (
+              {counts[platform]}
+              )
             </button>
           ))}
         </div>

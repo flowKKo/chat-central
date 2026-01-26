@@ -34,7 +34,7 @@ export function HighlightText({
 
     const lowerText = text.toLowerCase()
     const lowerQuery = query.toLowerCase()
-    const result: { text: string; highlight: boolean }[] = []
+    const result: { text: string, highlight: boolean }[] = []
 
     let matchIndex = lowerText.indexOf(lowerQuery)
 
@@ -55,7 +55,8 @@ export function HighlightText({
       // Recalculate match index in the truncated text
       const lowerDisplayText = displayText.toLowerCase()
       matchIndex = lowerDisplayText.indexOf(lowerQuery)
-    } else if (maxLength) {
+    }
+    else if (maxLength) {
       displayText = truncateText(text, maxLength)
       truncatedEnd = text.length > maxLength
     }
@@ -106,13 +107,15 @@ export function HighlightText({
         )}
         <span className="overflow-hidden">
           {parts.map((part, index) =>
-            part.highlight ? (
-              <mark key={index} className={cn('font-medium', highlightClassName)}>
-                {part.text}
-              </mark>
-            ) : (
-              <span key={index}>{part.text}</span>
-            )
+            part.highlight
+              ? (
+                  <mark key={index} className={cn('font-medium', highlightClassName)}>
+                    {part.text}
+                  </mark>
+                )
+              : (
+                  <span key={index}>{part.text}</span>
+                ),
           )}
         </span>
         {hasTruncatedEnd && (
@@ -131,13 +134,15 @@ export function HighlightText({
   return (
     <span className={className}>
       {parts.map((part, index) =>
-        part.highlight ? (
-          <mark key={index} className={cn('font-medium', highlightClassName)}>
-            {part.text}
-          </mark>
-        ) : (
-          <span key={index}>{part.text}</span>
-        )
+        part.highlight
+          ? (
+              <mark key={index} className={cn('font-medium', highlightClassName)}>
+                {part.text}
+              </mark>
+            )
+          : (
+              <span key={index}>{part.text}</span>
+            ),
       )}
     </span>
   )
@@ -153,8 +158,8 @@ function truncateAroundMatch(
   matchIndex: number,
   matchLength: number,
   maxLength: number,
-  fadeEdges: boolean
-): { text: string; hasStart: boolean; hasEnd: boolean } {
+  fadeEdges: boolean,
+): { text: string, hasStart: boolean, hasEnd: boolean } {
   if (text.length <= maxLength) {
     return { text, hasStart: false, hasEnd: false }
   }
@@ -169,7 +174,8 @@ function truncateAroundMatch(
   // Adjust if we hit boundaries
   if (start === 0) {
     end = Math.min(text.length, maxLength)
-  } else if (end === text.length) {
+  }
+  else if (end === text.length) {
     start = Math.max(0, text.length - maxLength)
   }
 

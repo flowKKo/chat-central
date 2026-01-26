@@ -48,7 +48,7 @@ export const themePreferenceAtom = atom(
     // Apply theme to document
     const resolved = resolveTheme(newPreference)
     applyThemeToDocument(resolved)
-  }
+  },
 )
 
 // Read-only atom for resolved theme
@@ -61,7 +61,8 @@ export function applyThemeToDocument(theme: ResolvedTheme): void {
   const root = document.documentElement
   if (theme === 'dark') {
     root.classList.add('dark')
-  } else {
+  }
+  else {
     root.classList.remove('dark')
   }
 }
@@ -75,7 +76,7 @@ export function initializeTheme(): void {
 
 // Setup system preference change listener
 export function setupSystemThemeListener(
-  onSystemChange: (resolved: ResolvedTheme) => void
+  onSystemChange: (resolved: ResolvedTheme) => void,
 ): () => void {
   if (typeof window === 'undefined') return () => {}
 

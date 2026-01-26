@@ -29,8 +29,8 @@ export function mergeConversation(existing: Conversation, incoming: Conversation
   const existingRank = rankDetailStatus(existing.detailStatus)
   const incomingRank = rankDetailStatus(incoming.detailStatus)
   let detailStatus = incomingRank >= existingRank ? incoming.detailStatus : existing.detailStatus
-  let detailSyncedAt =
-    incomingRank >= existingRank
+  let detailSyncedAt
+    = incomingRank >= existingRank
       ? Math.max(existing.detailSyncedAt ?? 0, incoming.detailSyncedAt ?? 0) || null
       : (existing.detailSyncedAt ?? null)
 
@@ -60,15 +60,16 @@ export function mergeConversation(existing: Conversation, incoming: Conversation
   if (incoming.title && (!existing.title || !shouldKeepExistingTitle)) {
     title = incoming.title
   }
-  const preview =
-    incomingIsNewer && incoming.preview ? incoming.preview : existing.preview || incoming.preview
+  const preview
+    = incomingIsNewer && incoming.preview ? incoming.preview : existing.preview || incoming.preview
   const messageCount = Math.max(existing.messageCount, incoming.messageCount)
   const isFavorite = existing.isFavorite || incoming.isFavorite
   let favoriteAt = existing.favoriteAt ?? null
 
   if (!existing.isFavorite && incoming.isFavorite) {
     favoriteAt = incoming.favoriteAt ?? Date.now()
-  } else if (!isFavorite) {
+  }
+  else if (!isFavorite) {
     favoriteAt = null
   }
 
@@ -108,7 +109,7 @@ export async function upsertConversationMerged(conversation: Conversation): Prom
 async function updateConversationFromMessages(
   conversationId: string,
   messages: Message[],
-  options: { mode: 'full' | 'partial'; existingIds?: Set<string> }
+  options: { mode: 'full' | 'partial', existingIds?: Set<string> },
 ): Promise<void> {
   const existing = await getConversationById(conversationId)
   if (!existing) return
@@ -133,7 +134,8 @@ async function updateConversationFromMessages(
   if (options.mode === 'full') {
     const firstUser = sortedMessages.find((message) => message.role === 'user')
     preview = (firstUser?.content || sortedMessages[0]?.content || preview).slice(0, 200)
-  } else {
+  }
+  else {
     const latestUserMessage = [...newMessages].reverse().find((message) => message.role === 'user')
     if (latestUserMessage) {
       preview = latestUserMessage.content.slice(0, 200)
@@ -155,7 +157,7 @@ async function updateConversationFromMessages(
  */
 async function ensureUniqueGeminiMessages(
   conversation: Conversation,
-  messages: Message[]
+  messages: Message[],
 ): Promise<Message[]> {
   if (conversation.platform !== 'gemini') return messages
 
@@ -170,7 +172,7 @@ async function ensureUniqueGeminiMessages(
 export async function applyConversationUpdate(
   conversation: Conversation,
   messages: Message[],
-  mode: 'full' | 'partial'
+  mode: 'full' | 'partial',
 ): Promise<void> {
   await upsertConversationMerged({
     ...conversation,
@@ -182,8 +184,8 @@ export async function applyConversationUpdate(
 
   const normalizedMessages = await ensureUniqueGeminiMessages(conversation, messages)
 
-  const existingIds =
-    mode === 'partial'
+  const existingIds
+    = mode === 'partial'
       ? await getExistingMessageIds(normalizedMessages.map((message) => message.id))
       : undefined
 

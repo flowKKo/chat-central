@@ -31,7 +31,8 @@ export function registerContextMenus() {
 
   if (clear && typeof (clear as Promise<void>).then === 'function') {
     ;(clear as Promise<void>).then(createMenu).catch(createMenu)
-  } else {
+  }
+  else {
     createMenu()
   }
 }

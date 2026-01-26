@@ -102,7 +102,8 @@ export class MockSyncProvider implements SyncProvider {
           message: 'Simulated conflict',
           serverVersion: this.records.get(record.id),
         })
-      } else {
+      }
+      else {
         this.records.set(record.id, record)
         applied.push(record.id)
       }

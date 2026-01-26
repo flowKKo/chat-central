@@ -70,7 +70,7 @@ describe('tagManager', () => {
     it('should call onTagsChange when remove button is clicked', () => {
       const onTagsChange = vi.fn()
       render(
-        <TagManager {...defaultProps} tags={['work', 'personal']} onTagsChange={onTagsChange} />
+        <TagManager {...defaultProps} tags={['work', 'personal']} onTagsChange={onTagsChange} />,
       )
 
       const removeButton = screen.getByRole('button', { name: /remove tag work/i })
@@ -182,7 +182,7 @@ describe('tagManager', () => {
         // 'work' should not appear in suggestions since it's already added
         const suggestions = screen.queryAllByRole('option')
         const workOption = suggestions.find(
-          (s) => s.textContent?.includes('work') && !s.textContent?.includes('Create')
+          (s) => s.textContent?.includes('work') && !s.textContent?.includes('Create'),
         )
         expect(workOption).toBeUndefined()
       })

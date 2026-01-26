@@ -98,7 +98,7 @@ export class CloudSyncError extends Error {
     message: string,
     public readonly category: CloudSyncErrorCategory,
     public readonly retryable: boolean,
-    public readonly userMessage: string = ERROR_USER_MESSAGES[category]
+    public readonly userMessage: string = ERROR_USER_MESSAGES[category],
   ) {
     super(message)
     this.name = 'CloudSyncError'
@@ -130,45 +130,45 @@ export function categorizeError(message: string): {
 
   // Network errors
   if (
-    lowerMessage.includes('network') ||
-    lowerMessage.includes('fetch') ||
-    lowerMessage.includes('connection') ||
-    lowerMessage.includes('timeout') ||
-    lowerMessage.includes('offline')
+    lowerMessage.includes('network')
+    || lowerMessage.includes('fetch')
+    || lowerMessage.includes('connection')
+    || lowerMessage.includes('timeout')
+    || lowerMessage.includes('offline')
   ) {
     return { category: 'network', retryable: true }
   }
 
   // Auth errors
   if (
-    lowerMessage.includes('401') ||
-    lowerMessage.includes('403') ||
-    lowerMessage.includes('unauthorized') ||
-    lowerMessage.includes('authentication') ||
-    lowerMessage.includes('token') ||
-    lowerMessage.includes('oauth') ||
-    lowerMessage.includes('permission')
+    lowerMessage.includes('401')
+    || lowerMessage.includes('403')
+    || lowerMessage.includes('unauthorized')
+    || lowerMessage.includes('authentication')
+    || lowerMessage.includes('token')
+    || lowerMessage.includes('oauth')
+    || lowerMessage.includes('permission')
   ) {
     return { category: 'auth', retryable: false }
   }
 
   // Quota errors
   if (
-    lowerMessage.includes('quota') ||
-    lowerMessage.includes('storage') ||
-    lowerMessage.includes('413') ||
-    lowerMessage.includes('insufficient')
+    lowerMessage.includes('quota')
+    || lowerMessage.includes('storage')
+    || lowerMessage.includes('413')
+    || lowerMessage.includes('insufficient')
   ) {
     return { category: 'quota', retryable: false }
   }
 
   // Data errors
   if (
-    lowerMessage.includes('parse') ||
-    lowerMessage.includes('json') ||
-    lowerMessage.includes('invalid') ||
-    lowerMessage.includes('corrupt') ||
-    lowerMessage.includes('format')
+    lowerMessage.includes('parse')
+    || lowerMessage.includes('json')
+    || lowerMessage.includes('invalid')
+    || lowerMessage.includes('corrupt')
+    || lowerMessage.includes('format')
   ) {
     return { category: 'data', retryable: false }
   }
@@ -207,7 +207,7 @@ export interface CloudSyncResult {
  * Create an empty sync result
  */
 export function createEmptyCloudSyncResult(
-  direction: CloudSyncResult['direction']
+  direction: CloudSyncResult['direction'],
 ): CloudSyncResult {
   return {
     success: true,

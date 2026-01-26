@@ -76,7 +76,7 @@ export const UpdateTagsSchema = z.object({
     z
       .string()
       .transform((s) => s.trim())
-      .refine((s) => s.length > 0, { message: 'Tag cannot be empty' })
+      .refine((s) => s.length > 0, { message: 'Tag cannot be empty' }),
   ),
 })
 

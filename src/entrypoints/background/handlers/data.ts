@@ -23,7 +23,7 @@ const log = createLogger('ChatCentral')
  * Get conversation list
  */
 export async function handleGetConversations(
-  rawMessage: unknown
+  rawMessage: unknown,
 ): Promise<{ conversations: Conversation[] } | { error: string }> {
   const parseResult = GetConversationsSchema.safeParse(rawMessage)
   if (!parseResult.success) {
@@ -40,7 +40,7 @@ export async function handleGetConversations(
  * Get conversation messages
  */
 export async function handleGetMessages(
-  rawMessage: unknown
+  rawMessage: unknown,
 ): Promise<{ messages: Message[] } | { error: string }> {
   const parseResult = GetMessagesSchema.safeParse(rawMessage)
   if (!parseResult.success) {
@@ -65,7 +65,7 @@ export async function handleGetStats() {
  * Search conversations
  */
 export async function handleSearch(
-  rawMessage: unknown
+  rawMessage: unknown,
 ): Promise<{ results: Conversation[] } | { error: string }> {
   const parseResult = SearchSchema.safeParse(rawMessage)
   if (!parseResult.success) {
@@ -80,7 +80,7 @@ export async function handleSearch(
   const lowerQuery = query.toLowerCase()
   const results = conversations.filter(
     (c) =>
-      c.title.toLowerCase().includes(lowerQuery) || c.preview.toLowerCase().includes(lowerQuery)
+      c.title.toLowerCase().includes(lowerQuery) || c.preview.toLowerCase().includes(lowerQuery),
   )
 
   return { results }
@@ -90,8 +90,8 @@ export async function handleSearch(
  * Toggle favorite status
  */
 export async function handleToggleFavorite(
-  rawMessage: unknown
-): Promise<{ success: boolean; conversation?: Conversation | null; error?: string }> {
+  rawMessage: unknown,
+): Promise<{ success: boolean, conversation?: Conversation | null, error?: string }> {
   const parseResult = ToggleFavoriteSchema.safeParse(rawMessage)
   if (!parseResult.success) {
     log.warn('Invalid toggle favorite message:', parseResult.error.message)
@@ -111,8 +111,8 @@ export async function handleToggleFavorite(
  * Update conversation tags
  */
 export async function handleUpdateTags(
-  rawMessage: unknown
-): Promise<{ success: boolean; conversation?: Conversation | null; error?: string }> {
+  rawMessage: unknown,
+): Promise<{ success: boolean, conversation?: Conversation | null, error?: string }> {
   const parseResult = UpdateTagsSchema.safeParse(rawMessage)
   if (!parseResult.success) {
     log.warn('Invalid update tags message:', parseResult.error.message)

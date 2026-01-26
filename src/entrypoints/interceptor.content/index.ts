@@ -43,8 +43,8 @@ function shouldCapture(url: string): boolean {
   }
   // Gemini
   if (
-    url.includes('gemini.google.com') &&
-    (url.includes('batchexecute') || url.includes('/conversations'))
+    url.includes('gemini.google.com')
+    && (url.includes('batchexecute') || url.includes('/conversations'))
   ) {
     return true
   }
@@ -62,14 +62,15 @@ function sendCapturedData(url: string, data: unknown) {
       data,
       timestamp: Date.now(),
     },
-    '*'
+    '*',
   )
 }
 
 function toAbsoluteUrl(url: string): string {
   try {
     return new URL(url, window.location.origin).toString()
-  } catch {
+  }
+  catch {
     return url
   }
 }
@@ -84,8 +85,8 @@ function injectFetchInterceptor() {
     const response = await originalFetch.apply(this, args)
 
     try {
-      const rawUrl =
-        typeof args[0] === 'string' ? args[0] : args[0] instanceof Request ? args[0].url : ''
+      const rawUrl
+        = typeof args[0] === 'string' ? args[0] : args[0] instanceof Request ? args[0].url : ''
       const url = toAbsoluteUrl(rawUrl)
 
       if (shouldCapture(url)) {
@@ -106,7 +107,8 @@ function injectFetchInterceptor() {
             console.error('[ChatCentral] Failed to read response text:', err)
           })
       }
-    } catch (e) {
+    }
+    catch (e) {
       // Ignore errors, do not affect original request
       console.error('[ChatCentral] Fetch interceptor error:', e)
     }
@@ -124,16 +126,18 @@ function tryParseResponse(text: string): unknown {
   // 1. Try standard JSON
   try {
     return JSON.parse(text)
-  } catch {
+  }
+  catch {
     // Ignore, continue to try other formats
   }
 
   // 2. Try Gemini format (starts with )]}')
-  if (text.trim().startsWith(")]}'")) {
+  if (text.trim().startsWith(')]}\'')) {
     try {
       const jsonText = text.substring(text.indexOf('\n') + 1)
       return JSON.parse(jsonText)
-    } catch {
+    }
+    catch {
       // Leave it to the adapter
     }
   }
@@ -160,7 +164,7 @@ function injectXHRInterceptor() {
     url: string | URL,
     async?: boolean,
     username?: string | null,
-    password?: string | null
+    password?: string | null,
   ) {
     // Store URL for use in onload
     const rawUrl = url.toString()
@@ -170,7 +174,7 @@ function injectXHRInterceptor() {
 
   XMLHttpRequest.prototype.send = function (
     this: ExtendedXHR,
-    body?: Document | XMLHttpRequestBodyInit | null
+    body?: Document | XMLHttpRequestBodyInit | null,
   ) {
     const url = this._chatCentralUrl
 
@@ -183,7 +187,8 @@ function injectXHRInterceptor() {
             console.log('[ChatCentral] Successfully parsed XHR response for:', url)
             sendCapturedData(url, data)
           }
-        } catch (e) {
+        }
+        catch (e) {
           console.error('[ChatCentral] Failed to process XHR response:', e)
         }
       })
