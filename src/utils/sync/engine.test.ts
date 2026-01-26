@@ -1,14 +1,17 @@
 import type {
   ConflictRecord,
+  OperationLog,
   PullResult,
   PushResult,
   SyncProvider,
   SyncRecord,
   SyncState,
 } from './types'
+import type { Conversation, Message } from '@/types'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { MockSyncProvider } from './providers/mock'
 import { syncCycle, applyConflictResolution, pullOnly, pushOnly } from './engine'
+import * as dbModule from '@/utils/db'
 
 // Hoisted mock tables (accessible inside vi.mock factories)
 const { mockDbTables } = vi.hoisted(() => ({
@@ -72,6 +75,60 @@ vi.mock('@/utils/db', () => ({
   getPendingOperations: vi.fn(() => []),
   markOperationsSynced: vi.fn(),
 }))
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
+  return {
+    id: 'conv-1',
+    originalId: 'orig-1',
+    platform: 'claude',
+    title: 'Test Conversation',
+    preview: 'Preview text',
+    messageCount: 5,
+    createdAt: 1000,
+    updatedAt: 2000,
+    url: 'https://example.com',
+    isFavorite: false,
+    favoriteAt: null,
+    tags: [],
+    syncedAt: 0,
+    detailStatus: 'none',
+    detailSyncedAt: null,
+    syncVersion: 1,
+    modifiedAt: 1000,
+    ...overrides,
+  }
+}
+
+function makeMessage(overrides: Partial<Message> = {}): Message {
+  return {
+    id: 'msg-1',
+    conversationId: 'conv-1',
+    role: 'user',
+    content: 'Hello',
+    createdAt: 1000,
+    syncVersion: 1,
+    modifiedAt: 1000,
+    ...overrides,
+  }
+}
+
+function makeOperationLog(overrides: Partial<OperationLog> = {}): OperationLog {
+  return {
+    id: 'op-1',
+    entityType: 'conversation',
+    entityId: 'conv-1',
+    operation: 'update',
+    changes: {},
+    timestamp: Date.now(),
+    synced: false,
+    syncedAt: null,
+    ...overrides,
+  }
+}
 
 describe('mockSyncProvider', () => {
   let provider: MockSyncProvider
@@ -321,11 +378,8 @@ function createSyncRecord(overrides: Partial<SyncRecord> = {}): SyncRecord {
 }
 
 describe('syncCycle', () => {
-  let dbMock: typeof import('@/utils/db')
-
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks()
-    dbMock = await vi.importMock<typeof import('@/utils/db')>('@/utils/db')
     mockDbTables.conversations.get.mockResolvedValue(undefined)
     mockDbTables.conversations.add.mockResolvedValue(undefined)
     mockDbTables.conversations.put.mockResolvedValue(undefined)
@@ -353,14 +407,16 @@ describe('syncCycle', () => {
 
     await syncCycle(provider)
 
-    expect(dbMock.updateSyncState).toHaveBeenCalledWith({
+    expect(vi.mocked(dbModule.updateSyncState)).toHaveBeenCalledWith({
       status: 'syncing',
       lastError: null,
     })
   })
 
   it('should pass cursor from sync state to pull', async () => {
-    dbMock.getSyncState.mockResolvedValue({ remoteCursor: 'existing-cursor' } as SyncState)
+    vi.mocked(dbModule.getSyncState).mockResolvedValue({
+      remoteCursor: 'existing-cursor',
+    } as SyncState)
     const provider = createMockProvider()
 
     await syncCycle(provider)
@@ -369,7 +425,7 @@ describe('syncCycle', () => {
   })
 
   it('should pass null cursor when no sync state', async () => {
-    dbMock.getSyncState.mockResolvedValue(null)
+    vi.mocked(dbModule.getSyncState).mockResolvedValue(undefined)
     const provider = createMockProvider()
 
     await syncCycle(provider)
@@ -392,8 +448,8 @@ describe('syncCycle', () => {
 
     expect(result.success).toBe(false)
     expect(result.errors).toHaveLength(1)
-    expect(result.errors[0].code).toBe('network_error')
-    expect(dbMock.updateSyncState).toHaveBeenCalledWith(
+    expect(result.errors[0]!.code).toBe('network_error')
+    expect(vi.mocked(dbModule.updateSyncState)).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'error', lastError: 'Connection lost' })
     )
   })
@@ -410,7 +466,7 @@ describe('syncCycle', () => {
 
     await syncCycle(provider)
 
-    expect(dbMock.updateSyncState).toHaveBeenCalledWith(
+    expect(vi.mocked(dbModule.updateSyncState)).toHaveBeenCalledWith(
       expect.objectContaining({ remoteCursor: 'new-cursor-123' })
     )
   })
@@ -441,11 +497,16 @@ describe('syncCycle', () => {
   })
 
   it('should push dirty conversations and messages', async () => {
-    const dirtyConv = { id: 'c1', title: 'Dirty', syncVersion: 2, modifiedAt: 1000 }
-    const dirtyMsg = { id: 'm1', content: 'Hello', syncVersion: 1, modifiedAt: 2000 }
+    const dirtyConv = makeConversation({
+      id: 'c1',
+      title: 'Dirty',
+      syncVersion: 2,
+      modifiedAt: 1000,
+    })
+    const dirtyMsg = makeMessage({ id: 'm1', content: 'Hello', syncVersion: 1, modifiedAt: 2000 })
 
-    dbMock.getDirtyConversations.mockResolvedValue([dirtyConv])
-    dbMock.getDirtyMessages.mockResolvedValue([dirtyMsg])
+    vi.mocked(dbModule.getDirtyConversations).mockResolvedValue([dirtyConv])
+    vi.mocked(dbModule.getDirtyMessages).mockResolvedValue([dirtyMsg])
 
     const pushFn = vi.fn().mockResolvedValue({
       success: true,
@@ -466,8 +527,8 @@ describe('syncCycle', () => {
   })
 
   it('should clear dirty flags after successful push', async () => {
-    dbMock.getDirtyConversations.mockResolvedValue([{ id: 'c1', syncVersion: 1, modifiedAt: 1 }])
-    dbMock.getDirtyMessages.mockResolvedValue([{ id: 'm1', syncVersion: 1, modifiedAt: 1 }])
+    vi.mocked(dbModule.getDirtyConversations).mockResolvedValue([makeConversation({ id: 'c1' })])
+    vi.mocked(dbModule.getDirtyMessages).mockResolvedValue([makeMessage({ id: 'm1' })])
 
     const provider = createMockProvider({
       push: vi.fn().mockResolvedValue({ success: true, applied: ['c1', 'm1'], failed: [] }),
@@ -475,7 +536,7 @@ describe('syncCycle', () => {
 
     await syncCycle(provider)
 
-    expect(dbMock.clearDirtyFlags).toHaveBeenCalledWith(['c1'], ['m1'])
+    expect(vi.mocked(dbModule.clearDirtyFlags)).toHaveBeenCalledWith(['c1'], ['m1'])
   })
 
   it('should not fail entire sync when push fails but pull succeeds', async () => {
@@ -488,12 +549,12 @@ describe('syncCycle', () => {
       }),
     })
 
-    dbMock.getDirtyConversations.mockResolvedValue([{ id: 'c1', syncVersion: 1, modifiedAt: 1 }])
+    vi.mocked(dbModule.getDirtyConversations).mockResolvedValue([makeConversation({ id: 'c1' })])
 
     const result = await syncCycle(provider)
 
     expect(result.errors).toHaveLength(1)
-    expect(result.errors[0].code).toBe('server_error')
+    expect(result.errors[0]!.code).toBe('server_error')
   })
 
   it('should catch unexpected errors and set error state', async () => {
@@ -510,7 +571,7 @@ describe('syncCycle', () => {
       message: 'Unexpected crash',
       recoverable: true,
     })
-    expect(dbMock.updateSyncState).toHaveBeenCalledWith(
+    expect(vi.mocked(dbModule.updateSyncState)).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'error', lastError: 'Unexpected crash' })
     )
   })
@@ -522,16 +583,14 @@ describe('syncCycle', () => {
 
     const result = await syncCycle(provider)
 
-    expect(result.errors[0].message).toBe('Unknown sync error')
+    expect(result.errors[0]!.message).toBe('Unknown sync error')
   })
 
   it('should use custom pushBatchSize option', async () => {
-    const records = Array.from({ length: 5 }, (_, i) => ({
-      id: `c${i}`,
-      syncVersion: 1,
-      modifiedAt: i,
-    }))
-    dbMock.getDirtyConversations.mockResolvedValue(records)
+    const records = Array.from({ length: 5 }, (_, i) =>
+      makeConversation({ id: `c${i}`, modifiedAt: i })
+    )
+    vi.mocked(dbModule.getDirtyConversations).mockResolvedValue(records)
 
     const pushFn = vi.fn().mockResolvedValue({ success: true, applied: [], failed: [] })
     const provider = createMockProvider({ push: pushFn })
@@ -543,10 +602,10 @@ describe('syncCycle', () => {
   })
 
   it('should mark operations as synced after push', async () => {
-    dbMock.getDirtyConversations.mockResolvedValue([{ id: 'c1', syncVersion: 1, modifiedAt: 1 }])
-    dbMock.getPendingOperations.mockResolvedValue([
-      { id: 'op1', entityId: 'c1' },
-      { id: 'op2', entityId: 'c-other' },
+    vi.mocked(dbModule.getDirtyConversations).mockResolvedValue([makeConversation({ id: 'c1' })])
+    vi.mocked(dbModule.getPendingOperations).mockResolvedValue([
+      makeOperationLog({ id: 'op1', entityId: 'c1' }),
+      makeOperationLog({ id: 'op2', entityId: 'c-other' }),
     ])
 
     const provider = createMockProvider({
@@ -555,7 +614,7 @@ describe('syncCycle', () => {
 
     await syncCycle(provider)
 
-    expect(dbMock.markOperationsSynced).toHaveBeenCalledWith(['op1'])
+    expect(vi.mocked(dbModule.markOperationsSynced)).toHaveBeenCalledWith(['op1'])
   })
 
   it('should set idle status when no conflicts', async () => {
@@ -563,7 +622,9 @@ describe('syncCycle', () => {
 
     await syncCycle(provider)
 
-    expect(dbMock.updateSyncState).toHaveBeenCalledWith(expect.objectContaining({ status: 'idle' }))
+    expect(vi.mocked(dbModule.updateSyncState)).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'idle' })
+    )
   })
 
   it('should handle push conflict with server version', async () => {
@@ -572,7 +633,7 @@ describe('syncCycle', () => {
       entityType: 'conversation',
     })
 
-    dbMock.getDirtyConversations.mockResolvedValue([{ id: 'c1', syncVersion: 1, modifiedAt: 1 }])
+    vi.mocked(dbModule.getDirtyConversations).mockResolvedValue([makeConversation({ id: 'c1' })])
 
     const provider = createMockProvider({
       push: vi.fn().mockResolvedValue({
@@ -706,11 +767,8 @@ describe('applyConflictResolution', () => {
 })
 
 describe('pullOnly', () => {
-  let dbMock: typeof import('@/utils/db')
-
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks()
-    dbMock = await vi.importMock<typeof import('@/utils/db')>('@/utils/db')
     mockDbTables.conversations.get.mockResolvedValue(undefined)
     mockDbTables.conversations.add.mockResolvedValue(undefined)
     mockDbTables.messages.get.mockResolvedValue(undefined)
@@ -727,7 +785,7 @@ describe('pullOnly', () => {
   })
 
   it('should use cursor from sync state', async () => {
-    dbMock.getSyncState.mockResolvedValue({ remoteCursor: 'cursor-abc' } as SyncState)
+    vi.mocked(dbModule.getSyncState).mockResolvedValue({ remoteCursor: 'cursor-abc' } as SyncState)
     const provider = createMockProvider()
 
     await pullOnly(provider)
@@ -769,7 +827,7 @@ describe('pullOnly', () => {
 
     await pullOnly(provider)
 
-    expect(dbMock.updateSyncState).toHaveBeenCalledWith(
+    expect(vi.mocked(dbModule.updateSyncState)).toHaveBeenCalledWith(
       expect.objectContaining({ remoteCursor: 'new-cursor' })
     )
   })
@@ -822,11 +880,8 @@ describe('pullOnly', () => {
 })
 
 describe('pushOnly', () => {
-  let dbMock: typeof import('@/utils/db')
-
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks()
-    dbMock = await vi.importMock<typeof import('@/utils/db')>('@/utils/db')
   })
 
   it('should return success with 0 pushed when nothing dirty', async () => {
@@ -839,8 +894,8 @@ describe('pushOnly', () => {
   })
 
   it('should push dirty records and return count', async () => {
-    dbMock.getDirtyConversations.mockResolvedValue([{ id: 'c1', syncVersion: 1, modifiedAt: 1 }])
-    dbMock.getDirtyMessages.mockResolvedValue([{ id: 'm1', syncVersion: 1, modifiedAt: 2 }])
+    vi.mocked(dbModule.getDirtyConversations).mockResolvedValue([makeConversation({ id: 'c1' })])
+    vi.mocked(dbModule.getDirtyMessages).mockResolvedValue([makeMessage({ id: 'm1' })])
 
     const provider = createMockProvider({
       push: vi.fn().mockResolvedValue({ success: true, applied: ['c1', 'm1'], failed: [] }),
@@ -853,7 +908,7 @@ describe('pushOnly', () => {
   })
 
   it('should return error when push fails', async () => {
-    dbMock.getDirtyConversations.mockResolvedValue([{ id: 'c1', syncVersion: 1, modifiedAt: 1 }])
+    vi.mocked(dbModule.getDirtyConversations).mockResolvedValue([makeConversation({ id: 'c1' })])
 
     const provider = createMockProvider({
       push: vi.fn().mockResolvedValue({
@@ -875,7 +930,7 @@ describe('pushOnly', () => {
   })
 
   it('should handle push throwing an exception', async () => {
-    dbMock.getDirtyConversations.mockResolvedValue([{ id: 'c1', syncVersion: 1, modifiedAt: 1 }])
+    vi.mocked(dbModule.getDirtyConversations).mockResolvedValue([makeConversation({ id: 'c1' })])
 
     const provider = createMockProvider({
       push: vi.fn().mockRejectedValue(new Error('Connection reset')),
