@@ -1,6 +1,7 @@
 import { atom } from 'jotai'
 import { browser } from 'wxt/browser'
 import { MS_PER_MINUTE } from '@/utils/date'
+import { createLogger, getErrorMessage } from '@/utils/logger'
 import type {
   CloudProviderType,
   CloudSyncResult,
@@ -12,6 +13,8 @@ import {
   loadCloudSyncState,
   syncToCloud,
 } from '@/utils/sync/cloud-sync'
+
+const log = createLogger('CloudSync')
 
 // ============================================================================
 // Cloud Sync State Atoms
@@ -109,7 +112,7 @@ export const initializeCloudSyncAtom = atom(null, async (_get, set) => {
     set(autoSyncIntervalAtom, state.autoSyncIntervalMinutes)
     set(cloudSyncErrorAtom, state.error)
   } catch (error) {
-    console.error('[CloudSync] Failed to initialize:', error)
+    log.error('Failed to initialize:', error)
   }
 })
 
@@ -148,8 +151,7 @@ export const performSyncAtom = atom(null, async (get, set) => {
       set(cloudSyncStatusAtom, 'error')
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Sync failed'
-    set(cloudSyncErrorAtom, message)
+    set(cloudSyncErrorAtom, getErrorMessage(error, 'Sync failed'))
     set(cloudSyncStatusAtom, 'error')
   }
 })
@@ -171,8 +173,7 @@ export const connectCloudAtom = atom(null, async (_get, set, provider: CloudProv
     // Trigger initial sync after connecting
     await set(performSyncAtom)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to connect'
-    set(cloudSyncErrorAtom, message)
+    set(cloudSyncErrorAtom, getErrorMessage(error, 'Failed to connect'))
     set(cloudSyncStatusAtom, 'error')
     throw error
   }
@@ -193,7 +194,7 @@ export const disconnectCloudAtom = atom(null, async (_get, set) => {
     set(cloudSyncStatusAtom, 'idle')
     set(lastSyncResultAtom, null)
   } catch (error) {
-    console.error('[CloudSync] Failed to disconnect:', error)
+    log.error('Failed to disconnect:', error)
   }
 })
 
@@ -216,7 +217,7 @@ export const toggleAutoSyncAtom = atom(null, async (get, set, enabled?: boolean)
       autoSyncIntervalMinutes: interval,
     })
   } catch (error) {
-    console.error('[CloudSync] Failed to update auto-sync settings:', error)
+    log.error('Failed to update auto-sync settings:', error)
   }
 })
 
@@ -235,6 +236,6 @@ export const setAutoSyncIntervalAtom = atom(null, async (get, set, minutes: numb
       autoSyncIntervalMinutes: minutes,
     })
   } catch (error) {
-    console.error('[CloudSync] Failed to update auto-sync interval:', error)
+    log.error('Failed to update auto-sync interval:', error)
   }
 })

@@ -1,4 +1,7 @@
 import { browser } from 'wxt/browser'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('ChatCentral')
 
 const DEV_RELOAD_PORT = 3717
 const RECONNECT_DELAY = 3000
@@ -20,7 +23,7 @@ export function connectDevReloadServer() {
       const ws = new WebSocket(`ws://localhost:${DEV_RELOAD_PORT}`)
 
       ws.onopen = () => {
-        console.log('[ChatCentral] Connected to dev reload server')
+        log.info('Connected to dev reload server')
         if (reconnectTimer) {
           clearTimeout(reconnectTimer)
           reconnectTimer = null
@@ -31,16 +34,16 @@ export function connectDevReloadServer() {
         try {
           const message = JSON.parse(event.data)
           if (message.type === 'reload') {
-            console.log('[ChatCentral] Reload signal received, reloading extension...')
+            log.info('Reload signal received, reloading extension...')
             browser.runtime.reload()
           }
         } catch (e) {
-          console.warn('[ChatCentral] Failed to parse dev reload message:', e)
+          log.warn('Failed to parse dev reload message:', e)
         }
       }
 
       ws.onclose = () => {
-        console.log('[ChatCentral] Disconnected from dev reload server')
+        log.info('Disconnected from dev reload server')
         scheduleReconnect()
       }
 
@@ -48,7 +51,7 @@ export function connectDevReloadServer() {
         // Error will be followed by close event, no need to handle here
       }
     } catch (e) {
-      console.warn('[ChatCentral] Failed to connect to dev reload server:', e)
+      log.warn('Failed to connect to dev reload server:', e)
       scheduleReconnect()
     }
   }

@@ -11,6 +11,7 @@ import {
   searchConversationsWithMatches,
   upsertMessages,
 } from '@/utils/db'
+import { createLogger } from '@/utils/logger'
 import { parseSearchQuery } from '@/utils/search-parser'
 import {
   allTagsAtom,
@@ -32,6 +33,8 @@ import {
   selectedMessagesAtom,
 } from './state'
 
+const log = createLogger('ChatCentral')
+
 // ============================================================================
 // Filter Actions
 // ============================================================================
@@ -44,7 +47,7 @@ export const loadAllTagsAtom = atom(null, async (_get, set) => {
     const tags = await getAllTags()
     set(allTagsAtom, tags)
   } catch (e) {
-    console.error('[ChatCentral] Failed to load tags:', e)
+    log.error('Failed to load tags:', e)
   }
 })
 
@@ -144,7 +147,7 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
       total: totalCount,
     })
   } catch (e) {
-    console.error('[ChatCentral] Failed to load conversations:', e)
+    log.error('Failed to load conversations:', e)
   } finally {
     set(isLoadingConversationsAtom, false)
   }
@@ -261,7 +264,7 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
       hasMore: false,
     })
   } catch (e) {
-    console.error('[ChatCentral] Failed to search:', e)
+    log.error('Failed to search:', e)
   } finally {
     set(isLoadingConversationsAtom, false)
   }
@@ -335,7 +338,7 @@ export const loadFavoritesAtom = atom(null, async (get, set, options?: { reset?:
       total: totalCount,
     })
   } catch (e) {
-    console.error('[ChatCentral] Failed to load favorite conversations:', e)
+    log.error('Failed to load favorite conversations:', e)
   } finally {
     set(isLoadingFavoritesAtom, false)
   }
@@ -396,7 +399,7 @@ export const toggleFavoriteAtom = atom(
         total: totalCount,
       })
     } catch (e) {
-      console.error('[ChatCentral] Failed to toggle favorite:', e)
+      log.error('Failed to toggle favorite:', e)
     }
   }
 )
@@ -428,7 +431,7 @@ export const loadConversationDetailAtom = atom(
         : await getMessagesByConversationId(conversationId)
       set(selectedMessagesAtom, messages)
     } catch (e) {
-      console.error('[ChatCentral] Failed to load conversation detail:', e)
+      log.error('Failed to load conversation detail:', e)
     } finally {
       set(isLoadingDetailAtom, false)
     }
@@ -458,7 +461,7 @@ export const loadFavoriteDetailAtom = atom(
         : await getMessagesByConversationId(conversationId)
       set(selectedMessagesAtom, messages)
     } catch (e) {
-      console.error('[ChatCentral] Failed to load favorite conversation detail:', e)
+      log.error('Failed to load favorite conversation detail:', e)
     } finally {
       set(isLoadingDetailAtom, false)
     }
@@ -527,7 +530,7 @@ export const updateTagsAtom = atom(
 
       return updated
     } catch (e) {
-      console.error('[ChatCentral] Failed to update tags:', e)
+      log.error('Failed to update tags:', e)
       return null
     }
   }

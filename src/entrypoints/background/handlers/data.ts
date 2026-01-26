@@ -15,6 +15,9 @@ import {
   updateConversationFavorite,
   updateConversationTags,
 } from '@/utils/db'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('ChatCentral')
 
 /**
  * Get conversation list
@@ -24,7 +27,7 @@ export async function handleGetConversations(
 ): Promise<{ conversations: Conversation[] } | { error: string }> {
   const parseResult = GetConversationsSchema.safeParse(rawMessage)
   if (!parseResult.success) {
-    console.warn('[ChatCentral] Invalid get conversations message:', parseResult.error.message)
+    log.warn('Invalid get conversations message:', parseResult.error.message)
     return { error: 'Invalid message format' }
   }
 
@@ -41,7 +44,7 @@ export async function handleGetMessages(
 ): Promise<{ messages: Message[] } | { error: string }> {
   const parseResult = GetMessagesSchema.safeParse(rawMessage)
   if (!parseResult.success) {
-    console.warn('[ChatCentral] Invalid get messages request:', parseResult.error.message)
+    log.warn('Invalid get messages request:', parseResult.error.message)
     return { error: 'Invalid message format' }
   }
 
@@ -66,7 +69,7 @@ export async function handleSearch(
 ): Promise<{ results: Conversation[] } | { error: string }> {
   const parseResult = SearchSchema.safeParse(rawMessage)
   if (!parseResult.success) {
-    console.warn('[ChatCentral] Invalid search message:', parseResult.error.message)
+    log.warn('Invalid search message:', parseResult.error.message)
     return { error: 'Invalid message format' }
   }
 
@@ -91,7 +94,7 @@ export async function handleToggleFavorite(
 ): Promise<{ success: boolean; conversation?: Conversation | null; error?: string }> {
   const parseResult = ToggleFavoriteSchema.safeParse(rawMessage)
   if (!parseResult.success) {
-    console.warn('[ChatCentral] Invalid toggle favorite message:', parseResult.error.message)
+    log.warn('Invalid toggle favorite message:', parseResult.error.message)
     return { success: false, error: 'Invalid message format' }
   }
 
@@ -112,7 +115,7 @@ export async function handleUpdateTags(
 ): Promise<{ success: boolean; conversation?: Conversation | null; error?: string }> {
   const parseResult = UpdateTagsSchema.safeParse(rawMessage)
   if (!parseResult.success) {
-    console.warn('[ChatCentral] Invalid update tags message:', parseResult.error.message)
+    log.warn('Invalid update tags message:', parseResult.error.message)
     return { success: false, error: 'Invalid message format' }
   }
 

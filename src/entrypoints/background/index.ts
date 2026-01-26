@@ -22,12 +22,15 @@ import {
   syncToCloud,
 } from '@/utils/sync/cloud-sync'
 import type { CloudProviderType } from '@/utils/sync/providers/cloud-types'
+import { createLogger, getErrorMessage } from '@/utils/logger'
+
+const log = createLogger('ChatCentral')
 
 export default defineBackground({
   type: 'module',
 
   main() {
-    console.log('[ChatCentral] Background service worker started')
+    log.info('Background service worker started')
 
     registerContextMenus()
     const menus = browser.contextMenus
@@ -41,9 +44,8 @@ export default defineBackground({
         handleMessage(message)
           .then(sendResponse)
           .catch((e: unknown) => {
-            console.error('[ChatCentral] Message handler error:', e)
-            const errorMessage = e instanceof Error ? e.message : 'Unknown error'
-            sendResponse({ error: errorMessage })
+            log.error('Message handler error:', e)
+            sendResponse({ error: getErrorMessage(e) })
           })
         return true // Keep message channel open to support asynchronous response
       }
@@ -54,10 +56,9 @@ export default defineBackground({
       browser.runtime?.onInstalled,
       (details: { reason: string; previousVersion?: string }) => {
         if (details.reason === 'install') {
-          console.log('[ChatCentral] Extension installed')
-          // Open welcome page here
+          log.info('Extension installed')
         } else if (details.reason === 'update') {
-          console.log('[ChatCentral] Extension updated')
+          log.info('Extension updated')
         }
 
         registerContextMenus()
@@ -69,7 +70,7 @@ export default defineBackground({
 
     // Initialize cloud sync
     initializeCloudSync().catch((e) => {
-      console.warn('[ChatCentral] Failed to initialize cloud sync:', e)
+      log.warn('Failed to initialize cloud sync:', e)
     })
 
     // Set up auto-sync alarm
@@ -98,25 +99,23 @@ async function setupAutoSyncAlarm() {
       await browser.alarms?.create(AUTO_SYNC_ALARM_NAME, {
         periodInMinutes: state.autoSyncIntervalMinutes,
       })
-      console.log(
-        `[ChatCentral] Auto-sync alarm set for every ${state.autoSyncIntervalMinutes} minutes`
-      )
+      log.info(`Auto-sync alarm set for every ${state.autoSyncIntervalMinutes} minutes`)
     }
   } catch (e) {
-    console.error('[ChatCentral] Failed to setup auto-sync alarm:', e)
+    log.error('Failed to setup auto-sync alarm:', e)
   }
 }
 
 async function handleAlarm(alarm: { name: string }) {
   if (alarm.name === AUTO_SYNC_ALARM_NAME) {
-    console.log('[ChatCentral] Auto-sync alarm triggered')
+    log.info('Auto-sync alarm triggered')
     try {
       if (isCloudConnected()) {
         await syncToCloud()
-        console.log('[ChatCentral] Auto-sync completed')
+        log.info('Auto-sync completed')
       }
     } catch (e) {
-      console.error('[ChatCentral] Auto-sync failed:', e)
+      log.error('Auto-sync failed:', e)
     }
   }
 }
@@ -195,7 +194,7 @@ async function handleMessage(message: unknown): Promise<unknown> {
       return handleCloudUpdateSettings(message)
 
     default:
-      console.warn('[ChatCentral] Unknown action:', action)
+      log.warn('Unknown action:', action)
       return { error: 'Unknown action' }
   }
 }
@@ -216,8 +215,7 @@ async function handleCloudConnect(message: MessagePayload): Promise<unknown> {
     await setupAutoSyncAlarm()
     return { success: true }
   } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : 'Connection failed'
-    return { error: errorMessage }
+    return { error: getErrorMessage(e, 'Connection failed') }
   }
 }
 
@@ -228,8 +226,7 @@ async function handleCloudDisconnect(): Promise<unknown> {
     await browser.alarms?.clear(AUTO_SYNC_ALARM_NAME)
     return { success: true }
   } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : 'Disconnect failed'
-    return { error: errorMessage }
+    return { error: getErrorMessage(e, 'Disconnect failed') }
   }
 }
 
@@ -242,8 +239,7 @@ async function handleCloudSyncNow(): Promise<unknown> {
     const result = await syncToCloud()
     return { success: result.success, result }
   } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : 'Sync failed'
-    return { error: errorMessage }
+    return { error: getErrorMessage(e, 'Sync failed') }
   }
 }
 
@@ -271,7 +267,6 @@ async function handleCloudUpdateSettings(message: MessagePayload): Promise<unkno
     }
     return { success: true }
   } catch (e) {
-    const errorMessage = e instanceof Error ? e.message : 'Failed to update settings'
-    return { error: errorMessage }
+    return { error: getErrorMessage(e, 'Failed to update settings') }
   }
 }

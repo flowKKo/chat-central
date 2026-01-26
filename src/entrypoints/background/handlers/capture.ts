@@ -1,6 +1,9 @@
 import { getAdapterForUrl, type PlatformAdapter } from '@/utils/platform-adapters'
+import { createLogger } from '@/utils/logger'
 import { CaptureApiResponseSchema, type CaptureApiResponseMessage } from '../schemas'
 import { upsertConversationMerged, applyConversationUpdate } from '../services'
+
+const log = createLogger('ChatCentral')
 
 /**
  * Handle captured API response from content script
@@ -10,7 +13,7 @@ export async function handleCapturedResponse(
 ): Promise<{ success: boolean; count?: number; error?: string }> {
   const parseResult = CaptureApiResponseSchema.safeParse(rawMessage)
   if (!parseResult.success) {
-    console.warn('[ChatCentral] Invalid capture message:', parseResult.error.message)
+    log.warn('Invalid capture message:', parseResult.error.message)
     return { success: false, error: 'Invalid message format' }
   }
 
@@ -19,12 +22,12 @@ export async function handleCapturedResponse(
 
   const adapter = getAdapterForUrl(url)
   if (!adapter) {
-    console.warn('[ChatCentral] No adapter found for URL:', url)
+    log.warn('No adapter found for URL:', url)
     return { success: false }
   }
 
   const endpointType = adapter.getEndpointType(url)
-  console.log(`[ChatCentral] Processing ${adapter.platform} ${endpointType} response`)
+  log.info(`Processing ${adapter.platform} ${endpointType} response`)
 
   try {
     switch (endpointType) {
@@ -38,11 +41,11 @@ export async function handleCapturedResponse(
         return await processStreamResponse(adapter, data, url)
 
       default:
-        console.warn('[ChatCentral] Unknown endpoint type:', endpointType)
+        log.warn('Unknown endpoint type:', endpointType)
         return await processUnknownResponse(adapter, data, url)
     }
   } catch (e) {
-    console.error('[ChatCentral] Failed to process response:', e)
+    log.error('Failed to process response:', e)
     return { success: false }
   }
 }
@@ -57,11 +60,11 @@ async function processConversationList(
   const conversations = adapter.parseConversationList(data)
 
   if (conversations.length === 0) {
-    console.log('[ChatCentral] No conversations parsed from list')
+    log.info('No conversations parsed from list')
     return { success: true, count: 0 }
   }
 
-  console.log(`[ChatCentral] Parsed ${conversations.length} conversations from ${adapter.platform}`)
+  log.info(`Parsed ${conversations.length} conversations from ${adapter.platform}`)
 
   for (const conversation of conversations) {
     await upsertConversationMerged(conversation)
@@ -80,15 +83,13 @@ async function processConversationDetail(
   const result = adapter.parseConversationDetail(data)
 
   if (!result) {
-    console.log('[ChatCentral] Failed to parse conversation detail')
+    log.info('Failed to parse conversation detail')
     return { success: false, count: 0 }
   }
 
   const { conversation, messages } = result
 
-  console.log(
-    `[ChatCentral] Parsed conversation "${conversation.title}" with ${messages.length} messages`
-  )
+  log.info(`Parsed conversation "${conversation.title}" with ${messages.length} messages`)
 
   await applyConversationUpdate(conversation, messages, 'full')
 
@@ -104,13 +105,13 @@ async function processStreamResponse(
   url: string
 ): Promise<{ success: boolean; count: number }> {
   if (!adapter.parseStreamResponse) {
-    console.log('[ChatCentral] Stream response not supported for adapter')
+    log.info('Stream response not supported for adapter')
     return { success: false, count: 0 }
   }
 
   const result = adapter.parseStreamResponse(data, url)
   if (!result) {
-    console.log('[ChatCentral] Failed to parse stream response')
+    log.info('Failed to parse stream response')
     return { success: false, count: 0 }
   }
 

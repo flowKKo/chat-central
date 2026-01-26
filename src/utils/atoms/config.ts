@@ -2,6 +2,9 @@ import { deepmerge } from 'deepmerge-ts'
 import { atom } from 'jotai'
 import { storage } from 'wxt/storage'
 import { type Config, configSchema, DEFAULT_CONFIG } from '@/types'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('ChatCentral')
 
 const CONFIG_STORAGE_KEY = 'config'
 
@@ -30,13 +33,13 @@ export const writeConfigAtom = atom(null, async (get, set, patch: Partial<Config
   try {
     const parsed = configSchema.safeParse(optimisticNext)
     if (!parsed.success) {
-      console.error('[ChatCentral] Config validation failed:', parsed.error)
+      log.error('Config validation failed:', parsed.error)
       return
     }
 
     await storage.setItem(`local:${CONFIG_STORAGE_KEY}`, parsed.data)
   } catch (e) {
-    console.error('[ChatCentral] Failed to save config:', e)
+    log.error('Failed to save config:', e)
     // If save fails and version is still the current version, rollback
     if (writeVersion === currentVersion) {
       set(configAtom, currentConfig)
@@ -57,7 +60,7 @@ export async function loadConfig(): Promise<Config> {
       }
     }
   } catch (e) {
-    console.error('[ChatCentral] Failed to load config:', e)
+    log.error('Failed to load config:', e)
   }
   return DEFAULT_CONFIG
 }

@@ -1,6 +1,9 @@
 import { browser } from 'wxt/browser'
 import { getConversationById, upsertConversation, updateConversationFavorite } from '@/utils/db'
+import { createLogger } from '@/utils/logger'
 import { parseConversationFromUrl, buildPlaceholderConversation } from './services'
+
+const log = createLogger('ChatCentral')
 
 export const FAVORITE_MENU_ID = 'chat-central-favorite-toggle'
 
@@ -41,7 +44,7 @@ export async function handleContextMenuClick(info: any, tab?: any) {
   if (info.menuItemId !== FAVORITE_MENU_ID) return
   const result = await toggleFavoriteFromTab(tab)
   if (!result) {
-    console.warn('[ChatCentral] Favorite toggle failed: no conversation detected')
+    log.warn('Favorite toggle failed: no conversation detected')
   }
 }
 

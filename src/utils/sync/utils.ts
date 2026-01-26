@@ -2,33 +2,12 @@
 // Shared Sync Utilities
 // ============================================================================
 
+import { createLogger } from '@/utils/logger'
+
 /**
- * Simple sync logger with context prefix
+ * Logger with [Sync] prefix for all sync-related operations
  */
-export const syncLogger = {
-  error: (msg: string, error?: unknown) => {
-    console.error(`[Sync] ${msg}`, error ?? '')
-  },
-  warn: (msg: string, data?: unknown) => {
-    console.warn(`[Sync] ${msg}`, data ?? '')
-  },
-  info: (msg: string, data?: unknown) => {
-    if (data !== undefined) {
-      console.info(`[Sync] ${msg}`, data)
-    } else {
-      console.info(`[Sync] ${msg}`)
-    }
-  },
-  debug: (msg: string, data?: unknown) => {
-    if (import.meta.env.DEV) {
-      if (data !== undefined) {
-        console.log(`[Sync] ${msg}`, data)
-      } else {
-        console.log(`[Sync] ${msg}`)
-      }
-    }
-  },
-}
+export const syncLogger = createLogger('Sync')
 
 /**
  * Calculate SHA-256 hash of a string
