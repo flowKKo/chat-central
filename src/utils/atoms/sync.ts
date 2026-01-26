@@ -3,6 +3,7 @@ import { atomWithStorage } from 'jotai/utils'
 import type { CloudSyncStatus, SyncConflict, ConflictRecord } from '@/utils/sync/types'
 import { syncManager, type SyncManagerState } from '@/utils/sync/manager'
 import { toSyncConflict } from '@/utils/sync/types'
+import { MS_PER_MINUTE, MS_PER_HOUR, MS_PER_DAY } from '@/utils/date'
 
 // ============================================================================
 // Storage Keys
@@ -151,10 +152,10 @@ export const syncStatusTextAtom = atom((get) => {
 
   if (state.lastSyncAt) {
     const ago = Date.now() - state.lastSyncAt
-    if (ago < 60000) return 'Just synced'
-    if (ago < 3600000) return `Synced ${Math.floor(ago / 60000)}m ago`
-    if (ago < 86400000) return `Synced ${Math.floor(ago / 3600000)}h ago`
-    return `Synced ${Math.floor(ago / 86400000)}d ago`
+    if (ago < MS_PER_MINUTE) return 'Just synced'
+    if (ago < MS_PER_HOUR) return `Synced ${Math.floor(ago / MS_PER_MINUTE)}m ago`
+    if (ago < MS_PER_DAY) return `Synced ${Math.floor(ago / MS_PER_HOUR)}h ago`
+    return `Synced ${Math.floor(ago / MS_PER_DAY)}d ago`
   }
 
   return 'Never synced'

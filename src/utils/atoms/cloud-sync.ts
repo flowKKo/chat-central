@@ -1,5 +1,6 @@
 import { atom } from 'jotai'
 import { browser } from 'wxt/browser'
+import { MS_PER_MINUTE } from '@/utils/date'
 import type {
   CloudProviderType,
   CloudSyncResult,
@@ -70,7 +71,7 @@ export const lastSyncTimeAgoAtom = atom((get) => {
   const now = Date.now()
   const diff = now - lastSync
 
-  const minutes = Math.floor(diff / 60000)
+  const minutes = Math.floor(diff / MS_PER_MINUTE)
   if (minutes < 1) return 'Just now'
   if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`
 
