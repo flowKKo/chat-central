@@ -22,17 +22,26 @@ export async function getDBStats(): Promise<DBStats> {
     claudeCount,
     chatgptCount,
     geminiCount,
-    oldest,
-    newest,
+    allConversations,
   ] = await Promise.all([
     db.conversations.count(),
     db.messages.count(),
     db.conversations.where('platform').equals('claude').count(),
     db.conversations.where('platform').equals('chatgpt').count(),
     db.conversations.where('platform').equals('gemini').count(),
-    db.conversations.orderBy('createdAt').first(),
-    db.conversations.orderBy('createdAt').last(),
+    db.conversations.toArray(),
   ])
+
+  let oldestTimestamp: number | null = null
+  let newestTimestamp: number | null = null
+  for (const conv of allConversations) {
+    if (oldestTimestamp === null || conv.createdAt < oldestTimestamp) {
+      oldestTimestamp = conv.createdAt
+    }
+    if (newestTimestamp === null || conv.createdAt > newestTimestamp) {
+      newestTimestamp = conv.createdAt
+    }
+  }
 
   return {
     totalConversations,
@@ -42,7 +51,7 @@ export async function getDBStats(): Promise<DBStats> {
       chatgpt: chatgptCount,
       gemini: geminiCount,
     },
-    oldestConversation: oldest?.createdAt ?? null,
-    newestConversation: newest?.createdAt ?? null,
+    oldestConversation: oldestTimestamp,
+    newestConversation: newestTimestamp,
   }
 }
