@@ -31,8 +31,7 @@ export function registerContextMenus() {
 
   if (clear && typeof (clear as Promise<void>).then === 'function') {
     ;(clear as Promise<void>).then(createMenu).catch(createMenu)
-  }
-  else {
+  } else {
     createMenu()
   }
 }
@@ -40,10 +39,10 @@ export function registerContextMenus() {
 /**
  * Handle context menu click
  */
-// eslint-disable-next-line ts/no-explicit-any
-export async function handleContextMenuClick(info: any, tab?: any) {
-  if (info.menuItemId !== FAVORITE_MENU_ID) return
-  const result = await toggleFavoriteFromTab(tab)
+export async function handleContextMenuClick(info: unknown, tab?: unknown) {
+  const infoObj = info as Record<string, unknown> | undefined
+  if (infoObj?.menuItemId !== FAVORITE_MENU_ID) return
+  const result = await toggleFavoriteFromTab(tab as { url?: string } | undefined)
   if (!result) {
     log.warn('Favorite toggle failed: no conversation detected')
   }
@@ -52,11 +51,11 @@ export async function handleContextMenuClick(info: any, tab?: any) {
 /**
  * Handle context menu shown - update menu title based on favorite status
  */
-// eslint-disable-next-line ts/no-explicit-any
-export async function handleContextMenuShown(_info: any, tab?: any) {
-  if (!tab?.url) return
+export async function handleContextMenuShown(_info: unknown, tab?: unknown) {
+  const tabObj = tab as { url?: string } | undefined
+  if (!tabObj?.url) return
 
-  const parsed = parseConversationFromUrl(tab.url)
+  const parsed = parseConversationFromUrl(tabObj.url)
   if (!parsed) {
     browser.contextMenus.update(FAVORITE_MENU_ID, { title: '收藏当前对话', enabled: false })
     browser.contextMenus.refresh()

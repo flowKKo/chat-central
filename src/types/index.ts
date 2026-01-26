@@ -42,7 +42,7 @@ export const messageSchema = z.object({
   content: z.string(),
   createdAt: z.number(),
   // Keep raw data for debugging
-  _raw: z.any().optional(),
+  _raw: z.unknown().optional(),
   // Sync fields (optional for backward compatibility)
   syncVersion: z.number().optional(),
   modifiedAt: z.number().optional(),
@@ -198,15 +198,15 @@ export const DEFAULT_CONFIG: Config = {
 // ============================================================================
 
 export type BackgroundMessage =
-  | { action: 'CAPTURE_CONVERSATION', platform: Platform, endpoint: string, payload: unknown }
+  | { action: 'CAPTURE_CONVERSATION'; platform: Platform; endpoint: string; payload: unknown }
   | {
-    action: 'UPDATE_CONVERSATION'
-    platform: Platform
-    conversationId: string
-    messages: Message[]
-  }
-  | { action: 'GET_CONVERSATIONS', filters?: SearchFilters }
-  | { action: 'SEARCH', query: string, filters?: SearchFilters }
-  | { action: 'EXPORT', options: ExportOptions }
+      action: 'UPDATE_CONVERSATION'
+      platform: Platform
+      conversationId: string
+      messages: Message[]
+    }
+  | { action: 'GET_CONVERSATIONS'; filters?: SearchFilters }
+  | { action: 'SEARCH'; query: string; filters?: SearchFilters }
+  | { action: 'EXPORT'; options: ExportOptions }
   | { action: 'GET_SYNC_STATUS' }
-  | { action: 'TRIGGER_SYNC', platform?: Platform }
+  | { action: 'TRIGGER_SYNC'; platform?: Platform }
