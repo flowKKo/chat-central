@@ -4,14 +4,17 @@ import { parseConversationDetailPayload } from './detail'
 import { parseConversationListPayload } from './list'
 import { getPayloadSources } from './payload'
 import type { Conversation, Message } from '@/types'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('Gemini')
 
 export const geminiAdapter: PlatformAdapter = {
   platform: 'gemini',
 
   shouldCapture(url: string): boolean {
     return (
-      url.includes('gemini.google.com')
-      && (API_PATTERNS.batch.test(url) || API_PATTERNS.conversations.test(url))
+      url.includes('gemini.google.com') &&
+      (API_PATTERNS.batch.test(url) || API_PATTERNS.conversations.test(url))
     )
   },
 
@@ -22,7 +25,7 @@ export const geminiAdapter: PlatformAdapter = {
   parseConversationList(data: unknown): Conversation[] {
     const sources = getPayloadSources(data)
     if (sources.length === 0) {
-      console.warn('[ChatCentral] Gemini: No data received')
+      log.warn('No data received')
       return []
     }
 
@@ -36,11 +39,11 @@ export const geminiAdapter: PlatformAdapter = {
   },
 
   parseConversationDetail(
-    data: unknown,
-  ): { conversation: Conversation, messages: Message[] } | null {
+    data: unknown
+  ): { conversation: Conversation; messages: Message[] } | null {
     const sources = getPayloadSources(data)
     if (sources.length === 0) {
-      console.warn('[ChatCentral] Gemini: No detail data received')
+      log.warn('No detail data received')
       return null
     }
 
@@ -54,8 +57,8 @@ export const geminiAdapter: PlatformAdapter = {
         messageMap.set(message.id, message)
         return
       }
-      const content
-        = message.content.length >= existing.content.length ? message.content : existing.content
+      const content =
+        message.content.length >= existing.content.length ? message.content : existing.content
       const createdAt = Math.min(existing.createdAt, message.createdAt)
       messageMap.set(message.id, { ...existing, ...message, content, createdAt })
     }
@@ -109,8 +112,7 @@ export const geminiAdapter: PlatformAdapter = {
       if (pathMatch) return pathMatch[1] ?? null
 
       return urlObj.searchParams.get('id') || urlObj.searchParams.get('c') || null
-    }
-    catch {
+    } catch {
       return null
     }
   },
@@ -119,7 +121,7 @@ export const geminiAdapter: PlatformAdapter = {
     return `${GEMINI_APP_URL}${originalId}`
   },
 
-  parseStreamResponse(): { conversation: Conversation, messages: Message[] } | null {
+  parseStreamResponse(): { conversation: Conversation; messages: Message[] } | null {
     return null
   },
 }

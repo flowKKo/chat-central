@@ -2,6 +2,9 @@ import type { PlatformAdapter } from './types'
 import type { Conversation, Message } from '@/types'
 import { extractSsePayloads, normalizeListPayload, parseJsonIfString } from './helpers'
 import { extractRole } from './common'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('Claude')
 
 /**
  * Claude API Endpoint Patterns
@@ -111,11 +114,11 @@ function extractConversationIdFromMessage(message: unknown): string | null {
   if (!message || typeof message !== 'object') return null
   const msg = message as Record<string, unknown>
   return (
-    (msg.conversation_id as string | undefined)
-    || (msg.conversationId as string | undefined)
-    || (msg.chat_conversation_uuid as string | undefined)
-    || (msg.chatConversationUuid as string | undefined)
-    || null
+    (msg.conversation_id as string | undefined) ||
+    (msg.conversationId as string | undefined) ||
+    (msg.chat_conversation_uuid as string | undefined) ||
+    (msg.chatConversationUuid as string | undefined) ||
+    null
   )
 }
 
@@ -144,7 +147,7 @@ export const claudeAdapter: PlatformAdapter = {
       'results',
     ])
     if (!items) {
-      console.warn('[ChatCentral] Claude: Expected array for conversation list')
+      log.warn('Expected array for conversation list')
       return []
     }
 
@@ -187,9 +190,8 @@ export const claudeAdapter: PlatformAdapter = {
           }
 
           return conversation
-        }
-        catch (e) {
-          console.warn('[ChatCentral] Claude: Failed to parse conversation', e)
+        } catch (e) {
+          log.warn('Failed to parse conversation', e)
           return null
         }
       })
@@ -197,41 +199,41 @@ export const claudeAdapter: PlatformAdapter = {
   },
 
   parseConversationDetail(
-    data: unknown,
-  ): { conversation: Conversation, messages: Message[] } | null {
+    data: unknown
+  ): { conversation: Conversation; messages: Message[] } | null {
     // Claude conversation detail format
     // { uuid, name, created_at, updated_at, chat_messages: [...] }
     const parsed = parseJsonIfString(data)
     if (!parsed || (typeof parsed !== 'object' && !Array.isArray(parsed))) {
-      console.warn('[ChatCentral] Claude: Invalid conversation detail data')
+      log.warn('Invalid conversation detail data')
       return null
     }
 
     const item = parsed as Record<string, unknown>
     const base = (item.conversation || item.chat_conversation || item) as Record<string, unknown>
     const itemData = item.data as Record<string, unknown> | undefined
-    const rawMessages
-      = item.chat_messages
-        || item.messages
-        || item.items
-        || item.message_history
-        || itemData?.messages
-        || itemData?.items
-        || (Array.isArray(item) ? item : null)
+    const rawMessages =
+      item.chat_messages ||
+      item.messages ||
+      item.items ||
+      item.message_history ||
+      itemData?.messages ||
+      itemData?.items ||
+      (Array.isArray(item) ? item : null)
 
     const messageList = normalizeMessageList(rawMessages)
 
     if (!messageList) {
-      console.warn('[ChatCentral] Claude: No messages array in detail payload')
+      log.warn('No messages array in detail payload')
       return null
     }
 
-    let originalId
-      = base?.uuid
-        || base?.id
-        || base?.conversation_id
-        || base?.conversationId
-        || base?.chat_conversation_uuid
+    let originalId =
+      base?.uuid ||
+      base?.id ||
+      base?.conversation_id ||
+      base?.conversationId ||
+      base?.chat_conversation_uuid
 
     const now = Date.now()
     const messages: Message[] = []
@@ -242,8 +244,8 @@ export const claudeAdapter: PlatformAdapter = {
       try {
         if (!msg || typeof msg !== 'object') continue
         const msgObj = msg as Record<string, unknown>
-        const messageId
-          = (msgObj.uuid as string) || (msgObj.id as string) || (msgObj.message_id as string)
+        const messageId =
+          (msgObj.uuid as string) || (msgObj.id as string) || (msgObj.message_id as string)
         const role = extractRole(msg)
         const content = extractClaudeMessageContent(msg)
         if (!role || !content) continue
@@ -272,9 +274,8 @@ export const claudeAdapter: PlatformAdapter = {
           createdAt,
           _raw: msg,
         })
-      }
-      catch (e) {
-        console.warn('[ChatCentral] Claude: Failed to parse message', e)
+      } catch (e) {
+        log.warn('Failed to parse message', e)
       }
     }
 
@@ -328,8 +329,8 @@ export const claudeAdapter: PlatformAdapter = {
 
   parseStreamResponse(
     data: unknown,
-    url: string,
-  ): { conversation: Conversation, messages: Message[] } | null {
+    url: string
+  ): { conversation: Conversation; messages: Message[] } | null {
     const payloads = extractSsePayloads(data)
     if (!payloads) return null
 
@@ -346,8 +347,7 @@ export const claudeAdapter: PlatformAdapter = {
       let eventData: Record<string, unknown> | null = null
       try {
         eventData = JSON.parse(payload) as Record<string, unknown>
-      }
-      catch {
+      } catch {
         continue
       }
 
@@ -371,8 +371,7 @@ export const claudeAdapter: PlatformAdapter = {
         const delta = eventData?.delta as Record<string, unknown> | undefined
         if (typeof eventData?.completion === 'string' || typeof delta?.text === 'string') {
           content += chunk
-        }
-        else if (chunk.length > content.length) {
+        } else if (chunk.length > content.length) {
           content = chunk
         }
       }

@@ -162,9 +162,9 @@ describe('conversations repository', () => {
     it('should return all conversations sorted by updatedAt desc', async () => {
       const results = await getConversations()
       expect(results).toHaveLength(3)
-      expect(results[0].id).toBe('c1') // updatedAt: 3000
-      expect(results[1].id).toBe('c3') // updatedAt: 2000
-      expect(results[2].id).toBe('c2') // updatedAt: 1000
+      expect(results[0]!.id).toBe('c1') // updatedAt: 3000
+      expect(results[1]!.id).toBe('c3') // updatedAt: 2000
+      expect(results[2]!.id).toBe('c2') // updatedAt: 1000
     })
 
     it('should filter by platform', async () => {
@@ -186,7 +186,7 @@ describe('conversations repository', () => {
 
       const results = await getConversations({ favoritesOnly: true })
       expect(results).toHaveLength(1)
-      expect(results[0].id).toBe('c1')
+      expect(results[0]!.id).toBe('c1')
     })
   })
 
@@ -336,7 +336,7 @@ describe('conversations repository', () => {
 
       const results = await getAllConversationsForExport()
       expect(results).toHaveLength(1)
-      expect(results[0].id).toBe('c1')
+      expect(results[0]!.id).toBe('c1')
     })
 
     it('should include deleted when requested', async () => {
@@ -399,7 +399,7 @@ describe('messages repository', () => {
 
       const msgs = await getMessagesByConversationId('c1')
       expect(msgs).toHaveLength(1)
-      expect(msgs[0].id).toBe('m1')
+      expect(msgs[0]!.id).toBe('m1')
     })
 
     it('should return empty array for unknown conversation', async () => {
@@ -477,7 +477,7 @@ describe('messages repository', () => {
 
       const results = await getAllMessagesForExport(['c1'])
       expect(results).toHaveLength(1)
-      expect(results[0].id).toBe('m1')
+      expect(results[0]!.id).toBe('m1')
     })
 
     it('should return empty array for empty conversation IDs', async () => {
@@ -524,7 +524,7 @@ describe('search', () => {
     it('should find conversations by title', async () => {
       const results = await searchConversations('React')
       expect(results).toHaveLength(1)
-      expect(results[0].id).toBe('c1')
+      expect(results[0]!.id).toBe('c1')
     })
 
     it('should be case-insensitive', async () => {
@@ -567,8 +567,8 @@ describe('search', () => {
       // "how" appears in c1 preview (updatedAt: 3000) and c3 preview (updatedAt: 1000)
       expect(results.length).toBeGreaterThanOrEqual(2)
       for (let i = 1; i < results.length; i++) {
-        expect(results[i - 1].conversation.updatedAt).toBeGreaterThanOrEqual(
-          results[i].conversation.updatedAt
+        expect(results[i - 1]!.conversation.updatedAt).toBeGreaterThanOrEqual(
+          results[i]!.conversation.updatedAt
         )
       }
     })
@@ -578,7 +578,7 @@ describe('search', () => {
     it('should find messages by content', async () => {
       const results = await searchMessages('hooks')
       expect(results).toHaveLength(1)
-      expect(results[0].id).toBe('m1')
+      expect(results[0]!.id).toBe('m1')
     })
 
     it('should be case-insensitive', async () => {

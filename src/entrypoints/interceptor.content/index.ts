@@ -1,5 +1,8 @@
 import { defineContentScript } from 'wxt/sandbox'
 import { getPlatformFromHost } from '@/utils/platform-adapters'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('Interceptor')
 
 /**
  * API Interceptor Content Script
@@ -21,7 +24,7 @@ export default defineContentScript({
     const platform = getPlatformFromHost(window.location.hostname)
     if (!platform) return
 
-    console.log(`[ChatCentral] Interceptor loaded for ${platform}`)
+    log.info(`Loaded for ${platform}`)
 
     // Inject network request interceptors
     injectFetchInterceptor()
@@ -43,8 +46,8 @@ function shouldCapture(url: string): boolean {
   }
   // Gemini
   if (
-    url.includes('gemini.google.com')
-    && (url.includes('batchexecute') || url.includes('/conversations'))
+    url.includes('gemini.google.com') &&
+    (url.includes('batchexecute') || url.includes('/conversations'))
   ) {
     return true
   }
@@ -62,15 +65,14 @@ function sendCapturedData(url: string, data: unknown) {
       data,
       timestamp: Date.now(),
     },
-    '*',
+    '*'
   )
 }
 
 function toAbsoluteUrl(url: string): string {
   try {
     return new URL(url, window.location.origin).toString()
-  }
-  catch {
+  } catch {
     return url
   }
 }
@@ -85,8 +87,8 @@ function injectFetchInterceptor() {
     const response = await originalFetch.apply(this, args)
 
     try {
-      const rawUrl
-        = typeof args[0] === 'string' ? args[0] : args[0] instanceof Request ? args[0].url : ''
+      const rawUrl =
+        typeof args[0] === 'string' ? args[0] : args[0] instanceof Request ? args[0].url : ''
       const url = toAbsoluteUrl(rawUrl)
 
       if (shouldCapture(url)) {
@@ -97,20 +99,19 @@ function injectFetchInterceptor() {
         clone
           .text()
           .then((text) => {
-            console.log('[ChatCentral] Captured fetch response length:', text.length)
+            log.debug('Captured fetch response length:', text.length)
             const data = tryParseResponse(text)
             if (!data) return
-            console.log('[ChatCentral] Successfully parsed response for:', url)
+            log.debug('Successfully parsed response for:', url)
             sendCapturedData(url, data)
           })
           .catch((err) => {
-            console.error('[ChatCentral] Failed to read response text:', err)
+            log.error('Failed to read response text:', err)
           })
       }
-    }
-    catch (e) {
+    } catch (e) {
       // Ignore errors, do not affect original request
-      console.error('[ChatCentral] Fetch interceptor error:', e)
+      log.error('Fetch interceptor error:', e)
     }
 
     return response
@@ -126,18 +127,16 @@ function tryParseResponse(text: string): unknown {
   // 1. Try standard JSON
   try {
     return JSON.parse(text)
-  }
-  catch {
+  } catch {
     // Ignore, continue to try other formats
   }
 
   // 2. Try Gemini format (starts with )]}')
-  if (text.trim().startsWith(')]}\'')) {
+  if (text.trim().startsWith(")]}'")) {
     try {
       const jsonText = text.substring(text.indexOf('\n') + 1)
       return JSON.parse(jsonText)
-    }
-    catch {
+    } catch {
       // Leave it to the adapter
     }
   }
@@ -164,7 +163,7 @@ function injectXHRInterceptor() {
     url: string | URL,
     async?: boolean,
     username?: string | null,
-    password?: string | null,
+    password?: string | null
   ) {
     // Store URL for use in onload
     const rawUrl = url.toString()
@@ -174,22 +173,21 @@ function injectXHRInterceptor() {
 
   XMLHttpRequest.prototype.send = function (
     this: ExtendedXHR,
-    body?: Document | XMLHttpRequestBodyInit | null,
+    body?: Document | XMLHttpRequestBodyInit | null
   ) {
     const url = this._chatCentralUrl
 
     if (url && shouldCapture(url)) {
       this.addEventListener('load', function () {
         try {
-          console.log('[ChatCentral] Captured XHR response length:', this.responseText.length)
+          log.debug('Captured XHR response length:', this.responseText.length)
           const data = tryParseResponse(this.responseText)
           if (data) {
-            console.log('[ChatCentral] Successfully parsed XHR response for:', url)
+            log.debug('Successfully parsed XHR response for:', url)
             sendCapturedData(url, data)
           }
-        }
-        catch (e) {
-          console.error('[ChatCentral] Failed to process XHR response:', e)
+        } catch (e) {
+          log.error('Failed to process XHR response:', e)
         }
       })
     }

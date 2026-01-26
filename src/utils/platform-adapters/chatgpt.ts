@@ -1,6 +1,9 @@
 import type { PlatformAdapter } from './types'
 import { extractSsePayloads, normalizeListPayload, parseJsonIfString } from './helpers'
 import type { Conversation, Message } from '@/types'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('ChatGPT')
 
 /**
  * ChatGPT API Endpoint Patterns
@@ -63,7 +66,7 @@ export const chatgptAdapter: PlatformAdapter = {
     const parsed = parseJsonIfString(data)
     const items = normalizeListPayload(parsed)
     if (!items) {
-      console.warn('[ChatCentral] ChatGPT: Invalid conversation list data')
+      log.warn('Invalid conversation list data')
       return []
     }
 
@@ -100,9 +103,8 @@ export const chatgptAdapter: PlatformAdapter = {
           }
 
           return conversation
-        }
-        catch (e) {
-          console.warn('[ChatCentral] ChatGPT: Failed to parse conversation', e)
+        } catch (e) {
+          log.warn('Failed to parse conversation', e)
           return null
         }
       })
@@ -110,13 +112,13 @@ export const chatgptAdapter: PlatformAdapter = {
   },
 
   parseConversationDetail(
-    data: unknown,
-  ): { conversation: Conversation, messages: Message[] } | null {
+    data: unknown
+  ): { conversation: Conversation; messages: Message[] } | null {
     // ChatGPT conversation detail format
     // { title, create_time, update_time, mapping: { [node_id]: { message, parent, children } }, ... }
     const parsed = parseJsonIfString(data)
     if (!parsed || typeof parsed !== 'object') {
-      console.warn('[ChatCentral] ChatGPT: Invalid conversation detail data')
+      log.warn('Invalid conversation detail data')
       return null
     }
 
@@ -132,11 +134,10 @@ export const chatgptAdapter: PlatformAdapter = {
 
       if (eventWithMapping) {
         item = eventWithMapping as Record<string, unknown>
-      }
-      else {
+      } else {
         // If mapping not found, it might be incremental update, currently unable to process
         // Unless we can build full message from increment
-        console.warn('[ChatCentral] ChatGPT: Stream events do not contain full mapping')
+        log.warn('Stream events do not contain full mapping')
         return null
       }
     }
@@ -206,9 +207,8 @@ export const chatgptAdapter: PlatformAdapter = {
             createdAt: parseChatGptTimestamp(msg.create_time, now),
             _raw: msg,
           })
-        }
-        catch (e) {
-          console.warn('[ChatCentral] ChatGPT: Failed to parse message', e)
+        } catch (e) {
+          log.warn('Failed to parse message', e)
         }
       }
 
@@ -229,8 +229,8 @@ export const chatgptAdapter: PlatformAdapter = {
 
   parseStreamResponse(
     data: unknown,
-    url: string,
-  ): { conversation: Conversation, messages: Message[] } | null {
+    url: string
+  ): { conversation: Conversation; messages: Message[] } | null {
     const payloads = extractSsePayloads(data)
     if (!payloads) return null
 
@@ -244,8 +244,7 @@ export const chatgptAdapter: PlatformAdapter = {
       let eventData: Record<string, unknown> | null = null
       try {
         eventData = JSON.parse(payload) as Record<string, unknown>
-      }
-      catch {
+      } catch {
         continue
       }
 

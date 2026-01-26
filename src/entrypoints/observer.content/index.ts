@@ -1,6 +1,9 @@
 import { browser } from 'wxt/browser'
 import { defineContentScript } from 'wxt/sandbox'
 import { getPlatformFromHost } from '@/utils/platform-adapters'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('Observer')
 
 /**
  * Observer Content Script
@@ -24,7 +27,7 @@ export default defineContentScript({
     const platform = getPlatformFromHost(window.location.hostname)
     if (!platform) return
 
-    console.log(`[ChatCentral] Observer loaded for ${platform}`)
+    log.info(`Loaded for ${platform}`)
 
     // Listen for messages from interceptor.content
     setupMessageListener()
@@ -34,8 +37,7 @@ export default defineContentScript({
       document.addEventListener('DOMContentLoaded', () => {
         setupDOMObserver(platform)
       })
-    }
-    else {
+    } else {
       setupDOMObserver(platform)
     }
   },
@@ -52,7 +54,7 @@ function setupMessageListener() {
 
     const { url, data, timestamp } = event.data
 
-    console.log('[ChatCentral] Received captured data:', url)
+    log.debug('Received captured data:', url)
 
     // Forward to background
     browser.runtime
@@ -63,7 +65,7 @@ function setupMessageListener() {
         timestamp,
       })
       .catch((e: unknown) => {
-        console.error('[ChatCentral] Failed to send to background:', e)
+        log.error('Failed to send to background:', e)
       })
   })
 }
@@ -88,7 +90,7 @@ function setupDOMObserver(platform: string) {
   // Wait for container to appear
   waitForElement(selectors.container).then((container) => {
     if (container) {
-      console.log('[ChatCentral] DOM observer started')
+      log.info('DOM observer started')
       observer.observe(container, {
         childList: true,
         subtree: true,
@@ -135,7 +137,7 @@ function getSelectors(platform: string): PlatformSelectors | null {
 function handleDOMMutation(
   mutation: MutationRecord,
   _platform: string,
-  _selectors: PlatformSelectors,
+  _selectors: PlatformSelectors
 ) {
   // Simple debounce
   // Full implementation requires parsing DOM content and merging with API data
