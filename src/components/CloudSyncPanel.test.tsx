@@ -40,7 +40,7 @@ function renderWithStore(store: ReturnType<typeof createStore>) {
   return render(
     <Provider store={store}>
       <CloudSyncPanel />
-    </Provider>
+    </Provider>,
   )
 }
 
@@ -75,7 +75,7 @@ describe('cloudSyncPanel', () => {
     it('should show privacy note', () => {
       renderWithStore(store)
       expect(
-        screen.getByText(/Your data is stored in your own Google Drive app folder/)
+        screen.getByText(/Your data is stored in your own Google Drive app folder/),
       ).toBeInTheDocument()
     })
 
@@ -207,7 +207,7 @@ describe('cloudSyncPanel', () => {
       Object.defineProperty(navigator, 'onLine', { value: false, writable: true })
       renderWithStore(store)
       expect(
-        screen.getByText(/You're offline\. Sync will resume when connected\./)
+        screen.getByText(/You're offline\. Sync will resume when connected\./),
       ).toBeInTheDocument()
       Object.defineProperty(navigator, 'onLine', { value: true, writable: true })
     })

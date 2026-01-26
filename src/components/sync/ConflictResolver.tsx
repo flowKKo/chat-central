@@ -37,9 +37,11 @@ export function ConflictResolverModal() {
       if (conflicts.length === 1) {
         setIsOpen(false)
       }
-    } catch (error) {
+    }
+    catch (error) {
       log.error('Failed to resolve conflict:', error)
-    } finally {
+    }
+    finally {
       setResolvingId(null)
     }
   }
@@ -59,7 +61,11 @@ export function ConflictResolverModal() {
         <div className="flex flex-shrink-0 items-center justify-between border-b border-border p-4">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
-            <h2 className="text-lg font-semibold">Resolve Conflicts ({conflicts.length})</h2>
+            <h2 className="text-lg font-semibold">
+              Resolve Conflicts (
+              {conflicts.length}
+              )
+            </h2>
           </div>
           <button
             type="button"
@@ -125,11 +131,11 @@ function ConflictItem({
   const localTitle = (localData?.title as string) ?? 'Unknown'
 
   const localModifiedAt = localVersion?.modifiedAt
-  const localModified =
-    typeof localModifiedAt === 'number' ? new Date(localModifiedAt).toLocaleString() : 'Unknown'
+  const localModified
+    = typeof localModifiedAt === 'number' ? new Date(localModifiedAt).toLocaleString() : 'Unknown'
   const remoteModifiedAt = remoteVersion?.modifiedAt
-  const remoteModified =
-    typeof remoteModifiedAt === 'number' ? new Date(remoteModifiedAt).toLocaleString() : 'Unknown'
+  const remoteModified
+    = typeof remoteModifiedAt === 'number' ? new Date(remoteModifiedAt).toLocaleString() : 'Unknown'
 
   return (
     <div className="overflow-hidden rounded-lg border border-border">
@@ -143,10 +149,14 @@ function ConflictItem({
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
           <div className="text-left">
             <p className="text-sm font-medium">
-              {conflict.entityType}:{localTitle}
+              {conflict.entityType}
+              :
+              {localTitle}
             </p>
             <p className="text-xs text-muted-foreground">
-              Field: {conflict.field ?? 'multiple fields'}
+              Field:
+              {' '}
+              {conflict.field ?? 'multiple fields'}
             </p>
           </div>
         </div>
@@ -192,16 +202,18 @@ function ConflictItem({
               className={cn(
                 'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm transition-colors',
                 'border border-blue-300 text-blue-700 hover:bg-blue-50',
-                'disabled:opacity-50'
+                'disabled:opacity-50',
               )}
               onClick={() => onResolve('local')}
               disabled={isResolving}
             >
-              {isResolving ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Check className="h-3 w-3" />
-              )}
+              {isResolving
+                ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  )
+                : (
+                    <Check className="h-3 w-3" />
+                  )}
               Keep Local
             </button>
             <button
@@ -209,16 +221,18 @@ function ConflictItem({
               className={cn(
                 'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm transition-colors',
                 'border border-green-300 text-green-700 hover:bg-green-50',
-                'disabled:opacity-50'
+                'disabled:opacity-50',
               )}
               onClick={() => onResolve('remote')}
               disabled={isResolving}
             >
-              {isResolving ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Check className="h-3 w-3" />
-              )}
+              {isResolving
+                ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  )
+                : (
+                    <Check className="h-3 w-3" />
+                  )}
               Keep Remote
             </button>
             <button
@@ -226,16 +240,18 @@ function ConflictItem({
               className={cn(
                 'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm transition-colors',
                 'border border-purple-300 text-purple-700 hover:bg-purple-50',
-                'disabled:opacity-50'
+                'disabled:opacity-50',
               )}
               onClick={() => onResolve('merged')}
               disabled={isResolving}
             >
-              {isResolving ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Check className="h-3 w-3" />
-              )}
+              {isResolving
+                ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  )
+                : (
+                    <Check className="h-3 w-3" />
+                  )}
               Auto Merge
             </button>
           </div>

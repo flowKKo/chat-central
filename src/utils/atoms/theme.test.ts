@@ -41,8 +41,8 @@ Object.defineProperty(window, 'matchMedia', {
 })
 
 // Import after localStorage is mocked
-const { themePreferenceAtom, resolvedThemeAtom, applyThemeToDocument, initializeTheme } =
-  await import('./theme')
+const { themePreferenceAtom, resolvedThemeAtom, applyThemeToDocument, initializeTheme }
+  = await import('./theme')
 
 describe('theme atoms', () => {
   let store: ReturnType<typeof createStore>

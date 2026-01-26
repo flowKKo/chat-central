@@ -103,7 +103,8 @@ export const chatgptAdapter: PlatformAdapter = {
           }
 
           return conversation
-        } catch (e) {
+        }
+        catch (e) {
           log.warn('Failed to parse conversation', e)
           return null
         }
@@ -112,8 +113,8 @@ export const chatgptAdapter: PlatformAdapter = {
   },
 
   parseConversationDetail(
-    data: unknown
-  ): { conversation: Conversation; messages: Message[] } | null {
+    data: unknown,
+  ): { conversation: Conversation, messages: Message[] } | null {
     // ChatGPT conversation detail format
     // { title, create_time, update_time, mapping: { [node_id]: { message, parent, children } }, ... }
     const parsed = parseJsonIfString(data)
@@ -134,7 +135,8 @@ export const chatgptAdapter: PlatformAdapter = {
 
       if (eventWithMapping) {
         item = eventWithMapping as Record<string, unknown>
-      } else {
+      }
+      else {
         // If mapping not found, it might be incremental update, currently unable to process
         // Unless we can build full message from increment
         log.warn('Stream events do not contain full mapping')
@@ -207,7 +209,8 @@ export const chatgptAdapter: PlatformAdapter = {
             createdAt: parseChatGptTimestamp(msg.create_time, now),
             _raw: msg,
           })
-        } catch (e) {
+        }
+        catch (e) {
           log.warn('Failed to parse message', e)
         }
       }
@@ -229,8 +232,8 @@ export const chatgptAdapter: PlatformAdapter = {
 
   parseStreamResponse(
     data: unknown,
-    url: string
-  ): { conversation: Conversation; messages: Message[] } | null {
+    url: string,
+  ): { conversation: Conversation, messages: Message[] } | null {
     const payloads = extractSsePayloads(data)
     if (!payloads) return null
 
@@ -244,7 +247,8 @@ export const chatgptAdapter: PlatformAdapter = {
       let eventData: Record<string, unknown> | null = null
       try {
         eventData = JSON.parse(payload) as Record<string, unknown>
-      } catch {
+      }
+      catch {
         continue
       }
 

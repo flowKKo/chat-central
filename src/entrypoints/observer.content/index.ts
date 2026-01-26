@@ -37,7 +37,8 @@ export default defineContentScript({
       document.addEventListener('DOMContentLoaded', () => {
         setupDOMObserver(platform)
       })
-    } else {
+    }
+    else {
       setupDOMObserver(platform)
     }
   },
@@ -137,7 +138,7 @@ function getSelectors(platform: string): PlatformSelectors | null {
 function handleDOMMutation(
   mutation: MutationRecord,
   _platform: string,
-  _selectors: PlatformSelectors
+  _selectors: PlatformSelectors,
 ) {
   // Simple debounce
   // Full implementation requires parsing DOM content and merging with API data

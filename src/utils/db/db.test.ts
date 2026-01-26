@@ -136,7 +136,7 @@ describe('conversations repository', () => {
   describe('getConversationByOriginalId', () => {
     it('should find conversation by platform and original ID', async () => {
       await upsertConversation(
-        makeConversation({ id: 'claude_abc', platform: 'claude', originalId: 'abc' })
+        makeConversation({ id: 'claude_abc', platform: 'claude', originalId: 'abc' }),
       )
 
       const result = await getConversationByOriginalId('claude', 'abc')
@@ -568,7 +568,7 @@ describe('search', () => {
       expect(results.length).toBeGreaterThanOrEqual(2)
       for (let i = 1; i < results.length; i++) {
         expect(results[i - 1]!.conversation.updatedAt).toBeGreaterThanOrEqual(
-          results[i]!.conversation.updatedAt
+          results[i]!.conversation.updatedAt,
         )
       }
     })

@@ -42,7 +42,7 @@ describe('useConversationFilter', () => {
     ]
 
     const { result } = renderHook(() =>
-      useConversationFilter(conversations, { platform: 'claude' })
+      useConversationFilter(conversations, { platform: 'claude' }),
     )
     expect(result.current).toHaveLength(2)
     result.current.forEach((c) => expect(c.platform).toBe('claude'))
@@ -55,7 +55,7 @@ describe('useConversationFilter', () => {
     ]
 
     const { result } = renderHook(() =>
-      useConversationFilter(conversations, { favoritesOnly: true })
+      useConversationFilter(conversations, { favoritesOnly: true }),
     )
     expect(result.current).toHaveLength(1)
     expect(result.current[0]!.id).toBe('c1')
