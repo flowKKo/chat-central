@@ -484,8 +484,8 @@ function ConversationItem({
 function LoadingSkeleton() {
   return (
     <div className="space-y-2 p-3" aria-busy="true" aria-label="Loading conversations">
-      {[...Array.from({ length: 5 })].map((_, i) => (
-        <div key={i} className="rounded-xl p-3">
+      {['s1', 's2', 's3', 's4', 's5'].map((id) => (
+        <div key={id} className="rounded-xl p-3">
           <div className="flex items-start gap-3 pl-2">
             <div className="flex-1 space-y-2">
               <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />

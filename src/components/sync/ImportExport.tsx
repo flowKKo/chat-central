@@ -215,8 +215,8 @@ export function ImportExportActions({ className }: ImportExportProps) {
 
           {importResult.errors.length > 0 && (
             <ul className="mt-2 space-y-1 text-xs">
-              {importResult.errors.map((error: string, i: number) => (
-                <li key={i}>{error}</li>
+              {importResult.errors.map((error: string) => (
+                <li key={error}>{error}</li>
               ))}
             </ul>
           )}

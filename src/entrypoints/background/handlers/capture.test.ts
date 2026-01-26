@@ -22,10 +22,10 @@ vi.mock('@/utils/logger', () => ({
   }),
 }))
 
-const { getAdapterForUrl } =
-  await vi.importMock<typeof import('@/utils/platform-adapters')>('@/utils/platform-adapters')
-const { upsertConversationMerged, applyConversationUpdate } =
-  await vi.importMock<typeof import('../services')>('../services')
+const { getAdapterForUrl }
+  = await vi.importMock<typeof import('@/utils/platform-adapters')>('@/utils/platform-adapters')
+const { upsertConversationMerged, applyConversationUpdate }
+  = await vi.importMock<typeof import('../services')>('../services')
 
 function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
   return {

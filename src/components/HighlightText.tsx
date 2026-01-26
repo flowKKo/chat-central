@@ -26,7 +26,7 @@ export function HighlightText({
     if (!query.trim()) {
       const truncated = maxLength ? truncateText(text, maxLength) : text
       return {
-        parts: [{ text: truncated, highlight: false }],
+        parts: [{ text: truncated, highlight: false, offset: 0 }],
         hasTruncatedStart: false,
         hasTruncatedEnd: maxLength ? text.length > maxLength : false,
       }
@@ -34,7 +34,7 @@ export function HighlightText({
 
     const lowerText = text.toLowerCase()
     const lowerQuery = query.toLowerCase()
-    const result: { text: string, highlight: boolean }[] = []
+    const result: { text: string, highlight: boolean, offset: number }[] = []
 
     let matchIndex = lowerText.indexOf(lowerQuery)
 
@@ -68,13 +68,14 @@ export function HighlightText({
     while (currentMatchIndex !== -1) {
       // Add text before match
       if (currentMatchIndex > lastIndex) {
-        result.push({ text: displayText.slice(lastIndex, currentMatchIndex), highlight: false })
+        result.push({ text: displayText.slice(lastIndex, currentMatchIndex), highlight: false, offset: lastIndex })
       }
 
       // Add matched text
       result.push({
         text: displayText.slice(currentMatchIndex, currentMatchIndex + query.length),
         highlight: true,
+        offset: currentMatchIndex,
       })
 
       lastIndex = currentMatchIndex + query.length
@@ -83,7 +84,7 @@ export function HighlightText({
 
     // Add remaining text
     if (lastIndex < displayText.length) {
-      result.push({ text: displayText.slice(lastIndex), highlight: false })
+      result.push({ text: displayText.slice(lastIndex), highlight: false, offset: lastIndex })
     }
 
     return {
@@ -106,15 +107,15 @@ export function HighlightText({
           />
         )}
         <span className="overflow-hidden">
-          {parts.map((part, index) =>
+          {parts.map((part) =>
             part.highlight
               ? (
-                  <mark key={index} className={cn('font-medium', highlightClassName)}>
+                  <mark key={part.offset} className={cn('font-medium', highlightClassName)}>
                     {part.text}
                   </mark>
                 )
               : (
-                  <span key={index}>{part.text}</span>
+                  <span key={part.offset}>{part.text}</span>
                 ),
           )}
         </span>
@@ -133,15 +134,15 @@ export function HighlightText({
 
   return (
     <span className={className}>
-      {parts.map((part, index) =>
+      {parts.map((part) =>
         part.highlight
           ? (
-              <mark key={index} className={cn('font-medium', highlightClassName)}>
+              <mark key={part.offset} className={cn('font-medium', highlightClassName)}>
                 {part.text}
               </mark>
             )
           : (
-              <span key={index}>{part.text}</span>
+              <span key={part.offset}>{part.text}</span>
             ),
       )}
     </span>

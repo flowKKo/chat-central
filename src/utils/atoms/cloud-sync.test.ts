@@ -58,8 +58,8 @@ vi.mock('@/utils/logger', () => ({
 }))
 
 const { browser } = await vi.importMock<typeof import('wxt/browser')>('wxt/browser')
-const { loadCloudSyncState, connectCloudProvider, disconnectCloudProvider, syncToCloud } =
-  await vi.importMock<typeof import('@/utils/sync/cloud-sync')>('@/utils/sync/cloud-sync')
+const { loadCloudSyncState, connectCloudProvider, disconnectCloudProvider, syncToCloud }
+  = await vi.importMock<typeof import('@/utils/sync/cloud-sync')>('@/utils/sync/cloud-sync')
 
 describe('cloud-sync atoms', () => {
   let store: ReturnType<typeof createStore>

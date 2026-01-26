@@ -340,8 +340,8 @@ export function SettingsPanel() {
                       : (
                           <>
                             <p className="font-medium text-red-600 dark:text-red-400">Import failed</p>
-                            {importResult.errors.map((error, i) => (
-                              <p key={i} className="text-muted-foreground">
+                            {importResult.errors.map((error) => (
+                              <p key={error.message} className="text-muted-foreground">
                                 {error.message}
                               </p>
                             ))}

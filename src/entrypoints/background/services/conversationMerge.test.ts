@@ -16,10 +16,10 @@ vi.mock('@/utils/message-dedupe', () => ({
 }))
 
 // Import mocked functions
-const { getConversationById, upsertConversation, upsertMessages, getExistingMessageIds, getMessagesByIds } =
-  await vi.importMock<typeof import('@/utils/db')>('@/utils/db')
-const { dedupeMessagesByContent } =
-  await vi.importMock<typeof import('@/utils/message-dedupe')>('@/utils/message-dedupe')
+const { getConversationById, upsertConversation, upsertMessages, getExistingMessageIds, getMessagesByIds }
+  = await vi.importMock<typeof import('@/utils/db')>('@/utils/db')
+const { dedupeMessagesByContent }
+  = await vi.importMock<typeof import('@/utils/message-dedupe')>('@/utils/message-dedupe')
 
 function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
   return {
