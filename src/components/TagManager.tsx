@@ -41,15 +41,22 @@ function TagInput({
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
 
+  // Pre-compute Sets for O(1) lookups instead of O(n) array scans
+  const existingTagSet = useMemo(() => new Set(existingTags), [existingTags])
+  const existingTagLowerSet = useMemo(
+    () => new Set(existingTags.map((t) => t.toLowerCase())),
+    [existingTags]
+  )
+
   // Filter suggestions based on input
   const suggestions = useMemo(() => {
     const lowerInput = inputValue.toLowerCase().trim()
     if (!lowerInput) return []
 
     return allTags
-      .filter((tag) => tag.toLowerCase().includes(lowerInput) && !existingTags.includes(tag))
+      .filter((tag) => tag.toLowerCase().includes(lowerInput) && !existingTagSet.has(tag))
       .slice(0, 5)
-  }, [inputValue, allTags, existingTags])
+  }, [inputValue, allTags, existingTagSet])
 
   // Check if input is a new tag (not in suggestions and not already added)
   const isNewTag = useMemo(() => {
@@ -58,9 +65,9 @@ function TagInput({
     const lowerInput = trimmed.toLowerCase()
     return (
       !suggestions.some((s) => s.toLowerCase() === lowerInput) &&
-      !existingTags.some((t) => t.toLowerCase() === lowerInput)
+      !existingTagLowerSet.has(lowerInput)
     )
-  }, [inputValue, suggestions, existingTags])
+  }, [inputValue, suggestions, existingTagLowerSet])
 
   // Focus input on mount
   useEffect(() => {
