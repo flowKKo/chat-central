@@ -1,18 +1,14 @@
 import { useAtom } from 'jotai'
+import { Calendar, CheckSquare, MessageSquare, RefreshCw, Search, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Calendar,
-  CheckSquare,
-  ChevronDown,
-  Download,
-  Filter,
-  MessageSquare,
-  RefreshCw,
-  Search,
-  X,
-} from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ConversationDetail, ConversationListItem, ConversationListSkeleton } from './conversations'
-import { PLATFORM_CONFIG, type Platform } from '@/types'
+  BatchActionBar,
+  ConversationDetail,
+  ConversationListItem,
+  ConversationListSkeleton,
+  PlatformFilterDropdown,
+} from './conversations'
+import type { Platform } from '@/types'
 import {
   conversationsAtom,
   loadConversationsAtom,
@@ -50,6 +46,7 @@ import { cn } from '@/utils/cn'
 import { filterAndSortConversations } from '@/utils/filters'
 import { exportConversations, downloadExport, exportBatchMarkdown } from '@/utils/sync/export'
 import { downloadBlob } from '@/utils/sync/utils'
+import { useClickOutside } from '@/hooks/useClickOutside'
 
 export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 'favorites' }) {
   const isFavorites = mode === 'favorites'
@@ -85,13 +82,8 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlatform] = useAtom(currentPlatformFilterAtom)
   const [, setPlatformFilter] = useAtom(setPlatformFilterAtom)
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
-  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
-  const filterRef = useRef<HTMLDivElement>(null)
   const dateFilterRef = useRef<HTMLDivElement>(null)
-  const exportMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadConversations({ reset: true })
@@ -106,97 +98,44 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
     return () => clearTimeout(timer)
   }, [searchQuery, searchConversations, isFavorites])
 
-  // Close dropdown when clicking outside
+  // Close dropdowns on Escape key
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
-        setIsFilterOpen(false)
-      }
-    }
+    if (!isDateFilterOpen) return
 
-    if (isFilterOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isFilterOpen])
-
-  // Close dropdown on Escape key
-  useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsFilterOpen(false)
-        setIsDateFilterOpen(false)
-        setIsExportMenuOpen(false)
-      }
-    }
-
-    if (isFilterOpen || isDateFilterOpen || isExportMenuOpen) {
-      document.addEventListener('keydown', handleEscape)
-      return () => document.removeEventListener('keydown', handleEscape)
-    }
-  }, [isFilterOpen, isDateFilterOpen, isExportMenuOpen])
-
-  // Close date filter dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dateFilterRef.current && !dateFilterRef.current.contains(event.target as Node)) {
         setIsDateFilterOpen(false)
       }
     }
 
-    if (isDateFilterOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
   }, [isDateFilterOpen])
 
-  // Close export menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
-        setIsExportMenuOpen(false)
-      }
-    }
-
-    if (isExportMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isExportMenuOpen])
+  // Close date filter dropdown when clicking outside
+  useClickOutside(
+    dateFilterRef,
+    isDateFilterOpen,
+    useCallback(() => setIsDateFilterOpen(false), [])
+  )
 
   // Memoize array conversion to avoid repeated Set->Array conversions
   const selectedIdsArray = useMemo(() => Array.from(batchSelectedIds), [batchSelectedIds])
 
   // Batch export handlers
-  const handleExportZip = async () => {
+  const handleExportZip = useCallback(async () => {
     if (selectedIdsArray.length === 0) return
-    setIsExporting(true)
-    try {
-      const result = await exportConversations(selectedIdsArray)
-      downloadExport(result)
-      clearBatchSelection()
-    } catch (error) {
-      console.error('[ChatCentral] Failed to export ZIP:', error)
-    } finally {
-      setIsExporting(false)
-      setIsExportMenuOpen(false)
-    }
-  }
+    const result = await exportConversations(selectedIdsArray)
+    downloadExport(result)
+    clearBatchSelection()
+  }, [selectedIdsArray, clearBatchSelection])
 
-  const handleExportMarkdown = async () => {
+  const handleExportMarkdown = useCallback(async () => {
     if (selectedIdsArray.length === 0) return
-    setIsExporting(true)
-    try {
-      const result = await exportBatchMarkdown(selectedIdsArray)
-      downloadBlob(result.blob, result.filename)
-      clearBatchSelection()
-    } catch (error) {
-      console.error('[ChatCentral] Failed to export Markdown:', error)
-    } finally {
-      setIsExporting(false)
-      setIsExportMenuOpen(false)
-    }
-  }
+    const result = await exportBatchMarkdown(selectedIdsArray)
+    downloadBlob(result.blob, result.filename)
+    clearBatchSelection()
+  }, [selectedIdsArray, clearBatchSelection])
 
   // Use shared filtering and sorting utilities
   // Note: platform filtering is now done at DB level, so we don't filter here
@@ -215,20 +154,26 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
       ),
     [conversations, isFavorites, searchQuery, selectedFilterTags, filters.dateRange]
   )
-  const filteredConversations = sortedConversations
 
   // Check if all visible conversations are selected
   const isAllSelected =
     sortedConversations.length > 0 && sortedConversations.every((c) => batchSelectedIds.has(c.id))
 
-  const handleToggleSelectAll = () => {
+  const handleToggleSelectAll = useCallback(() => {
     if (isAllSelected) {
       clearBatchSelection()
     } else {
       const ids = sortedConversations.map((c) => c.id)
       selectAllVisible(ids)
     }
-  }
+  }, [isAllSelected, clearBatchSelection, sortedConversations, selectAllVisible])
+
+  const handlePlatformSelect = useCallback(
+    (platform: Platform | 'all') => {
+      setPlatformFilter(platform)
+    },
+    [setPlatformFilter]
+  )
 
   const emptyLabel = isFavorites ? 'No favorites yet' : 'No conversations found'
   const pageTitle = isFavorites ? 'Favorites' : 'Conversations'
@@ -277,76 +222,11 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
 
             <div className="flex items-center gap-2">
               {/* Platform Filter Dropdown */}
-              <div className="relative flex-1" ref={filterRef}>
-                <button
-                  type="button"
-                  className="kbd-focus flex w-full cursor-pointer items-center justify-between rounded-xl border border-border bg-muted/50 px-3 py-2 text-sm transition-colors hover:bg-muted/80"
-                  onClick={() => setIsFilterOpen(!isFilterOpen)}
-                  aria-haspopup="listbox"
-                  aria-expanded={isFilterOpen}
-                  aria-label="Filter by platform"
-                >
-                  <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {selectedPlatform === 'all'
-                        ? `All Platforms (${counts.total})`
-                        : `${PLATFORM_CONFIG[selectedPlatform].name} (${counts[selectedPlatform]})`}
-                    </span>
-                  </div>
-                  <ChevronDown
-                    className={cn(
-                      'h-4 w-4 text-muted-foreground transition-transform duration-200',
-                      isFilterOpen && 'rotate-180'
-                    )}
-                  />
-                </button>
-
-                {isFilterOpen && (
-                  <div
-                    role="listbox"
-                    className="absolute left-0 right-0 top-full z-10 mt-1 animate-scale-in overflow-hidden rounded-xl border border-border bg-card shadow-lg"
-                  >
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={selectedPlatform === 'all'}
-                      className={cn(
-                        'w-full cursor-pointer px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80',
-                        selectedPlatform === 'all' && 'bg-primary/10 text-primary'
-                      )}
-                      onClick={() => {
-                        setPlatformFilter('all')
-                        setIsFilterOpen(false)
-                      }}
-                    >
-                      All Platforms ({counts.total})
-                    </button>
-                    {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
-                      <button
-                        type="button"
-                        key={platform}
-                        role="option"
-                        aria-selected={selectedPlatform === platform}
-                        className={cn(
-                          'flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80',
-                          selectedPlatform === platform && 'bg-primary/10 text-primary'
-                        )}
-                        onClick={() => {
-                          setPlatformFilter(platform)
-                          setIsFilterOpen(false)
-                        }}
-                      >
-                        <span
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{ backgroundColor: PLATFORM_CONFIG[platform].color }}
-                        />
-                        {PLATFORM_CONFIG[platform].name} ({counts[platform]})
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <PlatformFilterDropdown
+                selectedPlatform={selectedPlatform}
+                counts={counts}
+                onSelectPlatform={handlePlatformSelect}
+              />
 
               {/* Date filter */}
               <div className="relative" ref={dateFilterRef}>
@@ -418,73 +298,14 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
 
           {/* Batch operation bar */}
           {isBatchMode && (
-            <div className="mb-3 flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5">
-              <span className="text-sm font-medium">{batchSelectedCount} selected</span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted"
-                  onClick={handleToggleSelectAll}
-                >
-                  {isAllSelected ? 'Deselect all' : 'Select all'}
-                </button>
-                <button
-                  type="button"
-                  className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted"
-                  onClick={() => clearBatchSelection()}
-                >
-                  Clear selection
-                </button>
-
-                {/* Export dropdown */}
-                <div className="relative" ref={exportMenuRef}>
-                  <button
-                    type="button"
-                    className={cn(
-                      'flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50',
-                      isExporting && 'opacity-50'
-                    )}
-                    onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-                    disabled={batchSelectedCount === 0 || isExporting}
-                    aria-haspopup="menu"
-                    aria-expanded={isExportMenuOpen}
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    Export
-                    <ChevronDown
-                      className={cn(
-                        'h-3 w-3 transition-transform',
-                        isExportMenuOpen && 'rotate-180'
-                      )}
-                    />
-                  </button>
-
-                  {isExportMenuOpen && (
-                    <div
-                      role="menu"
-                      className="absolute right-0 top-full z-10 mt-1 w-44 animate-scale-in overflow-hidden rounded-xl border border-border bg-card shadow-lg"
-                    >
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className="w-full cursor-pointer px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80"
-                        onClick={handleExportZip}
-                      >
-                        Export as ZIP (JSON)
-                      </button>
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className="w-full cursor-pointer px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80"
-                        onClick={handleExportMarkdown}
-                      >
-                        Export as Markdown
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <BatchActionBar
+              selectedCount={batchSelectedCount}
+              isAllSelected={isAllSelected}
+              onToggleSelectAll={handleToggleSelectAll}
+              onClearSelection={clearBatchSelection}
+              onExportZip={handleExportZip}
+              onExportMarkdown={handleExportMarkdown}
+            />
           )}
 
           {/* Conversation List */}
@@ -496,7 +317,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
             >
               {isLoading && conversations.length === 0 ? (
                 <ConversationListSkeleton />
-              ) : filteredConversations.length === 0 ? (
+              ) : sortedConversations.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center p-8 text-center">
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50">
                     <MessageSquare className="h-5 w-5 text-muted-foreground/50" />
