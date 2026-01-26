@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi, beforeEach } from 'vitest'
 import {
   formatDateForFilename,
   generateSafeFilename,
@@ -8,7 +8,86 @@ import {
   toJsonl,
   parseJsonl,
 } from './utils'
+import {
+  exportData,
+  exportConversations,
+  exportToJson,
+  exportToMarkdown,
+  exportConversationToJson,
+  exportBatchMarkdown,
+} from './export'
+import type { Conversation, Message } from '@/types'
+import * as db from '@/utils/db'
+import JSZip from 'jszip'
 import { z } from 'zod'
+
+// ============================================================================
+// Mocks for export functions
+// ============================================================================
+
+vi.mock('@/utils/db', () => ({
+  getAllConversationsForExport: vi.fn().mockResolvedValue([]),
+  getAllMessagesForExport: vi.fn().mockResolvedValue([]),
+  getConversationById: vi.fn(),
+  getMessagesByConversationId: vi.fn().mockResolvedValue([]),
+  getSyncState: vi.fn().mockResolvedValue(null),
+  initializeSyncState: vi.fn().mockResolvedValue({
+    id: 'global',
+    deviceId: 'test-device-123',
+    lastPullAt: null,
+    lastPushAt: null,
+    remoteCursor: null,
+    pendingConflicts: 0,
+    status: 'idle',
+    lastError: null,
+    lastErrorAt: null,
+  }),
+}))
+
+vi.mock('@/utils/logger', () => ({
+  createLogger: () => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  }),
+}))
+
+// ============================================================================
+// Test Helpers
+// ============================================================================
+
+function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
+  return {
+    id: 'conv-1',
+    originalId: 'orig-1',
+    platform: 'claude',
+    title: 'Test Conversation',
+    preview: 'Preview text',
+    messageCount: 2,
+    createdAt: 1000,
+    updatedAt: 2000,
+    url: 'https://claude.ai/chat/orig-1',
+    isFavorite: false,
+    favoriteAt: null,
+    tags: [],
+    syncedAt: 0,
+    detailStatus: 'none',
+    detailSyncedAt: null,
+    ...overrides,
+  }
+}
+
+function makeMessage(overrides: Partial<Message> = {}): Message {
+  return {
+    id: 'msg-1',
+    conversationId: 'conv-1',
+    role: 'user',
+    content: 'Hello',
+    createdAt: 1000,
+    ...overrides,
+  }
+}
 
 // ============================================================================
 // Utils Tests
@@ -252,6 +331,237 @@ describe('sync/types', () => {
 
       const result = exportManifestSchema.safeParse(invalidManifest)
       expect(result.success).toBe(false)
+    })
+  })
+})
+
+// ============================================================================
+// Export Function Tests
+// ============================================================================
+
+describe('export functions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('exportData', () => {
+    it('should export empty data as valid ZIP', async () => {
+      const result = await exportData()
+
+      expect(result.blob).toBeInstanceOf(Blob)
+      expect(result.stats.conversations).toBe(0)
+      expect(result.stats.messages).toBe(0)
+      expect(result.filename).toContain('chatcentral_')
+      expect(result.filename).toContain('0conv_0msg')
+      expect(result.filename).toMatch(/\.zip$/)
+    })
+
+    it('should include conversations and messages in ZIP', async () => {
+      vi.mocked(db.getAllConversationsForExport).mockResolvedValue([makeConversation()])
+      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([makeMessage()])
+
+      const result = await exportData()
+
+      expect(result.stats.conversations).toBe(1)
+      expect(result.stats.messages).toBe(1)
+
+      const zip = await JSZip.loadAsync(result.blob)
+      expect(zip.file('manifest.json')).toBeTruthy()
+      expect(zip.file('conversations.jsonl')).toBeTruthy()
+      expect(zip.file('messages.jsonl')).toBeTruthy()
+    })
+
+    it('should create valid manifest with checksums', async () => {
+      vi.mocked(db.getAllConversationsForExport).mockResolvedValue([makeConversation()])
+      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([makeMessage()])
+
+      const result = await exportData()
+      const zip = await JSZip.loadAsync(result.blob)
+      const manifest = JSON.parse(await zip.file('manifest.json')!.async('string'))
+
+      expect(manifest.version).toBe('1.0')
+      expect(manifest.deviceId).toBe('test-device-123')
+      expect(manifest.counts).toEqual({ conversations: 1, messages: 1 })
+      expect(manifest.checksums).toHaveProperty('conversations.jsonl')
+      expect(manifest.checksums).toHaveProperty('messages.jsonl')
+      expect(manifest.exportType).toBe('full')
+      expect(manifest.encrypted).toBe(false)
+    })
+
+    it('should use incremental type when specified', async () => {
+      const result = await exportData({ type: 'incremental', since: 5000 })
+      const zip = await JSZip.loadAsync(result.blob)
+      const manifest = JSON.parse(await zip.file('manifest.json')!.async('string'))
+
+      expect(manifest.exportType).toBe('incremental')
+      expect(manifest.sinceTimestamp).toBe(5000)
+      expect(result.filename).toContain('_incremental')
+    })
+
+    it('should filter selected conversations', async () => {
+      const c1 = makeConversation({ id: 'c1' })
+      const c2 = makeConversation({ id: 'c2' })
+      vi.mocked(db.getAllConversationsForExport).mockResolvedValue([c1, c2])
+      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([])
+
+      const result = await exportData({ type: 'selected', conversationIds: ['c1'] })
+
+      expect(result.stats.conversations).toBe(1)
+      expect(result.filename).toContain('_selected')
+    })
+
+    it('should use existing sync state when available', async () => {
+      vi.mocked(db.getSyncState).mockResolvedValue({
+        id: 'global',
+        deviceId: 'existing-device',
+        status: 'idle',
+        lastPullAt: null,
+        lastPushAt: null,
+        remoteCursor: null,
+        pendingConflicts: 0,
+        lastError: null,
+        lastErrorAt: null,
+      })
+
+      const result = await exportData()
+      const zip = await JSZip.loadAsync(result.blob)
+      const manifest = JSON.parse(await zip.file('manifest.json')!.async('string'))
+
+      expect(manifest.deviceId).toBe('existing-device')
+    })
+  })
+
+  describe('exportConversations', () => {
+    it('should call exportData with selected type', async () => {
+      vi.mocked(db.getAllConversationsForExport).mockResolvedValue([makeConversation({ id: 'c1' })])
+      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([])
+
+      const result = await exportConversations(['c1'])
+
+      expect(result.stats.conversations).toBe(1)
+    })
+  })
+
+  describe('exportToJson', () => {
+    it('should export as JSON blob with grouped messages', async () => {
+      const c1 = makeConversation({ id: 'c1' })
+      const c2 = makeConversation({ id: 'c2' })
+      const m1 = makeMessage({ id: 'm1', conversationId: 'c1' })
+      const m2 = makeMessage({ id: 'm2', conversationId: 'c2' })
+      const m3 = makeMessage({ id: 'm3', conversationId: 'c1' })
+
+      vi.mocked(db.getAllConversationsForExport).mockResolvedValue([c1, c2])
+      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([m1, m2, m3])
+
+      const result = await exportToJson()
+
+      expect(result.blob.type).toBe('application/json')
+      expect(result.filename).toMatch(/\.json$/)
+
+      const text = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.readAsText(result.blob)
+      })
+      const data = JSON.parse(text)
+      expect(data.version).toBe('1.0')
+      expect(data.conversations).toHaveLength(2)
+
+      const conv1 = data.conversations.find((c: Record<string, unknown>) => c.id === 'c1')
+      expect(conv1.messages).toHaveLength(2)
+    })
+  })
+
+  describe('exportToMarkdown', () => {
+    it('should export conversation as Markdown', async () => {
+      vi.mocked(db.getConversationById).mockResolvedValue(makeConversation({ title: 'AI Chat' }))
+      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([
+        makeMessage({ role: 'user', content: 'Hello!' }),
+        makeMessage({ id: 'm2', role: 'assistant', content: 'Hi there!' }),
+      ])
+
+      const result = await exportToMarkdown('conv-1')
+
+      expect(result.content).toContain('# AI Chat')
+      expect(result.content).toContain('## User')
+      expect(result.content).toContain('Hello!')
+      expect(result.content).toContain('## Assistant')
+      expect(result.content).toContain('Hi there!')
+      expect(result.messageCount).toBe(2)
+      expect(result.filename).toMatch(/\.md$/)
+    })
+
+    it('should throw when conversation not found', async () => {
+      vi.mocked(db.getConversationById).mockResolvedValue(undefined)
+
+      await expect(exportToMarkdown('missing')).rejects.toThrow('Conversation not found: missing')
+    })
+  })
+
+  describe('exportConversationToJson', () => {
+    it('should export single conversation as JSON', async () => {
+      vi.mocked(db.getConversationById).mockResolvedValue(makeConversation({ title: 'Test' }))
+      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([makeMessage()])
+
+      const result = await exportConversationToJson('conv-1')
+
+      const data = JSON.parse(result.content)
+      expect(data.version).toBe('1.0')
+      expect(data.conversation.title).toBe('Test')
+      expect(data.conversation.messages).toHaveLength(1)
+      expect(result.filename).toMatch(/\.json$/)
+    })
+
+    it('should throw when conversation not found', async () => {
+      vi.mocked(db.getConversationById).mockResolvedValue(undefined)
+
+      await expect(exportConversationToJson('missing')).rejects.toThrow(
+        'Conversation not found: missing'
+      )
+    })
+  })
+
+  describe('exportBatchMarkdown', () => {
+    it('should export multiple conversations as ZIP', async () => {
+      vi.mocked(db.getConversationById)
+        .mockResolvedValueOnce(makeConversation({ id: 'c1', title: 'Chat 1' }))
+        .mockResolvedValueOnce(makeConversation({ id: 'c2', title: 'Chat 2' }))
+      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([makeMessage()])
+
+      const result = await exportBatchMarkdown(['c1', 'c2'])
+
+      expect(result.stats.conversations).toBe(2)
+      expect(result.stats.totalMessages).toBe(2)
+      expect(result.filename).toContain('2conv_markdown')
+
+      const zip = await JSZip.loadAsync(result.blob)
+      expect(Object.keys(zip.files)).toHaveLength(2)
+    })
+
+    it('should handle duplicate filenames with suffix', async () => {
+      vi.mocked(db.getConversationById)
+        .mockResolvedValueOnce(makeConversation({ id: 'c1', title: 'Same Title' }))
+        .mockResolvedValueOnce(makeConversation({ id: 'c2', title: 'Same Title' }))
+      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([makeMessage()])
+
+      const result = await exportBatchMarkdown(['c1', 'c2'])
+
+      const zip = await JSZip.loadAsync(result.blob)
+      const files = Object.keys(zip.files)
+      expect(files).toHaveLength(2)
+      expect(files.some((f) => f.includes('_1'))).toBe(true)
+    })
+
+    it('should skip failed conversations', async () => {
+      vi.mocked(db.getConversationById)
+        .mockResolvedValueOnce(makeConversation({ id: 'c1', title: 'Good' }))
+        .mockResolvedValueOnce(undefined) // not found
+      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([makeMessage()])
+
+      const result = await exportBatchMarkdown(['c1', 'c2'])
+
+      const zip = await JSZip.loadAsync(result.blob)
+      expect(Object.keys(zip.files)).toHaveLength(1)
     })
   })
 })
