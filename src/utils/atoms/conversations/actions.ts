@@ -46,8 +46,7 @@ export const loadAllTagsAtom = atom(null, async (_get, set) => {
   try {
     const tags = await getAllTags()
     set(allTagsAtom, tags)
-  }
-  catch (e) {
+  } catch (e) {
     log.error('Failed to load tags:', e)
   }
 })
@@ -71,17 +70,6 @@ export const clearTagFiltersAtom = atom(null, (get, set) => {
   const filters = get(filtersAtom)
   set(filtersAtom, { ...filters, tags: [] })
 })
-
-/**
- * Set date range filter
- */
-export const setDateRangeAtom = atom(
-  null,
-  (get, set, range: { start: number | null, end: number | null }) => {
-    const filters = get(filtersAtom)
-    set(filtersAtom, { ...filters, dateRange: range })
-  },
-)
 
 /**
  * Clear all filters
@@ -111,19 +99,19 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
     const offset = reset ? 0 : pagination.offset
     const limit = pagination.limit
 
-    // Get platform filter from filters atom
+    // Get filters from filters atom
     const filters = get(filtersAtom)
     const platform = filters.platforms.length === 1 ? filters.platforms[0] : undefined
+    const dateRange = filters.dateRange
 
-    const conversations = await getConversations({ limit: limit + 1, offset, platform })
+    const conversations = await getConversations({ limit: limit + 1, offset, platform, dateRange })
 
     const hasMore = conversations.length > limit
     const data = hasMore ? conversations.slice(0, limit) : conversations
 
     if (reset) {
       set(conversationsAtom, data)
-    }
-    else {
+    } else {
       const existing = get(conversationsAtom)
       set(conversationsAtom, [...existing, ...data])
     }
@@ -148,14 +136,37 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
       gemini: geminiCount,
       total: totalCount,
     })
-  }
-  catch (e) {
+  } catch (e) {
     log.error('Failed to load conversations:', e)
-  }
-  finally {
+  } finally {
     set(isLoadingConversationsAtom, false)
   }
 })
+
+/**
+ * Set date range filter and reload conversations
+ */
+export const setDateRangeAtom = atom(
+  null,
+  async (get, set, range: { start: number | null; end: number | null }) => {
+    const filters = get(filtersAtom)
+    set(filtersAtom, { ...filters, dateRange: range })
+
+    // Reset pagination and reload with new date filter (same pattern as setPlatformFilterAtom)
+    set(paginationAtom, {
+      offset: 0,
+      limit: get(paginationAtom).limit,
+      hasMore: true,
+    })
+    set(favoritesPaginationAtom, {
+      offset: 0,
+      limit: get(favoritesPaginationAtom).limit,
+      hasMore: true,
+    })
+
+    await set(loadConversationsAtom, { reset: true })
+  }
+)
 
 /**
  * Set platform filter and reload conversations
@@ -222,12 +233,12 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
   }
 
   // Only update filters if operators were used
-  const hasOperators
-    = parsed.operators.platform
-      || parsed.operators.tags
-      || parsed.operators.before
-      || parsed.operators.after
-      || parsed.operators.isFavorite
+  const hasOperators =
+    parsed.operators.platform ||
+    parsed.operators.tags ||
+    parsed.operators.before ||
+    parsed.operators.after ||
+    parsed.operators.isFavorite
 
   if (hasOperators) {
     set(filtersAtom, newFilters)
@@ -258,7 +269,7 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
     set(searchResultsAtom, results)
     set(
       conversationsAtom,
-      results.map((r) => r.conversation),
+      results.map((r) => r.conversation)
     )
 
     // Disable pagination for search results
@@ -267,11 +278,9 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
       limit: results.length,
       hasMore: false,
     })
-  }
-  catch (e) {
+  } catch (e) {
     log.error('Failed to search:', e)
-  }
-  finally {
+  } finally {
     set(isLoadingConversationsAtom, false)
   }
 })
@@ -302,14 +311,16 @@ export const loadFavoritesAtom = atom(null, async (get, set, options?: { reset?:
     const offset = reset ? 0 : pagination.offset
     const limit = pagination.limit
 
-    // Get platform filter from filters atom
+    // Get filters from filters atom
     const filters = get(filtersAtom)
     const platform = filters.platforms.length === 1 ? filters.platforms[0] : undefined
+    const dateRange = filters.dateRange
 
     const conversations = await getConversations({
       limit: limit + 1,
       offset,
       platform,
+      dateRange,
       favoritesOnly: true,
       orderBy: 'favoriteAt',
     })
@@ -319,8 +330,7 @@ export const loadFavoritesAtom = atom(null, async (get, set, options?: { reset?:
 
     if (reset) {
       set(favoritesConversationsAtom, data)
-    }
-    else {
+    } else {
       const existing = get(favoritesConversationsAtom)
       set(favoritesConversationsAtom, [...existing, ...data])
     }
@@ -344,11 +354,9 @@ export const loadFavoritesAtom = atom(null, async (get, set, options?: { reset?:
       gemini: geminiCount,
       total: totalCount,
     })
-  }
-  catch (e) {
+  } catch (e) {
     log.error('Failed to load favorite conversations:', e)
-  }
-  finally {
+  } finally {
     set(isLoadingFavoritesAtom, false)
   }
 })
@@ -379,15 +387,13 @@ export const toggleFavoriteAtom = atom(
         const exists = favoriteList.some((item) => item.id === updated.id)
         if (exists) {
           set(favoritesConversationsAtom, applyUpdate(favoriteList))
-        }
-        else {
+        } else {
           set(favoritesConversationsAtom, [updated, ...favoriteList])
         }
-      }
-      else {
+      } else {
         set(
           favoritesConversationsAtom,
-          favoriteList.filter((item) => item.id !== updated.id),
+          favoriteList.filter((item) => item.id !== updated.id)
         )
       }
 
@@ -409,11 +415,10 @@ export const toggleFavoriteAtom = atom(
         gemini: geminiCount,
         total: totalCount,
       })
-    }
-    catch (e) {
+    } catch (e) {
       log.error('Failed to toggle favorite:', e)
     }
-  },
+  }
 )
 
 // ============================================================================
@@ -442,14 +447,12 @@ export const loadConversationDetailAtom = atom(
         ? await loadMessagesWithFallback(conversation)
         : await getMessagesByConversationId(conversationId)
       set(selectedMessagesAtom, messages)
-    }
-    catch (e) {
+    } catch (e) {
       log.error('Failed to load conversation detail:', e)
-    }
-    finally {
+    } finally {
       set(isLoadingDetailAtom, false)
     }
-  },
+  }
 )
 
 /**
@@ -474,14 +477,12 @@ export const loadFavoriteDetailAtom = atom(
         ? await loadMessagesWithFallback(conversation)
         : await getMessagesByConversationId(conversationId)
       set(selectedMessagesAtom, messages)
-    }
-    catch (e) {
+    } catch (e) {
       log.error('Failed to load favorite conversation detail:', e)
-    }
-    finally {
+    } finally {
       set(isLoadingDetailAtom, false)
     }
-  },
+  }
 )
 
 /**
@@ -518,7 +519,7 @@ export const updateConversationAtom = atom(null, (get, set, updated: Conversatio
  */
 export const updateTagsAtom = atom(
   null,
-  async (get, set, { conversationId, tags }: { conversationId: string, tags: string[] }) => {
+  async (get, set, { conversationId, tags }: { conversationId: string; tags: string[] }) => {
     try {
       const response = (await browser.runtime.sendMessage({
         action: 'UPDATE_TAGS',
@@ -545,12 +546,11 @@ export const updateTagsAtom = atom(
       await set(loadAllTagsAtom)
 
       return updated
-    }
-    catch (e) {
+    } catch (e) {
       log.error('Failed to update tags:', e)
       return null
     }
-  },
+  }
 )
 
 // ============================================================================

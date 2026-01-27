@@ -10,6 +10,7 @@ export async function getConversations(options?: {
   offset?: number
   favoritesOnly?: boolean
   orderBy?: 'updatedAt' | 'createdAt' | 'syncedAt' | 'favoriteAt'
+  dateRange?: { start: number | null; end: number | null }
 }): Promise<Conversation[]> {
   const {
     platform,
@@ -17,7 +18,10 @@ export async function getConversations(options?: {
     offset = 0,
     favoritesOnly = false,
     orderBy = 'updatedAt',
+    dateRange,
   } = options ?? {}
+
+  const hasDateRange = dateRange && (dateRange.start !== null || dateRange.end !== null)
 
   // Sorting function for in-memory sorting
   const score = (conv: Conversation) => {
@@ -33,11 +37,21 @@ export async function getConversations(options?: {
     }
   }
 
+  const matchesDateRange = (conv: Conversation): boolean => {
+    if (!hasDateRange) return true
+    if (dateRange.start !== null && conv.updatedAt < dateRange.start) return false
+    if (dateRange.end !== null && conv.updatedAt > dateRange.end) return false
+    return true
+  }
+
   // No platform filter: use indexed query (efficient)
   if (!platform) {
     let query = db.conversations.orderBy(orderBy).reverse()
     if (favoritesOnly) {
       query = query.filter((conv) => conv.isFavorite)
+    }
+    if (hasDateRange) {
+      query = query.filter(matchesDateRange)
     }
     return query.offset(offset).limit(limit).toArray()
   }
@@ -47,6 +61,9 @@ export async function getConversations(options?: {
   let query = db.conversations.where('platform').equals(platform)
   if (favoritesOnly) {
     query = query.filter((conv) => conv.isFavorite)
+  }
+  if (hasDateRange) {
+    query = query.filter(matchesDateRange)
   }
 
   const filtered = await query.toArray()
@@ -66,7 +83,7 @@ export async function getConversationById(id: string): Promise<Conversation | un
  */
 export async function getConversationByOriginalId(
   platform: Platform,
-  originalId: string,
+  originalId: string
 ): Promise<Conversation | undefined> {
   const id = `${platform}_${originalId}`
   return db.conversations.get(id)
@@ -91,7 +108,7 @@ export async function upsertConversations(conversations: Conversation[]): Promis
  */
 export async function updateConversationFavorite(
   id: string,
-  isFavorite: boolean,
+  isFavorite: boolean
 ): Promise<Conversation | null> {
   const existing = await db.conversations.get(id)
   if (!existing) return null
@@ -227,7 +244,7 @@ export async function getAllTags(): Promise<string[]> {
 
   // Filter out empty strings and ensure all values are strings
   const validTags = uniqueTags.filter(
-    (tag): tag is string => typeof tag === 'string' && tag.length > 0,
+    (tag): tag is string => typeof tag === 'string' && tag.length > 0
   )
 
   return validTags.sort()
@@ -238,7 +255,7 @@ export async function getAllTags(): Promise<string[]> {
  */
 export async function updateConversationTags(
   id: string,
-  tags: string[],
+  tags: string[]
 ): Promise<Conversation | null> {
   const existing = await db.conversations.get(id)
   if (!existing) return null
