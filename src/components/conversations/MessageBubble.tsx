@@ -2,6 +2,7 @@ import { User, Bot } from 'lucide-react'
 import type { Message } from '@/types'
 import { cn } from '@/utils/cn'
 import { HighlightText } from '../HighlightText'
+import { MarkdownContent } from './MarkdownContent'
 
 interface MessageBubbleProps {
   message: Message
@@ -18,7 +19,7 @@ export function MessageBubble({ message, platformColor, searchQuery, style }: Me
       data-message-id={message.id}
       className={cn(
         'flex animate-slide-in gap-3 rounded-xl transition-all',
-        isUser && 'flex-row-reverse',
+        isUser && 'flex-row-reverse'
       )}
       style={style}
     >
@@ -26,24 +27,22 @@ export function MessageBubble({ message, platformColor, searchQuery, style }: Me
       <div
         className={cn(
           'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl',
-          isUser ? 'bg-primary/20' : 'bg-muted',
+          isUser ? 'bg-primary/20' : 'bg-muted'
         )}
         style={!isUser ? { backgroundColor: `${platformColor}12` } : undefined}
       >
-        {isUser
-          ? (
-              <User className="h-4 w-4 text-primary" />
-            )
-          : (
-              <Bot className="h-4 w-4" style={{ color: platformColor }} />
-            )}
+        {isUser ? (
+          <User className="h-4 w-4 text-primary" />
+        ) : (
+          <Bot className="h-4 w-4" style={{ color: platformColor }} />
+        )}
       </div>
 
       {/* Bubble */}
       <div
         className={cn(
           'max-w-[85%] flex-1 rounded-2xl px-4 py-3',
-          isUser ? 'ml-auto bg-primary/15 text-foreground' : 'border border-border/50 bg-muted/50',
+          isUser ? 'ml-auto bg-primary/15 text-foreground' : 'border border-border/50 bg-muted/50'
         )}
       >
         <div className="mb-1.5 flex items-center justify-between gap-2">
@@ -56,14 +55,12 @@ export function MessageBubble({ message, platformColor, searchQuery, style }: Me
             </span>
           )}
         </div>
-        <div className="whitespace-pre-wrap text-sm leading-relaxed">
-          {searchQuery
-            ? (
-                <HighlightText text={message.content} query={searchQuery} />
-              )
-            : (
-                message.content
-              )}
+        <div className={cn('text-sm leading-relaxed', searchQuery && 'whitespace-pre-wrap')}>
+          {searchQuery ? (
+            <HighlightText text={message.content} query={searchQuery} />
+          ) : (
+            <MarkdownContent content={message.content} />
+          )}
         </div>
       </div>
     </div>
