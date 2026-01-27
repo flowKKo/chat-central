@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { Provider, createStore } from 'jotai'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { CloudSyncPanel } from './CloudSyncPanel'
@@ -40,7 +40,7 @@ function renderWithStore(store: ReturnType<typeof createStore>) {
   return render(
     <Provider store={store}>
       <CloudSyncPanel />
-    </Provider>,
+    </Provider>
   )
 }
 
@@ -75,20 +75,8 @@ describe('cloudSyncPanel', () => {
     it('should show privacy note', () => {
       renderWithStore(store)
       expect(
-        screen.getByText(/Your data is stored in your own Google Drive app folder/),
+        screen.getByText(/Your data is stored in your own Google Drive app folder/)
       ).toBeInTheDocument()
-    })
-
-    it('should toggle advanced options', () => {
-      renderWithStore(store)
-
-      expect(screen.queryByText('WebDAV (Coming Soon)')).not.toBeInTheDocument()
-
-      fireEvent.click(screen.getByText('Advanced options'))
-      expect(screen.getByText('WebDAV (Coming Soon)')).toBeInTheDocument()
-
-      fireEvent.click(screen.getByText('Advanced options'))
-      expect(screen.queryByText('WebDAV (Coming Soon)')).not.toBeInTheDocument()
     })
 
     it('should not show connected-state elements', () => {
@@ -207,7 +195,7 @@ describe('cloudSyncPanel', () => {
       Object.defineProperty(navigator, 'onLine', { value: false, writable: true })
       renderWithStore(store)
       expect(
-        screen.getByText(/You're offline\. Sync will resume when connected\./),
+        screen.getByText(/You're offline\. Sync will resume when connected\./)
       ).toBeInTheDocument()
       Object.defineProperty(navigator, 'onLine', { value: true, writable: true })
     })

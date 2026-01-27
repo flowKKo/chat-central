@@ -24,7 +24,7 @@ import type { ImportResult } from '@/utils/sync/types'
 import { isFileSizeSafe } from '@/utils/sync/utils'
 import { CloudSyncPanel } from './CloudSyncPanel'
 
-const themeOptions: { value: ThemePreference, label: string, icon: typeof Sun }[] = [
+const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', icon: Sun },
   { value: 'dark', label: 'Dark', icon: Moon },
   { value: 'system', label: 'System', icon: Monitor },
@@ -50,8 +50,7 @@ export function SettingsPanel() {
     try {
       await clearAllData()
       window.location.reload()
-    }
-    finally {
+    } finally {
       setIsClearing(false)
     }
   }
@@ -64,8 +63,7 @@ export function SettingsPanel() {
     try {
       await clearPlatformData(platform)
       window.location.reload()
-    }
-    finally {
+    } finally {
       setIsClearing(false)
     }
   }
@@ -75,8 +73,7 @@ export function SettingsPanel() {
     try {
       const result = await exportData({ type: 'full' })
       downloadExport(result)
-    }
-    finally {
+    } finally {
       setIsExporting(false)
     }
   }
@@ -91,10 +88,9 @@ export function SettingsPanel() {
       const { safe, sizeFormatted } = isFileSizeSafe(file)
       if (!safe) {
         setFileSizeWarning(
-          `Large file (${sizeFormatted}). Import may take a while and could affect browser performance.`,
+          `Large file (${sizeFormatted}). Import may take a while and could affect browser performance.`
         )
-      }
-      else {
+      } else {
         setFileSizeWarning(null)
       }
     }
@@ -132,8 +128,7 @@ export function SettingsPanel() {
           fileInputRef.current.value = ''
         }
       }
-    }
-    finally {
+    } finally {
       setIsImporting(false)
     }
   }
@@ -141,22 +136,22 @@ export function SettingsPanel() {
   return (
     <div className="mx-auto h-full max-w-3xl">
       {/* Page Header */}
-      <div className="mb-8">
+      <div className="mb-5">
         <h1 className="mb-1 font-heading text-2xl font-bold tracking-tight">Settings</h1>
         <p className="text-sm text-muted-foreground">Manage your preferences and data</p>
       </div>
 
       {/* Settings Sections */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Appearance */}
-        <section className="rounded-2xl border border-border bg-card/50 p-6">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-              <Sun className="h-5 w-5 text-primary" />
+        <section className="rounded-2xl border border-border bg-card/50 p-5">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+              <Sun className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h2 className="font-heading text-base font-semibold">Appearance</h2>
-              <p className="text-sm text-muted-foreground">Customize how the app looks</p>
+              <h2 className="font-heading text-sm font-semibold">Appearance</h2>
+              <p className="text-xs text-muted-foreground">Customize how the app looks</p>
             </div>
           </div>
 
@@ -171,20 +166,20 @@ export function SettingsPanel() {
                   role="radio"
                   aria-checked={isSelected}
                   className={cn(
-                    'flex flex-1 cursor-pointer flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all',
+                    'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 py-2.5 transition-all',
                     isSelected
                       ? 'border-primary bg-primary/10'
-                      : 'border-transparent bg-muted/50 hover:bg-muted',
+                      : 'border-transparent bg-muted/50 hover:bg-muted'
                   )}
                   onClick={() => setThemePreference(option.value)}
                 >
                   <Icon
-                    className={cn('h-6 w-6', isSelected ? 'text-primary' : 'text-muted-foreground')}
+                    className={cn('h-4 w-4', isSelected ? 'text-primary' : 'text-muted-foreground')}
                   />
                   <span
                     className={cn(
                       'text-sm font-medium',
-                      isSelected ? 'text-primary' : 'text-muted-foreground',
+                      isSelected ? 'text-primary' : 'text-muted-foreground'
                     )}
                   >
                     {option.label}
@@ -196,57 +191,55 @@ export function SettingsPanel() {
         </section>
 
         {/* Data Transfer */}
-        <section className="rounded-2xl border border-border bg-card/50 p-6">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
-              <HardDrive className="h-5 w-5 text-blue-500" />
+        <section className="rounded-2xl border border-border bg-card/50 p-5">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10">
+              <HardDrive className="h-4 w-4 text-blue-500" />
             </div>
             <div>
-              <h2 className="font-heading text-base font-semibold">Data Transfer</h2>
-              <p className="text-sm text-muted-foreground">Export or import your conversations</p>
+              <h2 className="font-heading text-sm font-semibold">Data Transfer</h2>
+              <p className="text-xs text-muted-foreground">Export or import your conversations</p>
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Export Row */}
-            <div className="flex items-center justify-between rounded-xl bg-muted/30 p-4">
+            <div className="flex items-center justify-between rounded-xl bg-muted/30 px-4 py-3">
               <div className="flex items-center gap-3">
-                <Download className="h-5 w-5 text-muted-foreground" />
+                <Download className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">Export Data</p>
-                  <p className="text-sm text-muted-foreground">Download as ZIP archive</p>
+                  <p className="text-sm font-medium">Export Data</p>
+                  <p className="text-xs text-muted-foreground">Download as ZIP archive</p>
                 </div>
               </div>
               <button
                 type="button"
                 className={cn(
                   'flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90',
-                  isExporting && 'cursor-not-allowed opacity-50',
+                  isExporting && 'cursor-not-allowed opacity-50'
                 )}
                 onClick={handleExport}
                 disabled={isExporting}
               >
-                {isExporting
-                  ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Exporting...
-                      </>
-                    )
-                  : (
-                      'Export'
-                    )}
+                {isExporting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  'Export'
+                )}
               </button>
             </div>
 
             {/* Import Row */}
-            <div className="rounded-xl bg-muted/30 p-4">
+            <div className="rounded-xl bg-muted/30 px-4 py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Upload className="h-5 w-5 text-muted-foreground" />
+                  <Upload className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="font-medium">Import Data</p>
-                    <p className="text-sm text-muted-foreground">Restore from .zip or .json</p>
+                    <p className="text-sm font-medium">Import Data</p>
+                    <p className="text-xs text-muted-foreground">Restore from .zip or .json</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -262,36 +255,32 @@ export function SettingsPanel() {
                     htmlFor="import-file"
                     className={cn(
                       'cursor-pointer rounded-lg border border-dashed border-border px-3 py-2 text-sm transition-colors hover:bg-muted/50',
-                      selectedFile && 'border-primary bg-primary/5 text-primary',
+                      selectedFile && 'border-primary bg-primary/5 text-primary'
                     )}
                   >
-                    {selectedFile
-                      ? (
-                          <span className="max-w-32 truncate">{selectedFile.name}</span>
-                        )
-                      : (
-                          'Choose file'
-                        )}
+                    {selectedFile ? (
+                      <span className="max-w-32 truncate">{selectedFile.name}</span>
+                    ) : (
+                      'Choose file'
+                    )}
                   </label>
                   <button
                     type="button"
                     className={cn(
                       'flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90',
-                      (!selectedFile || isImporting) && 'cursor-not-allowed opacity-50',
+                      (!selectedFile || isImporting) && 'cursor-not-allowed opacity-50'
                     )}
                     onClick={handleImport}
                     disabled={!selectedFile || isImporting}
                   >
-                    {isImporting
-                      ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Importing...
-                          </>
-                        )
-                      : (
-                          'Import'
-                        )}
+                    {isImporting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Importing...
+                      </>
+                    ) : (
+                      'Import'
+                    )}
                   </button>
                 </div>
               </div>
@@ -309,44 +298,35 @@ export function SettingsPanel() {
                 <div
                   className={cn(
                     'mt-3 flex items-start gap-2 rounded-lg p-3',
-                    importResult.success ? 'bg-emerald-500/10' : 'bg-red-500/10',
+                    importResult.success ? 'bg-emerald-500/10' : 'bg-red-500/10'
                   )}
                 >
-                  {importResult.success
-                    ? (
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
-                      )
-                    : (
-                        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
-                      )}
+                  {importResult.success ? (
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+                  ) : (
+                    <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+                  )}
                   <div className="text-sm">
-                    {importResult.success
-                      ? (
-                          <>
-                            <p className="font-medium text-emerald-600 dark:text-emerald-400">
-                              Import successful
-                            </p>
-                            <p className="text-muted-foreground">
-                              {importResult.imported.conversations}
-                              {' '}
-                              conversations,
-                              {' '}
-                              {importResult.imported.messages}
-                              {' '}
-                              messages imported
-                            </p>
-                          </>
-                        )
-                      : (
-                          <>
-                            <p className="font-medium text-red-600 dark:text-red-400">Import failed</p>
-                            {importResult.errors.map((error) => (
-                              <p key={error.message} className="text-muted-foreground">
-                                {error.message}
-                              </p>
-                            ))}
-                          </>
-                        )}
+                    {importResult.success ? (
+                      <>
+                        <p className="font-medium text-emerald-600 dark:text-emerald-400">
+                          Import successful
+                        </p>
+                        <p className="text-muted-foreground">
+                          {importResult.imported.conversations} conversations,{' '}
+                          {importResult.imported.messages} messages imported
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium text-red-600 dark:text-red-400">Import failed</p>
+                        {importResult.errors.map((error) => (
+                          <p key={error.message} className="text-muted-foreground">
+                            {error.message}
+                          </p>
+                        ))}
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -358,11 +338,11 @@ export function SettingsPanel() {
         <CloudSyncPanel />
 
         {/* Platform Data */}
-        <section className="rounded-2xl border border-border bg-card/50 p-6">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
+        <section className="rounded-2xl border border-border bg-card/50 p-5">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10">
               <svg
-                className="h-5 w-5 text-violet-500"
+                className="h-4 w-4 text-violet-500"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -373,34 +353,29 @@ export function SettingsPanel() {
               </svg>
             </div>
             <div>
-              <h2 className="font-heading text-base font-semibold">Platform Data</h2>
-              <p className="text-sm text-muted-foreground">Manage synced data by platform</p>
+              <h2 className="font-heading text-sm font-semibold">Platform Data</h2>
+              <p className="text-xs text-muted-foreground">Manage synced data by platform</p>
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-3">
             {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
               <div
                 key={platform}
-                className="flex items-center justify-between rounded-xl bg-muted/30 p-4 transition-colors hover:bg-muted/50"
+                className="flex items-center justify-between rounded-xl bg-muted/30 px-3 py-2.5 transition-colors hover:bg-muted/50"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <div
-                    className="flex h-10 w-10 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `${PLATFORM_CONFIG[platform].color}15` }}
-                  >
-                    <div
-                      className="h-3.5 w-3.5 rounded-full"
-                      style={{ backgroundColor: PLATFORM_CONFIG[platform].color }}
-                    />
-                  </div>
-                  <span className="font-medium">{PLATFORM_CONFIG[platform].name}</span>
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: PLATFORM_CONFIG[platform].color }}
+                  />
+                  <span className="text-sm font-medium">{PLATFORM_CONFIG[platform].name}</span>
                 </div>
                 <button
                   type="button"
                   className={cn(
-                    'cursor-pointer rounded-lg px-3 py-1.5 text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10',
-                    isClearing && 'cursor-not-allowed opacity-50',
+                    'cursor-pointer rounded-md px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/10',
+                    isClearing && 'cursor-not-allowed opacity-50'
                   )}
                   onClick={() => handleClearPlatform(platform)}
                   disabled={isClearing}
@@ -413,36 +388,35 @@ export function SettingsPanel() {
         </section>
 
         {/* Privacy Notice */}
-        <section className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6">
-          <div className="flex gap-4">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
-              <Shield className="h-5 w-5 text-emerald-500" />
+        <section className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
+              <Shield className="h-4 w-4 text-emerald-500" />
             </div>
             <div>
-              <h2 className="mb-1 font-heading text-base font-semibold text-emerald-600 dark:text-emerald-400">
+              <h2 className="font-heading text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                 Your Data is Private
               </h2>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                All conversation data is stored locally in your browser using IndexedDB. Nothing is
-                sent to external servers. Your data stays on your device.
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                All data is stored locally in your browser. Nothing is sent to external servers.
               </p>
             </div>
           </div>
         </section>
 
         {/* Danger Zone */}
-        <section className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex gap-4">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-500/10">
-                <Trash2 className="h-5 w-5 text-red-500" />
+        <section className="rounded-2xl border border-red-500/20 bg-red-500/5 px-5 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-red-500/10">
+                <Trash2 className="h-4 w-4 text-red-500" />
               </div>
               <div>
-                <h2 className="mb-1 font-heading text-base font-semibold text-red-600 dark:text-red-400">
+                <h2 className="font-heading text-sm font-semibold text-red-600 dark:text-red-400">
                   Delete All Data
                 </h2>
-                <p className="text-sm text-muted-foreground">
-                  Permanently delete all conversations from all platforms. This cannot be undone.
+                <p className="text-xs text-muted-foreground">
+                  Permanently delete all conversations. This cannot be undone.
                 </p>
               </div>
             </div>
@@ -450,27 +424,25 @@ export function SettingsPanel() {
               type="button"
               className={cn(
                 'flex cursor-pointer items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600',
-                isClearing && 'cursor-not-allowed opacity-50',
+                isClearing && 'cursor-not-allowed opacity-50'
               )}
               onClick={handleClearAll}
               disabled={isClearing}
             >
-              {isClearing
-                ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Deleting...
-                    </>
-                  )
-                : (
-                    'Delete All'
-                  )}
+              {isClearing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete All'
+              )}
             </button>
           </div>
         </section>
 
         {/* Version Info */}
-        <div className="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
           <Info className="h-3.5 w-3.5" />
           <span>Chat Central v0.1.0</span>
         </div>

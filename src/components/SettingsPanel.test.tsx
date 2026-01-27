@@ -76,7 +76,7 @@ function renderWithStore(store: ReturnType<typeof createStore>) {
   return render(
     <Provider store={store}>
       <SettingsPanel />
-    </Provider>,
+    </Provider>
   )
 }
 
@@ -175,9 +175,7 @@ describe('settingsPanel', () => {
     it('should render delete all button', () => {
       renderWithStore(store)
       expect(screen.getByText('Delete All')).toBeInTheDocument()
-      expect(
-        screen.getByText(/Permanently delete all conversations from all platforms/),
-      ).toBeInTheDocument()
+      expect(screen.getByText(/Permanently delete all conversations/)).toBeInTheDocument()
     })
 
     it('should show confirmation before deleting all data', () => {
@@ -187,7 +185,7 @@ describe('settingsPanel', () => {
       fireEvent.click(screen.getByText('Delete All'))
 
       expect(confirmSpy).toHaveBeenCalledWith(
-        'Are you sure you want to delete all synced conversations? This cannot be undone.',
+        'Are you sure you want to delete all synced conversations? This cannot be undone.'
       )
     })
 

@@ -7,7 +7,6 @@ import {
   CloudOff,
   Loader2,
   RefreshCw,
-  Settings2,
   WifiOff,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -29,9 +28,8 @@ import {
 import { cn } from '@/utils/cn'
 
 export function CloudSyncPanel() {
-  const [showAdvanced, setShowAdvanced] = useState(false)
   const [isOnline, setIsOnline] = useState(
-    typeof navigator !== 'undefined' ? navigator.onLine : true,
+    typeof navigator !== 'undefined' ? navigator.onLine : true
   )
 
   // Listen for online/offline events
@@ -79,11 +77,9 @@ export function CloudSyncPanel() {
     setConnectError(null)
     try {
       await connect('google-drive')
-    }
-    catch (error) {
+    } catch (error) {
       setConnectError(error instanceof Error ? error.message : 'Connection failed')
-    }
-    finally {
+    } finally {
       setIsConnecting(false)
     }
   }
@@ -100,14 +96,14 @@ export function CloudSyncPanel() {
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-card/50 p-6">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/10">
-          <Cloud className="h-5 w-5 text-sky-500" />
+    <section className="rounded-2xl border border-border bg-card/50 p-5">
+      <div className="mb-3 flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10">
+          <Cloud className="h-4 w-4 text-sky-500" />
         </div>
         <div>
-          <h2 className="font-heading text-base font-semibold">Cloud Sync</h2>
-          <p className="text-sm text-muted-foreground">Sync your conversations across devices</p>
+          <h2 className="font-heading text-sm font-semibold">Cloud Sync</h2>
+          <p className="text-xs text-muted-foreground">Sync your conversations across devices</p>
         </div>
       </div>
 
@@ -121,195 +117,164 @@ export function CloudSyncPanel() {
         </div>
       )}
 
-      {!isConnected
-        ? (
-      // Not Connected State
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-4">
-                <CloudOff className="h-5 w-5 text-muted-foreground" />
-                <div className="flex-1">
-                  <p className="font-medium">Not connected</p>
-                  <p className="text-sm text-muted-foreground">
-                    Connect to sync your data with Google Drive
-                  </p>
-                </div>
-              </div>
-
-              {/* Connect Error */}
-              {connectError && (
-                <div className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
-                  <p className="text-sm text-red-600 dark:text-red-400">{connectError}</p>
-                </div>
-              )}
-
-              {/* Google Connect Button */}
-              <button
-                type="button"
-                onClick={handleConnect}
-                disabled={isConnecting}
-                className={cn(
-                  'flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-border bg-white px-4 py-3 font-medium transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700',
-                  isConnecting && 'cursor-not-allowed opacity-50',
-                )}
-              >
-                {isConnecting
-                  ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        Connecting...
-                      </>
-                    )
-                  : (
-                      <>
-                        <GoogleIcon className="h-5 w-5" />
-                        Connect with Google
-                      </>
-                    )}
-              </button>
-
-              {/* Advanced Options Toggle */}
-              <button
-                type="button"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="flex w-full cursor-pointer items-center justify-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <Settings2 className="h-4 w-4" />
-                Advanced options
-              </button>
-
-              {/* Advanced Options (WebDAV) */}
-              {showAdvanced && (
-                <div className="rounded-xl border border-dashed border-border p-4">
-                  <p className="mb-2 text-sm font-medium">WebDAV (Coming Soon)</p>
-                  <p className="text-sm text-muted-foreground">
-                    Self-host your data with any WebDAV server like Nextcloud, ownCloud, or your own
-                    server.
-                  </p>
-                </div>
-              )}
+      {!isConnected ? (
+        // Not Connected State
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-4">
+            <CloudOff className="h-5 w-5 text-muted-foreground" />
+            <div className="flex-1">
+              <p className="font-medium">Not connected</p>
+              <p className="text-sm text-muted-foreground">
+                Connect to sync your data with Google Drive
+              </p>
             </div>
-          )
-        : (
-      // Connected State
-            <div className="space-y-4">
-              {/* Connection Status */}
-              <div className="flex items-center justify-between rounded-xl bg-emerald-500/10 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20">
-                    <Check className="h-5 w-5 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-emerald-600 dark:text-emerald-400">
-                      Connected to Google Drive
-                    </p>
-                    {lastSyncTimeAgo && (
-                      <p className="text-sm text-muted-foreground">
-                        Last synced:
-                        {lastSyncTimeAgo}
-                      </p>
-                    )}
-                  </div>
-                </div>
+          </div>
+
+          {/* Connect Error */}
+          {connectError && (
+            <div className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+              <p className="text-sm text-red-600 dark:text-red-400">{connectError}</p>
+            </div>
+          )}
+
+          {/* Google Connect Button */}
+          <button
+            type="button"
+            onClick={handleConnect}
+            disabled={isConnecting}
+            className={cn(
+              'flex w-full cursor-pointer items-center justify-center gap-3 rounded-xl border border-border bg-white px-4 py-3 font-medium transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700',
+              isConnecting && 'cursor-not-allowed opacity-50'
+            )}
+          >
+            {isConnecting ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Connecting...
+              </>
+            ) : (
+              <>
+                <GoogleIcon className="h-5 w-5" />
+                Connect with Google
+              </>
+            )}
+          </button>
+        </div>
+      ) : (
+        // Connected State
+        <div className="space-y-4">
+          {/* Connection Status */}
+          <div className="flex items-center justify-between rounded-xl bg-emerald-500/10 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/20">
+                <Check className="h-5 w-5 text-emerald-500" />
               </div>
-
-              {/* Sync Error */}
-              {syncError && (
-                <div className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
-                  <div className="text-sm text-red-600 dark:text-red-400">
-                    <p>{syncError}</p>
-                    {lastResult?.errorCategory === 'auth' && (
-                      <button
-                        type="button"
-                        onClick={handleDisconnect}
-                        className="mt-2 text-xs underline hover:no-underline"
-                      >
-                        Reconnect account
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Sync Success */}
-              {syncStatus === 'success' && lastResult && (
-                <div className="flex items-start gap-2 rounded-lg bg-emerald-500/10 p-3">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
-                  <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                    <p className="font-medium">Sync completed</p>
-                    {(lastResult.stats.conversationsUploaded > 0
-                      || lastResult.stats.conversationsDownloaded > 0) && (
-                      <p className="text-muted-foreground">
-                        {lastResult.stats.conversationsUploaded > 0
-                        && `Uploaded ${lastResult.stats.conversationsUploaded} conversations. `}
-                        {lastResult.stats.conversationsDownloaded > 0
-                        && `Downloaded ${lastResult.stats.conversationsDownloaded} conversations.`}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleSync}
-                  disabled={isSyncing || !isOnline}
-                  className={cn(
-                    'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90',
-                    (isSyncing || !isOnline) && 'cursor-not-allowed opacity-50',
-                  )}
-                >
-                  {isSyncing
-                    ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Syncing...
-                        </>
-                      )
-                    : (
-                        <>
-                          <RefreshCw className="h-4 w-4" />
-                          Sync Now
-                        </>
-                      )}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDisconnect}
-                  className="cursor-pointer rounded-xl border border-border px-4 py-2.5 font-medium transition-colors hover:bg-muted"
-                >
-                  Disconnect
-                </button>
-              </div>
-
-              {/* Auto-sync Toggle */}
-              <div className="flex items-center justify-between rounded-xl bg-muted/30 p-4">
-                <div>
-                  <p className="font-medium">Auto-sync</p>
+              <div>
+                <p className="font-medium text-emerald-600 dark:text-emerald-400">
+                  Connected to Google Drive
+                </p>
+                {lastSyncTimeAgo && (
                   <p className="text-sm text-muted-foreground">
-                    Automatically sync every
-                    {' '}
-                    {autoSyncInterval}
-                    {' '}
-                    minute
-                    {autoSyncInterval === 1 ? '' : 's'}
+                    Last synced:
+                    {lastSyncTimeAgo}
                   </p>
-                </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={autoSyncEnabled}
-                    onChange={() => toggleAutoSync()}
-                    className="peer sr-only"
-                  />
-                  <div className="h-6 w-11 rounded-full bg-muted after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50" />
-                </label>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Sync Error */}
+          {syncError && (
+            <div className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+              <div className="text-sm text-red-600 dark:text-red-400">
+                <p>{syncError}</p>
+                {lastResult?.errorCategory === 'auth' && (
+                  <button
+                    type="button"
+                    onClick={handleDisconnect}
+                    className="mt-2 text-xs underline hover:no-underline"
+                  >
+                    Reconnect account
+                  </button>
+                )}
               </div>
             </div>
           )}
+
+          {/* Sync Success */}
+          {syncStatus === 'success' && lastResult && (
+            <div className="flex items-start gap-2 rounded-lg bg-emerald-500/10 p-3">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
+              <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                <p className="font-medium">Sync completed</p>
+                {(lastResult.stats.conversationsUploaded > 0 ||
+                  lastResult.stats.conversationsDownloaded > 0) && (
+                  <p className="text-muted-foreground">
+                    {lastResult.stats.conversationsUploaded > 0 &&
+                      `Uploaded ${lastResult.stats.conversationsUploaded} conversations. `}
+                    {lastResult.stats.conversationsDownloaded > 0 &&
+                      `Downloaded ${lastResult.stats.conversationsDownloaded} conversations.`}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleSync}
+              disabled={isSyncing || !isOnline}
+              className={cn(
+                'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90',
+                (isSyncing || !isOnline) && 'cursor-not-allowed opacity-50'
+              )}
+            >
+              {isSyncing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  Sync Now
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handleDisconnect}
+              className="cursor-pointer rounded-xl border border-border px-4 py-2.5 font-medium transition-colors hover:bg-muted"
+            >
+              Disconnect
+            </button>
+          </div>
+
+          {/* Auto-sync Toggle */}
+          <div className="flex items-center justify-between rounded-xl bg-muted/30 p-4">
+            <div>
+              <p className="font-medium">Auto-sync</p>
+              <p className="text-sm text-muted-foreground">
+                Automatically sync every {autoSyncInterval} minute
+                {autoSyncInterval === 1 ? '' : 's'}
+              </p>
+            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                checked={autoSyncEnabled}
+                onChange={() => toggleAutoSync()}
+                className="peer sr-only"
+              />
+              <div className="h-6 w-11 rounded-full bg-muted after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/50" />
+            </label>
+          </div>
+        </div>
+      )}
 
       {/* Privacy Note */}
       <div className="mt-4 flex items-start gap-2 text-xs text-muted-foreground">
