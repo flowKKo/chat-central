@@ -14,7 +14,7 @@ export async function getConversations(options?: {
 }): Promise<Conversation[]> {
   const {
     platform,
-    limit = 50,
+    limit,
     offset = 0,
     favoritesOnly = false,
     orderBy = 'updatedAt',
@@ -53,7 +53,11 @@ export async function getConversations(options?: {
     if (hasDateRange) {
       query = query.filter(matchesDateRange)
     }
-    return query.offset(offset).limit(limit).toArray()
+    query = query.offset(offset)
+    if (limit !== undefined) {
+      query = query.limit(limit)
+    }
+    return query.toArray()
   }
 
   // With platform filter: Dexie can't combine .where().equals() with .orderBy()
@@ -68,7 +72,7 @@ export async function getConversations(options?: {
 
   const filtered = await query.toArray()
   filtered.sort((a, b) => score(b) - score(a))
-  return filtered.slice(offset, offset + limit)
+  return limit !== undefined ? filtered.slice(offset, offset + limit) : filtered.slice(offset)
 }
 
 /**

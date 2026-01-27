@@ -96,31 +96,49 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
 
   try {
     const pagination = get(paginationAtom)
-    const offset = reset ? 0 : pagination.offset
-    const limit = pagination.limit
 
     // Get filters from filters atom
     const filters = get(filtersAtom)
     const platform = filters.platforms.length === 1 ? filters.platforms[0] : undefined
     const dateRange = filters.dateRange
+    const hasDateRange = dateRange.start !== null || dateRange.end !== null
 
-    const conversations = await getConversations({ limit: limit + 1, offset, platform, dateRange })
-
-    const hasMore = conversations.length > limit
-    const data = hasMore ? conversations.slice(0, limit) : conversations
-
-    if (reset) {
-      set(conversationsAtom, data)
+    if (hasDateRange) {
+      // When date range is active, load ALL matching conversations (no pagination)
+      const conversations = await getConversations({ platform, dateRange })
+      set(conversationsAtom, conversations)
+      set(paginationAtom, {
+        ...pagination,
+        offset: conversations.length,
+        hasMore: false,
+      })
     } else {
-      const existing = get(conversationsAtom)
-      set(conversationsAtom, [...existing, ...data])
-    }
+      const offset = reset ? 0 : pagination.offset
+      const limit = pagination.limit
 
-    set(paginationAtom, {
-      ...pagination,
-      offset: offset + data.length,
-      hasMore,
-    })
+      const conversations = await getConversations({
+        limit: limit + 1,
+        offset,
+        platform,
+        dateRange,
+      })
+
+      const hasMore = conversations.length > limit
+      const data = hasMore ? conversations.slice(0, limit) : conversations
+
+      if (reset) {
+        set(conversationsAtom, data)
+      } else {
+        const existing = get(conversationsAtom)
+        set(conversationsAtom, [...existing, ...data])
+      }
+
+      set(paginationAtom, {
+        ...pagination,
+        offset: offset + data.length,
+        hasMore,
+      })
+    }
 
     // Update stats
     const [claudeCount, chatgptCount, geminiCount, totalCount] = await Promise.all([
@@ -308,38 +326,56 @@ export const loadFavoritesAtom = atom(null, async (get, set, options?: { reset?:
 
   try {
     const pagination = get(favoritesPaginationAtom)
-    const offset = reset ? 0 : pagination.offset
-    const limit = pagination.limit
 
     // Get filters from filters atom
     const filters = get(filtersAtom)
     const platform = filters.platforms.length === 1 ? filters.platforms[0] : undefined
     const dateRange = filters.dateRange
+    const hasDateRange = dateRange.start !== null || dateRange.end !== null
 
-    const conversations = await getConversations({
-      limit: limit + 1,
-      offset,
-      platform,
-      dateRange,
-      favoritesOnly: true,
-      orderBy: 'favoriteAt',
-    })
-
-    const hasMore = conversations.length > limit
-    const data = hasMore ? conversations.slice(0, limit) : conversations
-
-    if (reset) {
-      set(favoritesConversationsAtom, data)
+    if (hasDateRange) {
+      // When date range is active, load ALL matching favorites (no pagination)
+      const conversations = await getConversations({
+        platform,
+        dateRange,
+        favoritesOnly: true,
+        orderBy: 'favoriteAt',
+      })
+      set(favoritesConversationsAtom, conversations)
+      set(favoritesPaginationAtom, {
+        ...pagination,
+        offset: conversations.length,
+        hasMore: false,
+      })
     } else {
-      const existing = get(favoritesConversationsAtom)
-      set(favoritesConversationsAtom, [...existing, ...data])
-    }
+      const offset = reset ? 0 : pagination.offset
+      const limit = pagination.limit
 
-    set(favoritesPaginationAtom, {
-      ...pagination,
-      offset: offset + data.length,
-      hasMore,
-    })
+      const conversations = await getConversations({
+        limit: limit + 1,
+        offset,
+        platform,
+        dateRange,
+        favoritesOnly: true,
+        orderBy: 'favoriteAt',
+      })
+
+      const hasMore = conversations.length > limit
+      const data = hasMore ? conversations.slice(0, limit) : conversations
+
+      if (reset) {
+        set(favoritesConversationsAtom, data)
+      } else {
+        const existing = get(favoritesConversationsAtom)
+        set(favoritesConversationsAtom, [...existing, ...data])
+      }
+
+      set(favoritesPaginationAtom, {
+        ...pagination,
+        offset: offset + data.length,
+        hasMore,
+      })
+    }
 
     const [claudeCount, chatgptCount, geminiCount, totalCount] = await Promise.all([
       getFavoriteConversationCount('claude'),
