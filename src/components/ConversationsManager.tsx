@@ -43,6 +43,7 @@ import {
   filteredFavoriteCountsAtom,
 } from '@/utils/atoms'
 import { DateRangePicker } from './ui/DateRangePicker'
+import { Tooltip } from './ui/Tooltip'
 import { cn } from '@/utils/cn'
 import { filterAndSortConversations } from '@/utils/filters'
 import { exportConversations, downloadExport, exportBatchMarkdown } from '@/utils/sync/export'
@@ -245,19 +246,21 @@ export default function ConversationsManager() {
 
               {/* Date filter */}
               <div className="relative" ref={dateFilterRef}>
-                <button
-                  type="button"
-                  className={cn(
-                    'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
-                    hasDateFilter && 'border-primary bg-primary/10 text-primary'
-                  )}
-                  onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
-                  aria-label="Date filter"
-                  aria-haspopup="dialog"
-                  aria-expanded={isDateFilterOpen}
-                >
-                  <Calendar className="h-4 w-4" />
-                </button>
+                <Tooltip label="Date filter">
+                  <button
+                    type="button"
+                    className={cn(
+                      'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
+                      hasDateFilter && 'border-primary bg-primary/10 text-primary'
+                    )}
+                    onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
+                    aria-label="Date filter"
+                    aria-haspopup="dialog"
+                    aria-expanded={isDateFilterOpen}
+                  >
+                    <Calendar className="h-4 w-4" />
+                  </button>
+                </Tooltip>
 
                 {isDateFilterOpen && (
                   <div
@@ -275,53 +278,59 @@ export default function ConversationsManager() {
               </div>
 
               {/* Favorites toggle */}
-              <button
-                type="button"
-                className={cn(
-                  'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
-                  showFavoritesOnly && 'border-amber-400 bg-amber-500/10 text-amber-400'
-                )}
-                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                aria-label={showFavoritesOnly ? 'Show all conversations' : 'Show favorites only'}
-                aria-pressed={showFavoritesOnly}
-              >
-                <Star className={cn('h-4 w-4', showFavoritesOnly && 'fill-amber-400')} />
-              </button>
+              <Tooltip label={showFavoritesOnly ? 'Show all' : 'Favorites'}>
+                <button
+                  type="button"
+                  className={cn(
+                    'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
+                    showFavoritesOnly && 'border-amber-400 bg-amber-500/10 text-amber-400'
+                  )}
+                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                  aria-label={showFavoritesOnly ? 'Show all conversations' : 'Show favorites only'}
+                  aria-pressed={showFavoritesOnly}
+                >
+                  <Star className={cn('h-4 w-4', showFavoritesOnly && 'fill-amber-400')} />
+                </button>
+              </Tooltip>
 
               {/* Batch select toggle */}
-              <button
-                type="button"
-                className={cn(
-                  'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
-                  isBatchMode && 'border-primary bg-primary/10 text-primary'
-                )}
-                onClick={() => {
-                  if (isBatchMode) {
-                    clearBatchSelection()
-                  } else {
-                    const firstConv = sortedConversations[0]
-                    if (firstConv) {
-                      toggleBatchSelect(firstConv.id)
+              <Tooltip label={isBatchMode ? 'Exit selection' : 'Batch select'}>
+                <button
+                  type="button"
+                  className={cn(
+                    'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
+                    isBatchMode && 'border-primary bg-primary/10 text-primary'
+                  )}
+                  onClick={() => {
+                    if (isBatchMode) {
+                      clearBatchSelection()
+                    } else {
+                      const firstConv = sortedConversations[0]
+                      if (firstConv) {
+                        toggleBatchSelect(firstConv.id)
+                      }
                     }
-                  }
-                }}
-                aria-label={isBatchMode ? 'Exit selection mode' : 'Enter selection mode'}
-                aria-pressed={isBatchMode}
-              >
-                <CheckSquare className="h-4 w-4" />
-              </button>
+                  }}
+                  aria-label={isBatchMode ? 'Exit selection mode' : 'Enter selection mode'}
+                  aria-pressed={isBatchMode}
+                >
+                  <CheckSquare className="h-4 w-4" />
+                </button>
+              </Tooltip>
 
-              <button
-                type="button"
-                className={cn(
-                  'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
-                  isLoading && 'animate-pulse'
-                )}
-                onClick={() => loadConversations({ reset: true })}
-                aria-label="Refresh conversations"
-              >
-                <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
-              </button>
+              <Tooltip label="Refresh">
+                <button
+                  type="button"
+                  className={cn(
+                    'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
+                    isLoading && 'animate-pulse'
+                  )}
+                  onClick={() => loadConversations({ reset: true })}
+                  aria-label="Refresh conversations"
+                >
+                  <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
+                </button>
+              </Tooltip>
             </div>
           </div>
 
