@@ -72,7 +72,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-hidden p-3" aria-label="Main navigation">
+      <nav className="scrollbar-thin flex-1 overflow-y-auto p-3" aria-label="Main navigation">
         <ul className="space-y-1">
           {navItems.map((item) => {
             const badgeCount = getBadgeCount(item.badgeAtom)
@@ -156,7 +156,7 @@ export function Sidebar() {
                     Clear filters
                   </button>
                 )}
-                <div className="scrollbar-thin max-h-40 space-y-0.5 overflow-y-auto">
+                <div className="ml-2 space-y-0.5">
                   {allTags.map((tag) => {
                     const isSelected = selectedTags.includes(tag)
                     return (
@@ -164,15 +164,22 @@ export function Sidebar() {
                         type="button"
                         key={tag}
                         className={cn(
-                          'flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition-colors',
+                          'flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors',
                           isSelected
                             ? 'bg-primary/10 text-primary'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            : 'text-foreground/70 hover:bg-muted hover:text-foreground'
                         )}
                         onClick={() => toggleTagFilter(tag)}
                         aria-pressed={isSelected}
                       >
-                        <Tag className="h-3 w-3 flex-shrink-0" />
+                        <span
+                          className={cn(
+                            'flex-shrink-0 text-[10px]',
+                            isSelected ? 'text-primary/60' : 'text-muted-foreground/60'
+                          )}
+                        >
+                          #
+                        </span>
                         <span className="truncate">{tag}</span>
                         {isSelected && (
                           <X className="ml-auto h-3 w-3 flex-shrink-0 opacity-60 hover:opacity-100" />
@@ -191,7 +198,7 @@ export function Sidebar() {
       <div className="border-t border-border/50 p-4">
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            v<span className="font-medium tabular-nums text-foreground">{version}</span>
+            v<span className="tabular-nums">{version}</span>
           </p>
           <a
             href="https://github.com/flowKKo/chat-central"
