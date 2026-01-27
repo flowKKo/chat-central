@@ -277,7 +277,7 @@ function SummaryBlock({ summary }: { summary: string }) {
       <div className="mb-1 text-xs font-medium text-foreground/50">Summary</div>
       <p
         ref={textRef}
-        className={cn('text-sm leading-relaxed text-foreground/80', !expanded && 'line-clamp-3')}
+        className={cn('text-sm leading-relaxed text-foreground/80', !expanded && 'line-clamp-2')}
       >
         {summary}
       </p>

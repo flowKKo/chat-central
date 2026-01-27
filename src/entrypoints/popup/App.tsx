@@ -81,7 +81,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <div className="flex max-h-[600px] min-h-[520px] w-[420px] flex-col bg-background text-foreground">
+      <div className="flex max-h-[600px] min-h-[520px] w-[380px] flex-col bg-background text-foreground">
         {/* Header */}
         <header className="relative bg-card px-4 pb-3 pt-4">
           <div className="mb-4 flex items-center justify-between">
@@ -143,7 +143,7 @@ export default function App() {
               id="search-input"
               type="text"
               placeholder="Search conversations... (⌘K)"
-              className="w-full rounded-xl border border-border bg-muted py-2.5 pl-9 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-xl border border-border bg-muted py-2.5 pl-9 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground focus:border-border focus:outline-none focus:ring-1 focus:ring-border"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
