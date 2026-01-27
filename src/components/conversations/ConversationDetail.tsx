@@ -2,6 +2,7 @@ import { useAtom } from 'jotai'
 import {
   AlertCircle,
   ChevronDown,
+  ChevronRight,
   Clock,
   Download,
   ExternalLink,
@@ -50,7 +51,7 @@ export function ConversationDetail({
     async (newTags: string[]) => {
       await updateTags({ conversationId: conversation.id, tags: newTags })
     },
-    [conversation.id, updateTags],
+    [conversation.id, updateTags]
   )
 
   // Scroll to target message when loaded
@@ -60,7 +61,7 @@ export function ConversationDetail({
 
     if (scrollToMessageId && messages.length > 0 && messagesContainerRef.current) {
       const targetElement = messagesContainerRef.current.querySelector(
-        `[data-message-id="${scrollToMessageId}"]`,
+        `[data-message-id="${scrollToMessageId}"]`
       )
       if (targetElement) {
         // Small delay to ensure DOM is ready
@@ -71,14 +72,14 @@ export function ConversationDetail({
             'ring-2',
             'ring-primary',
             'ring-offset-2',
-            'ring-offset-background',
+            'ring-offset-background'
           )
           highlightTimer = setTimeout(() => {
             targetElement.classList.remove(
               'ring-2',
               'ring-primary',
               'ring-offset-2',
-              'ring-offset-background',
+              'ring-offset-background'
             )
           }, 2000)
         }, 100)
@@ -142,11 +143,7 @@ export function ConversationDetail({
             </div>
             <h2 className="truncate font-heading text-lg font-semibold">{conversation.title}</h2>
             <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="tabular-nums">
-                {messages.length}
-                {' '}
-                messages
-              </span>
+              <span className="tabular-nums">{messages.length} messages</span>
               <span className="opacity-40" aria-hidden="true">
                 ·
               </span>
@@ -182,7 +179,7 @@ export function ConversationDetail({
                 type="button"
                 className={cn(
                   'kbd-focus flex cursor-pointer items-center gap-1 rounded-xl p-2.5 transition-colors hover:bg-muted',
-                  showExportMenu && 'bg-muted',
+                  showExportMenu && 'bg-muted'
                 )}
                 onClick={() => setShowExportMenu(!showExportMenu)}
                 aria-label="Export options"
@@ -232,33 +229,68 @@ export function ConversationDetail({
             </button>
           </div>
         )}
+
+        {conversation.summary && <SummaryBlock summary={conversation.summary} />}
       </div>
 
       {/* Messages */}
       <div ref={messagesContainerRef} className="scrollbar-thin flex-1 overflow-y-auto p-5">
-        {messages.length === 0
-          ? (
-              <div className="flex h-full flex-col items-center justify-center text-center">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50">
-                  <MessageSquare className="h-5 w-5 text-muted-foreground/50" />
-                </div>
-                <p className="text-sm text-muted-foreground">No synced messages yet</p>
-              </div>
-            )
-          : (
-              <div className="space-y-4">
-                {messages.map((message, index) => (
-                  <MessageBubble
-                    key={message.id}
-                    message={message}
-                    platformColor={platformConfig.color}
-                    searchQuery={searchQuery}
-                    style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
-                  />
-                ))}
-              </div>
-            )}
+        {messages.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center text-center">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50">
+              <MessageSquare className="h-5 w-5 text-muted-foreground/50" />
+            </div>
+            <p className="text-sm text-muted-foreground">No synced messages yet</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {messages.map((message, index) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                platformColor={platformConfig.color}
+                searchQuery={searchQuery}
+                style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
+              />
+            ))}
+          </div>
+        )}
       </div>
+    </div>
+  )
+}
+
+function SummaryBlock({ summary }: { summary: string }) {
+  const [expanded, setExpanded] = useState(false)
+  const [clamped, setClamped] = useState(false)
+  const textRef = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    const el = textRef.current
+    if (el) {
+      setClamped(el.scrollHeight > el.clientHeight)
+    }
+  }, [summary])
+
+  return (
+    <div className="mt-4 rounded-xl bg-muted/40 px-4 py-3">
+      <div className="mb-1 text-xs font-medium text-foreground/50">Summary</div>
+      <p
+        ref={textRef}
+        className={cn('text-sm leading-relaxed text-foreground/80', !expanded && 'line-clamp-3')}
+      >
+        {summary}
+      </p>
+      {clamped && (
+        <button
+          type="button"
+          className="mt-1 flex cursor-pointer items-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <ChevronRight className={cn('h-3 w-3 transition-transform', expanded && 'rotate-90')} />
+          {expanded ? 'Show less' : 'Show more'}
+        </button>
+      )}
     </div>
   )
 }
