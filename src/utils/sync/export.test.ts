@@ -181,9 +181,9 @@ describe('sync/utils', () => {
       expect(result).toBe('My Document.md')
     })
 
-    it('should remove special characters', () => {
-      const result = generateSafeFilename('Hello! @#$% World', '.txt')
-      expect(result).toBe('Hello  World.txt')
+    it('should remove filesystem-unsafe characters', () => {
+      const result = generateSafeFilename('Hello: World?', '.txt')
+      expect(result).toBe('Hello World.txt')
     })
 
     it('should truncate long titles', () => {
@@ -197,8 +197,8 @@ describe('sync/utils', () => {
       expect(result).toBe('untitled.md')
     })
 
-    it('should handle title with only special characters', () => {
-      const result = generateSafeFilename('!@#$%', '.md')
+    it('should handle title with only unsafe characters', () => {
+      const result = generateSafeFilename('/:*?"<>|', '.md')
       expect(result).toBe('untitled.md')
     })
   })

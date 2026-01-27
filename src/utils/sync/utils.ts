@@ -32,8 +32,8 @@ export function toJsonl<T>(items: T[]): string {
  */
 export function parseJsonl<T>(
   content: string,
-  schema: { safeParse: (data: unknown) => { success: boolean, data?: T, error?: unknown } },
-  onError?: (line: number, message: string) => void,
+  schema: { safeParse: (data: unknown) => { success: boolean; data?: T; error?: unknown } },
+  onError?: (line: number, message: string) => void
 ): T[] {
   const items: T[] = []
   const lines = content.split('\n').filter((line) => line.trim())
@@ -48,12 +48,10 @@ export function parseJsonl<T>(
 
       if (validated.success && validated.data) {
         items.push(validated.data)
-      }
-      else {
+      } else {
         onError?.(i + 1, 'Invalid data format')
       }
-    }
-    catch {
+    } catch {
       onError?.(i + 1, 'Invalid JSON')
     }
   }
@@ -76,8 +74,7 @@ export function downloadBlob(blob: Blob, filename: string): boolean {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
     return true
-  }
-  catch (error) {
+  } catch (error) {
     syncLogger.error('Failed to download file', error)
     return false
   }
@@ -89,7 +86,9 @@ export function downloadBlob(blob: Blob, filename: string): boolean {
  */
 export function generateSafeFilename(title: string, extension: string, maxLength = 50): string {
   const safeTitle = title
-    .replace(/[^\w\s-]/g, '')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+    .replace(/\s+/g, ' ')
     .trim()
     .slice(0, maxLength)
   return `${safeTitle || 'untitled'}${extension}`
@@ -101,7 +100,7 @@ export const MAX_IMPORT_FILE_SIZE = 100 * 1024 * 1024
 /**
  * Check if file size is within safe limits
  */
-export function isFileSizeSafe(file: File): { safe: boolean, sizeFormatted: string } {
+export function isFileSizeSafe(file: File): { safe: boolean; sizeFormatted: string } {
   const sizeFormatted = formatFileSize(file.size)
   return {
     safe: file.size <= MAX_IMPORT_FILE_SIZE,

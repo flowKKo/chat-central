@@ -86,7 +86,7 @@ describe('sync/utils', () => {
     })
 
     it('should skip invalid JSON lines', () => {
-      const errors: Array<{ line: number, message: string }> = []
+      const errors: Array<{ line: number; message: string }> = []
       const content = '{"id":1}\ninvalid json\n{"id":3}'
       const result = parseJsonl(content, mockSchema, (line, msg) => {
         errors.push({ line, message: msg })
@@ -98,7 +98,7 @@ describe('sync/utils', () => {
     })
 
     it('should skip lines that fail schema validation', () => {
-      const errors: Array<{ line: number, message: string }> = []
+      const errors: Array<{ line: number; message: string }> = []
       const content = '{"id":1}\n{"invalid":"data"}\n{"id":3}'
       const result = parseJsonl(content, mockSchema, (line, msg) => {
         errors.push({ line, message: msg })
@@ -120,16 +120,26 @@ describe('sync/utils', () => {
       expect(generateSafeFilename('test', '.json')).toBe('test.json')
     })
 
-    it('should remove special characters', () => {
+    it('should remove filesystem-unsafe characters', () => {
       expect(generateSafeFilename('test/file:name?', '.txt')).toBe('testfilename.txt')
+      expect(generateSafeFilename('a<b>c"d|e', '.txt')).toBe('abcde.txt')
     })
 
     it('should handle empty title', () => {
       expect(generateSafeFilename('', '.json')).toBe('untitled.json')
     })
 
-    it('should handle title with only special chars', () => {
-      expect(generateSafeFilename('!@#$%', '.md')).toBe('untitled.md')
+    it('should handle title with only unsafe chars', () => {
+      expect(generateSafeFilename('/:*?"<>|', '.md')).toBe('untitled.md')
+    })
+
+    it('should preserve unicode characters', () => {
+      expect(generateSafeFilename('对话标题', '.md')).toBe('对话标题.md')
+      expect(generateSafeFilename('café résumé', '.txt')).toBe('café résumé.txt')
+    })
+
+    it('should collapse multiple spaces', () => {
+      expect(generateSafeFilename('hello   world', '.md')).toBe('hello world.md')
     })
 
     it('should truncate long filenames', () => {
