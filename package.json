@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "packageManager": "pnpm@9.15.0",
   "description": "Unified AI conversation manager - Track, search, and export your Claude, ChatGPT, and Gemini conversations",
+  "license": "GPL-3.0-only",
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
