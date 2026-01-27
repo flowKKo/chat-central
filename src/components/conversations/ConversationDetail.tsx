@@ -12,7 +12,13 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { browser } from 'wxt/browser'
 import { PLATFORM_CONFIG } from '@/types'
-import { allTagsAtom, loadAllTagsAtom, scrollToMessageIdAtom, updateTagsAtom } from '@/utils/atoms'
+import {
+  allTagsAtom,
+  loadAllTagsAtom,
+  refreshConversationDetailAtom,
+  scrollToMessageIdAtom,
+  updateTagsAtom,
+} from '@/utils/atoms'
 import { cn } from '@/utils/cn'
 import { exportConversationToJson, exportToMarkdown } from '@/utils/sync/export'
 import { downloadBlob } from '@/utils/sync/utils'
@@ -41,11 +47,30 @@ export function ConversationDetail({
   const [allTags] = useAtom(allTagsAtom)
   const [, loadAllTags] = useAtom(loadAllTagsAtom)
   const [, updateTags] = useAtom(updateTagsAtom)
+  const [, refreshDetail] = useAtom(refreshConversationDetailAtom)
 
   // Load tags on mount
   useEffect(() => {
     loadAllTags()
   }, [loadAllTags])
+
+  // Auto-refresh when background syncs this conversation's detail
+  useEffect(() => {
+    const listener = (message: unknown) => {
+      if (
+        typeof message === 'object' &&
+        message !== null &&
+        'action' in message &&
+        (message as { action: string }).action === 'CONVERSATION_DETAIL_SYNCED' &&
+        'conversationId' in message &&
+        (message as { conversationId: string }).conversationId === conversation.id
+      ) {
+        refreshDetail()
+      }
+    }
+    browser.runtime.onMessage.addListener(listener)
+    return () => browser.runtime.onMessage.removeListener(listener)
+  }, [conversation.id, refreshDetail])
 
   const handleTagsChange = useCallback(
     async (newTags: string[]) => {
@@ -244,13 +269,12 @@ export function ConversationDetail({
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((message, index) => (
+            {messages.map((message) => (
               <MessageBubble
                 key={message.id}
                 message={message}
                 platformColor={platformConfig.color}
                 searchQuery={searchQuery}
-                style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
               />
             ))}
           </div>

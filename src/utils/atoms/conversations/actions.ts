@@ -4,6 +4,7 @@ import type { Conversation, Message, Platform } from '@/types'
 import {
   deleteMessagesByConversationId,
   getAllTags,
+  getConversationById,
   getConversationCount,
   getConversations,
   getFavoriteConversationCount,
@@ -473,7 +474,11 @@ export const loadConversationDetailAtom = atom(
 
     try {
       const conversations = get(conversationsAtom)
-      const conversation = conversations.find((c) => c.id === conversationId)
+      let conversation = conversations.find((c) => c.id === conversationId)
+
+      if (!conversation) {
+        conversation = (await getConversationById(conversationId)) ?? undefined
+      }
 
       if (conversation) {
         set(selectedConversationAtom, conversation)
@@ -503,7 +508,11 @@ export const loadFavoriteDetailAtom = atom(
 
     try {
       const conversations = get(favoritesConversationsAtom)
-      const conversation = conversations.find((c) => c.id === conversationId)
+      let conversation = conversations.find((c) => c.id === conversationId)
+
+      if (!conversation) {
+        conversation = (await getConversationById(conversationId)) ?? undefined
+      }
 
       if (conversation) {
         set(selectedConversationAtom, conversation)
@@ -520,6 +529,37 @@ export const loadFavoriteDetailAtom = atom(
     }
   }
 )
+
+/**
+ * Refresh currently selected conversation detail from DB.
+ * Also updates list atoms so sidebar reflects the latest data.
+ */
+export const refreshConversationDetailAtom = atom(null, async (get, set) => {
+  const conversationId = get(selectedConversationIdAtom)
+  if (!conversationId) return
+
+  set(isLoadingDetailAtom, true)
+  try {
+    const conversation = (await getConversationById(conversationId)) ?? undefined
+    if (conversation) {
+      set(selectedConversationAtom, conversation)
+
+      // Keep list atoms in sync
+      const updateList = (list: Conversation[]) =>
+        list.map((item) => (item.id === conversation.id ? conversation : item))
+      set(conversationsAtom, updateList(get(conversationsAtom)))
+      set(favoritesConversationsAtom, updateList(get(favoritesConversationsAtom)))
+    }
+    const messages = conversation
+      ? await loadMessagesWithFallback(conversation)
+      : await getMessagesByConversationId(conversationId)
+    set(selectedMessagesAtom, messages)
+  } catch (e) {
+    log.error('Failed to refresh conversation detail:', e)
+  } finally {
+    set(isLoadingDetailAtom, false)
+  }
+})
 
 /**
  * Clear selection

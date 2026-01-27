@@ -8,20 +8,15 @@ interface MessageBubbleProps {
   message: Message
   platformColor: string
   searchQuery?: string
-  style?: React.CSSProperties
 }
 
-export function MessageBubble({ message, platformColor, searchQuery, style }: MessageBubbleProps) {
+export function MessageBubble({ message, platformColor, searchQuery }: MessageBubbleProps) {
   const isUser = message.role === 'user'
 
   return (
     <div
       data-message-id={message.id}
-      className={cn(
-        'flex animate-slide-in gap-3 rounded-xl transition-all',
-        isUser && 'flex-row-reverse'
-      )}
-      style={style}
+      className={cn('flex gap-3 rounded-xl', isUser && 'flex-row-reverse')}
     >
       {/* Avatar */}
       <div
