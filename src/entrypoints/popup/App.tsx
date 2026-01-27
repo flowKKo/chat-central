@@ -10,7 +10,7 @@ import {
   X,
   Github,
 } from 'lucide-react'
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { browser } from 'wxt/browser'
 import type { SearchResultWithMatches } from '@/utils/db'
 import { MS_PER_MINUTE, MS_PER_HOUR, MS_PER_DAY } from '@/utils/date'
@@ -33,7 +33,6 @@ import {
 } from '@/utils/atoms'
 import { initializeSyncAtom } from '@/utils/atoms/sync'
 import { cn } from '@/utils/cn'
-import { filterAndSortConversations } from '@/utils/filters'
 
 export default function App() {
   const [conversations] = useAtom(conversationsAtom)
@@ -44,7 +43,6 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlatform] = useAtom(currentPlatformFilterAtom)
   const [, setPlatformFilter] = useAtom(setPlatformFilterAtom)
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [, initializeSync] = useAtom(initializeSyncAtom)
   const [, performSearch] = useAtom(performSearchAtom)
   const [activeSearchQuery] = useAtom(activeSearchQueryAtom)
@@ -75,19 +73,6 @@ export default function App() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
-
-  // Use shared filtering and sorting utilities
-  // Note: platform filtering is now done at DB level, so we don't filter here
-  const sortedConversations = useMemo(
-    () =>
-      filterAndSortConversations(
-        conversations,
-        { favoritesOnly: showFavoritesOnly },
-        { byFavoriteTime: showFavoritesOnly }
-      ),
-    [conversations, showFavoritesOnly]
-  )
-  const filteredConversations = sortedConversations
 
   const clearSearch = useCallback(() => {
     setSearchQuery('')
@@ -121,6 +106,18 @@ export default function App() {
                 aria-label="View on GitHub"
               >
                 <Github className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <button
+                type="button"
+                className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
+                onClick={() =>
+                  browser.tabs.create({
+                    url: browser.runtime.getURL('/manage.html#/conversations?favorites=true'),
+                  })
+                }
+                aria-label="View favorites"
+              >
+                <Star className="h-4 w-4 text-muted-foreground" />
               </button>
               <button
                 type="button"
@@ -173,40 +170,18 @@ export default function App() {
             <PlatformTab
               label="All"
               count={counts.total}
-              isActive={selectedPlatform === 'all' && !showFavoritesOnly}
-              onClick={() => {
-                setShowFavoritesOnly(false)
-                setPlatformFilter('all')
-              }}
+              isActive={selectedPlatform === 'all'}
+              onClick={() => setPlatformFilter('all')}
             />
             {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
               <PlatformTab
                 key={platform}
                 platform={platform}
                 count={counts[platform]}
-                isActive={selectedPlatform === platform && !showFavoritesOnly}
-                onClick={() => {
-                  setShowFavoritesOnly(false)
-                  setPlatformFilter(platform)
-                }}
+                isActive={selectedPlatform === platform}
+                onClick={() => setPlatformFilter(platform)}
               />
             ))}
-            <div className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
-            <button
-              type="button"
-              role="tab"
-              aria-selected={showFavoritesOnly}
-              className={cn(
-                'kbd-focus flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
-                showFavoritesOnly
-                  ? 'bg-amber-500/20 text-amber-400'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-              onClick={() => setShowFavoritesOnly(true)}
-            >
-              <Star className={cn('h-3.5 w-3.5', showFavoritesOnly && 'fill-amber-400')} />
-              <span>Favorites</span>
-            </button>
           </div>
         </div>
 
@@ -218,11 +193,11 @@ export default function App() {
         >
           {isLoading && conversations.length === 0 ? (
             <LoadingSkeleton />
-          ) : filteredConversations.length === 0 ? (
+          ) : conversations.length === 0 ? (
             <EmptyState searchQuery={searchQuery} onClearSearch={clearSearch} />
           ) : (
             <div className="space-y-1 p-2">
-              {sortedConversations.map((conv, index) => {
+              {conversations.map((conv, index) => {
                 const matchInfo = searchResults.find((r) => r.conversation.id === conv.id)
                 return (
                   <ConversationItem

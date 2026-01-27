@@ -1,6 +1,7 @@
 import { useAtom } from 'jotai'
 import { Calendar, CheckSquare, MessageSquare, RefreshCw, Search, Star, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   BatchActionBar,
   ConversationDetail,
@@ -49,7 +50,25 @@ import { downloadBlob } from '@/utils/sync/utils'
 import { useClickOutside } from '@/hooks/useClickOutside'
 
 export default function ConversationsManager() {
-  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const showFavoritesOnly = searchParams.get('favorites') === 'true'
+  const setShowFavoritesOnly = useCallback(
+    (value: boolean) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          if (value) {
+            next.set('favorites', 'true')
+          } else {
+            next.delete('favorites')
+          }
+          return next
+        },
+        { replace: true }
+      )
+    },
+    [setSearchParams]
+  )
   const isFavorites = showFavoritesOnly
   const [conversations] = useAtom(isFavorites ? favoritesConversationsAtom : conversationsAtom)
   const [counts] = useAtom(
