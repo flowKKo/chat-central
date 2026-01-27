@@ -66,4 +66,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
 ## License
 
-MIT
+[GPL-3.0](LICENSE)
