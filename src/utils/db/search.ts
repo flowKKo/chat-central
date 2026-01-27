@@ -14,6 +14,27 @@ export interface SearchResultWithMatches {
 }
 
 /**
+ * Get conversation field matches for a search query.
+ * Returns match descriptors for title, preview, and summary fields.
+ */
+function getConversationFieldMatches(
+  conv: Conversation,
+  lowerQuery: string
+): SearchResultWithMatches['matches'] {
+  const matches: SearchResultWithMatches['matches'] = []
+  if (conv.title.toLowerCase().includes(lowerQuery)) {
+    matches.push({ type: 'title', text: conv.title })
+  }
+  if (conv.preview.toLowerCase().includes(lowerQuery)) {
+    matches.push({ type: 'preview', text: conv.preview })
+  }
+  if (conv.summary?.toLowerCase().includes(lowerQuery)) {
+    matches.push({ type: 'summary', text: conv.summary })
+  }
+  return matches
+}
+
+/**
  * Simple title search for conversations
  */
 export async function searchConversations(query: string): Promise<Conversation[]> {
@@ -41,14 +62,9 @@ export async function searchConversationsWithMatches(
 ): Promise<SearchResultWithMatches[]> {
   const lowerQuery = query.toLowerCase()
 
-  // 1. Find conversations with matching titles or previews
+  // 1. Find conversations with matching titles, previews, or summaries
   const titleMatchConvs = await db.conversations
-    .filter(
-      (conv) =>
-        conv.title.toLowerCase().includes(lowerQuery) ||
-        conv.preview.toLowerCase().includes(lowerQuery) ||
-        (conv.summary?.toLowerCase().includes(lowerQuery) ?? false)
-    )
+    .filter((conv) => getConversationFieldMatches(conv, lowerQuery).length > 0)
     .toArray()
 
   // 2. Find messages with matching content
@@ -58,7 +74,7 @@ export async function searchConversationsWithMatches(
     .toArray()
 
   // Group messages by conversation
-  const messagesByConv = new Map<string, typeof messageMatches>()
+  const messagesByConv = new Map<string, Message[]>()
   for (const msg of messageMatches) {
     const existing = messagesByConv.get(msg.conversationId) || []
     existing.push(msg)
@@ -72,18 +88,9 @@ export async function searchConversationsWithMatches(
   // 4. Build result map
   const resultMap = new Map<string, SearchResultWithMatches>()
 
-  // Add title/preview matches
+  // Add title/preview/summary matches
   for (const conv of titleMatchConvs) {
-    const matches: SearchResultWithMatches['matches'] = []
-    if (conv.title.toLowerCase().includes(lowerQuery)) {
-      matches.push({ type: 'title', text: conv.title })
-    }
-    if (conv.preview.toLowerCase().includes(lowerQuery)) {
-      matches.push({ type: 'preview', text: conv.preview })
-    }
-    if (conv.summary?.toLowerCase().includes(lowerQuery)) {
-      matches.push({ type: 'summary', text: conv.summary })
-    }
+    const matches = getConversationFieldMatches(conv, lowerQuery)
     resultMap.set(conv.id, { conversation: conv, matches })
   }
 
@@ -95,7 +102,6 @@ export async function searchConversationsWithMatches(
     const existing = resultMap.get(conv.id)
 
     if (existing) {
-      // Add message matches to existing result
       for (const msg of messages) {
         existing.matches.push({
           type: 'message',
@@ -104,7 +110,6 @@ export async function searchConversationsWithMatches(
         })
       }
     } else {
-      // Create new result with message matches
       resultMap.set(conv.id, {
         conversation: conv,
         matches: messages.map((msg) => ({

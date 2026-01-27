@@ -2,7 +2,6 @@ import { useAtom } from 'jotai'
 import {
   AlertCircle,
   ChevronDown,
-  ChevronRight,
   Clock,
   Download,
   ExternalLink,
@@ -19,6 +18,7 @@ import { exportConversationToJson, exportToMarkdown } from '@/utils/sync/export'
 import { downloadBlob } from '@/utils/sync/utils'
 import { TagManager } from '../TagManager'
 import { MessageBubble } from './MessageBubble'
+import { SummaryBlock } from './SummaryBlock'
 import type { Conversation, Message } from '@/types'
 
 interface ConversationDetailProps {
@@ -256,41 +256,6 @@ export function ConversationDetail({
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-function SummaryBlock({ summary }: { summary: string }) {
-  const [expanded, setExpanded] = useState(false)
-  const [clamped, setClamped] = useState(false)
-  const textRef = useRef<HTMLParagraphElement>(null)
-
-  useEffect(() => {
-    const el = textRef.current
-    if (el) {
-      setClamped(el.scrollHeight > el.clientHeight)
-    }
-  }, [summary])
-
-  return (
-    <div className="mt-4 rounded-xl bg-muted/40 px-4 py-3">
-      <div className="mb-1 text-xs font-medium text-foreground/50">Summary</div>
-      <p
-        ref={textRef}
-        className={cn('text-sm leading-relaxed text-foreground/80', !expanded && 'line-clamp-2')}
-      >
-        {summary}
-      </p>
-      {clamped && (
-        <button
-          type="button"
-          className="mt-1 flex cursor-pointer items-center gap-0.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-          onClick={() => setExpanded(!expanded)}
-        >
-          <ChevronRight className={cn('h-3 w-3 transition-transform', expanded && 'rotate-90')} />
-          {expanded ? 'Show less' : 'Show more'}
-        </button>
-      )}
     </div>
   )
 }

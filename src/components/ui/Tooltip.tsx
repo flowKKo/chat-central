@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { cn } from '@/utils/cn'
 
 interface TooltipProps {
@@ -8,10 +9,13 @@ interface TooltipProps {
 }
 
 export function Tooltip({ label, children, position = 'bottom', className }: TooltipProps) {
+  const tooltipId = useId()
+
   return (
-    <div className={cn('group/tooltip relative', className)}>
+    <div className={cn('group/tooltip relative', className)} aria-describedby={tooltipId}>
       {children}
       <span
+        id={tooltipId}
         role="tooltip"
         className={cn(
           'pointer-events-none absolute left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1.5 text-xs font-medium text-background opacity-0 shadow-lg transition-opacity duration-150 group-hover/tooltip:opacity-100',

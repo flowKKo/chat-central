@@ -577,6 +577,22 @@ describe('search', () => {
       expect(results.length).toBe(2) // c1 (title) + c2 (message)
     })
 
+    it('should return summary matches', async () => {
+      await upsertConversation(
+        makeConversation({
+          id: 'c4',
+          title: 'Unrelated title',
+          preview: 'Unrelated preview',
+          summary: 'A discussion about TypeScript generics',
+          updatedAt: 4000,
+        })
+      )
+      const results = await searchConversationsWithMatches('TypeScript')
+      expect(results).toHaveLength(1)
+      expect(results[0]!.conversation.id).toBe('c4')
+      expect(results[0]!.matches.some((m) => m.type === 'summary')).toBe(true)
+    })
+
     it('should sort results by updatedAt desc', async () => {
       const results = await searchConversationsWithMatches('how')
       // "how" appears in c1 preview (updatedAt: 3000) and c3 preview (updatedAt: 1000)

@@ -26,6 +26,7 @@ import {
   toggleAutoSyncAtom,
 } from '@/utils/atoms/cloud-sync'
 import { cn } from '@/utils/cn'
+import { SettingsSection } from './ui/SettingsSection'
 
 export function CloudSyncPanel() {
   const [isOnline, setIsOnline] = useState(
@@ -96,17 +97,13 @@ export function CloudSyncPanel() {
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-card/50 p-5">
-      <div className="mb-3 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10">
-          <Cloud className="h-4 w-4 text-sky-500" />
-        </div>
-        <div>
-          <h2 className="font-heading text-sm font-semibold">Cloud Sync</h2>
-          <p className="text-xs text-muted-foreground">Sync your conversations across devices</p>
-        </div>
-      </div>
-
+    <SettingsSection
+      icon={Cloud}
+      iconColor="text-sky-500"
+      iconBgColor="bg-sky-500/10"
+      title="Cloud Sync"
+      description="Sync your conversations across devices"
+    >
       {/* Offline Warning */}
       {!isOnline && (
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-amber-500/10 p-3">
@@ -284,7 +281,7 @@ export function CloudSyncPanel() {
           it.
         </p>
       </div>
-    </section>
+    </SettingsSection>
   )
 }
 

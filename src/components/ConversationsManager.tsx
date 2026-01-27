@@ -11,18 +11,8 @@ import {
 } from './conversations'
 import type { Platform } from '@/types'
 import {
-  conversationsAtom,
-  loadConversationsAtom,
   selectedConversationAtom,
   selectedMessagesAtom,
-  loadConversationDetailAtom,
-  paginationAtom,
-  isLoadingConversationsAtom,
-  favoritesConversationsAtom,
-  loadFavoritesAtom,
-  favoritesPaginationAtom,
-  isLoadingFavoritesAtom,
-  loadFavoriteDetailAtom,
   toggleFavoriteAtom,
   performSearchAtom,
   activeSearchQueryAtom,
@@ -39,8 +29,6 @@ import {
   selectAllVisibleAtom,
   currentPlatformFilterAtom,
   setPlatformFilterAtom,
-  filteredConversationCountsAtom,
-  filteredFavoriteCountsAtom,
 } from '@/utils/atoms'
 import { DateRangePicker } from './ui/DateRangePicker'
 import { Tooltip } from './ui/Tooltip'
@@ -49,6 +37,7 @@ import { filterAndSortConversations } from '@/utils/filters'
 import { exportConversations, downloadExport, exportBatchMarkdown } from '@/utils/sync/export'
 import { downloadBlob } from '@/utils/sync/utils'
 import { useClickOutside } from '@/hooks/useClickOutside'
+import { useConversationSource } from '@/hooks/useConversationSource'
 
 export default function ConversationsManager() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -71,20 +60,18 @@ export default function ConversationsManager() {
     [setSearchParams]
   )
   const isFavorites = showFavoritesOnly
-  const [conversations] = useAtom(isFavorites ? favoritesConversationsAtom : conversationsAtom)
-  const [counts] = useAtom(
-    isFavorites ? filteredFavoriteCountsAtom : filteredConversationCountsAtom
-  )
-  const [, loadConversations] = useAtom(isFavorites ? loadFavoritesAtom : loadConversationsAtom)
+  const { conversations, counts, loadConversations, loadDetail, pagination, isLoading } =
+    useConversationSource(isFavorites)
   const [selectedConversation] = useAtom(selectedConversationAtom)
   const [selectedMessages] = useAtom(selectedMessagesAtom)
-  const [, loadDetail] = useAtom(isFavorites ? loadFavoriteDetailAtom : loadConversationDetailAtom)
-  const [pagination] = useAtom(isFavorites ? favoritesPaginationAtom : paginationAtom)
-  const [isLoading] = useAtom(isFavorites ? isLoadingFavoritesAtom : isLoadingConversationsAtom)
   const [, toggleFavorite] = useAtom(toggleFavoriteAtom)
   const [, searchConversations] = useAtom(performSearchAtom)
   const [activeSearchQuery] = useAtom(activeSearchQueryAtom)
   const [searchResults] = useAtom(searchResultsAtom)
+  const searchResultsMap = useMemo(
+    () => new Map(searchResults.map((r) => [r.conversation.id, r])),
+    [searchResults]
+  )
   const [selectedFilterTags] = useAtom(selectedFilterTagsAtom)
 
   // Batch selection state
@@ -365,7 +352,7 @@ export default function ConversationsManager() {
               ) : (
                 <div className="divide-y divide-border/50">
                   {sortedConversations.map((conv, index) => {
-                    const matchInfo = searchResults.find((r) => r.conversation.id === conv.id)
+                    const matchInfo = searchResultsMap.get(conv.id)
                     const messageMatch = matchInfo?.matches.find((m) => m.type === 'message')
                     return (
                       <ConversationListItem

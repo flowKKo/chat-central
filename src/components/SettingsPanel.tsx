@@ -2,6 +2,7 @@ import { useAtom } from 'jotai'
 import {
   AlertTriangle,
   CheckCircle2,
+  Clock,
   Download,
   HardDrive,
   Info,
@@ -23,6 +24,7 @@ import { importData, importFromJson, validateImportFile } from '@/utils/sync/imp
 import type { ImportResult } from '@/utils/sync/types'
 import { isFileSizeSafe } from '@/utils/sync/utils'
 import { CloudSyncPanel } from './CloudSyncPanel'
+import { SettingsSection } from './ui/SettingsSection'
 
 const themeOptions: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', icon: Sun },
@@ -144,17 +146,13 @@ export function SettingsPanel() {
       {/* Settings Sections */}
       <div className="space-y-4">
         {/* Appearance */}
-        <section className="rounded-2xl border border-border bg-card/50 p-5">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-              <Sun className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-heading text-sm font-semibold">Appearance</h2>
-              <p className="text-xs text-muted-foreground">Customize how the app looks</p>
-            </div>
-          </div>
-
+        <SettingsSection
+          icon={Sun}
+          iconColor="text-primary"
+          iconBgColor="bg-primary/10"
+          title="Appearance"
+          description="Customize how the app looks"
+        >
           <div className="flex gap-3" role="radiogroup" aria-label="Theme selection">
             {themeOptions.map((option) => {
               const Icon = option.icon
@@ -188,20 +186,16 @@ export function SettingsPanel() {
               )
             })}
           </div>
-        </section>
+        </SettingsSection>
 
         {/* Data Transfer */}
-        <section className="rounded-2xl border border-border bg-card/50 p-5">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10">
-              <HardDrive className="h-4 w-4 text-blue-500" />
-            </div>
-            <div>
-              <h2 className="font-heading text-sm font-semibold">Data Transfer</h2>
-              <p className="text-xs text-muted-foreground">Export or import your conversations</p>
-            </div>
-          </div>
-
+        <SettingsSection
+          icon={HardDrive}
+          iconColor="text-blue-500"
+          iconBgColor="bg-blue-500/10"
+          title="Data Transfer"
+          description="Export or import your conversations"
+        >
           <div className="space-y-3">
             {/* Export Row */}
             <div className="flex items-center justify-between rounded-xl bg-muted/30 px-4 py-3">
@@ -332,32 +326,19 @@ export function SettingsPanel() {
               )}
             </div>
           </div>
-        </section>
+        </SettingsSection>
 
         {/* Cloud Sync */}
         <CloudSyncPanel />
 
         {/* Platform Data */}
-        <section className="rounded-2xl border border-border bg-card/50 p-5">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10">
-              <svg
-                className="h-4 w-4 text-violet-500"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 6v6l4 2" />
-              </svg>
-            </div>
-            <div>
-              <h2 className="font-heading text-sm font-semibold">Platform Data</h2>
-              <p className="text-xs text-muted-foreground">Manage synced data by platform</p>
-            </div>
-          </div>
-
+        <SettingsSection
+          icon={Clock}
+          iconColor="text-violet-500"
+          iconBgColor="bg-violet-500/10"
+          title="Platform Data"
+          description="Manage synced data by platform"
+        >
           <div className="grid grid-cols-3 gap-3">
             {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
               <div
@@ -385,7 +366,7 @@ export function SettingsPanel() {
               </div>
             ))}
           </div>
-        </section>
+        </SettingsSection>
 
         {/* Privacy Notice */}
         <section className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4">

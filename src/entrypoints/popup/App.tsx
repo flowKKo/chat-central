@@ -10,7 +10,7 @@ import {
   X,
   Github,
 } from 'lucide-react'
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { browser } from 'wxt/browser'
 import type { SearchResultWithMatches } from '@/utils/db'
 import { MS_PER_MINUTE, MS_PER_HOUR, MS_PER_DAY } from '@/utils/date'
@@ -47,6 +47,10 @@ export default function App() {
   const [, performSearch] = useAtom(performSearchAtom)
   const [activeSearchQuery] = useAtom(activeSearchQueryAtom)
   const [searchResults] = useAtom(searchResultsAtom)
+  const searchResultsMap = useMemo(
+    () => new Map(searchResults.map((r) => [r.conversation.id, r])),
+    [searchResults]
+  )
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -198,7 +202,7 @@ export default function App() {
           ) : (
             <div className="space-y-1 p-2">
               {conversations.map((conv, index) => {
-                const matchInfo = searchResults.find((r) => r.conversation.id === conv.id)
+                const matchInfo = searchResultsMap.get(conv.id)
                 return (
                   <ConversationItem
                     key={conv.id}
