@@ -1,15 +1,5 @@
 import { useAtom } from 'jotai'
-import {
-  Search,
-  Settings,
-  ExternalLink,
-  Star,
-  MessageSquare,
-  ArrowRight,
-  Sparkles,
-  X,
-  Github,
-} from 'lucide-react'
+import { Search, Settings, LayoutDashboard, Star, Sparkles, X, Github } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { browser } from 'wxt/browser'
 import type { SearchResultWithMatches } from '@/utils/db'
@@ -32,6 +22,7 @@ import {
   setPlatformFilterAtom,
 } from '@/utils/atoms'
 import { initializeSyncAtom } from '@/utils/atoms/sync'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { cn } from '@/utils/cn'
 
 export default function App() {
@@ -101,38 +92,44 @@ export default function App() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
-                onClick={() =>
-                  browser.tabs.create({ url: 'https://github.com/flowKKo/chat-central' })
-                }
-                aria-label="View on GitHub"
-              >
-                <Github className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <button
-                type="button"
-                className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
-                onClick={() =>
-                  browser.tabs.create({
-                    url: browser.runtime.getURL('/manage.html#/conversations?favorites=true'),
-                  })
-                }
-                aria-label="View favorites"
-              >
-                <Star className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <button
-                type="button"
-                className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
-                onClick={() =>
-                  browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/settings') })
-                }
-                aria-label="Open settings"
-              >
-                <Settings className="h-4 w-4 text-muted-foreground" />
-              </button>
+              <Tooltip label="GitHub">
+                <button
+                  type="button"
+                  className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
+                  onClick={() =>
+                    browser.tabs.create({ url: 'https://github.com/flowKKo/chat-central' })
+                  }
+                  aria-label="View on GitHub"
+                >
+                  <Github className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </Tooltip>
+              <Tooltip label="Favorites">
+                <button
+                  type="button"
+                  className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
+                  onClick={() =>
+                    browser.tabs.create({
+                      url: browser.runtime.getURL('/manage.html#/conversations?favorites=true'),
+                    })
+                  }
+                  aria-label="View favorites"
+                >
+                  <Star className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </Tooltip>
+              <Tooltip label="Settings">
+                <button
+                  type="button"
+                  className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
+                  onClick={() =>
+                    browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/settings') })
+                  }
+                  aria-label="Open settings"
+                >
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </Tooltip>
             </div>
           </div>
 
@@ -147,7 +144,7 @@ export default function App() {
               id="search-input"
               type="text"
               placeholder="Search conversations... (⌘K)"
-              className="w-full rounded-xl border border-border bg-muted py-2.5 pl-9 pr-8 text-sm text-foreground transition-all placeholder:text-muted-foreground focus:border-border focus:outline-none focus:ring-1 focus:ring-border"
+              className="w-full rounded-xl border border-border bg-muted py-2.5 pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/15"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -237,29 +234,25 @@ export default function App() {
         </div>
 
         {/* Footer */}
-        <footer className="border-t border-border bg-card px-3 py-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <MessageSquare className="h-3.5 w-3.5" />
-                <span className="font-medium tabular-nums text-foreground">{counts.total}</span>
-                <span>conversations</span>
-              </div>
-              <span className="text-[10px] tabular-nums text-muted-foreground/50">
-                {`v${browser.runtime.getManifest().version}`}
-              </span>
-              <SyncStatusBar />
-            </div>
+        <footer className="border-t border-border bg-card px-2 py-2">
+          <div className="relative flex items-center justify-between">
             <button
               type="button"
-              className="kbd-focus group flex cursor-pointer items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
+              className="kbd-focus flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               onClick={() =>
-                browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/conversations') })
+                browser.tabs.create({
+                  url: browser.runtime.getURL('/manage.html#/conversations'),
+                })
               }
+              aria-label="Open dashboard"
             >
-              Manage
-              <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              Dashboard
             </button>
+            <span className="absolute left-1/2 -translate-x-1/2 text-xs tabular-nums text-muted-foreground">
+              {`v${browser.runtime.getManifest().version}`}
+            </span>
+            <SyncStatusBar />
           </div>
         </footer>
 
@@ -369,21 +362,15 @@ function ConversationItem({
         aria-hidden="true"
       />
 
-      <div className="flex items-start gap-3 pl-2">
+      <div className="flex items-start gap-2 pl-2">
         <div className="min-w-0 flex-1">
-          <div className="mb-1 flex min-w-0 items-center gap-2">
-            <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-              {searchQuery ? (
-                <HighlightText text={conversation.title} query={searchQuery} />
-              ) : (
-                conversation.title
-              )}
-            </h3>
-            <ExternalLink
-              className="h-3 w-3 flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-              aria-hidden="true"
-            />
-          </div>
+          <h3 className="mb-1 min-w-0 truncate text-sm font-medium text-foreground">
+            {searchQuery ? (
+              <HighlightText text={conversation.title} query={searchQuery} />
+            ) : (
+              conversation.title
+            )}
+          </h3>
 
           {/* Show message match snippet if available, otherwise show summary/preview */}
           {hasMessageMatch && searchQuery ? (

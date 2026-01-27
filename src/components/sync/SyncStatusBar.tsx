@@ -36,7 +36,7 @@ export function SyncStatusBar() {
         onClick={() => setSyncSettingsOpen(true)}
         title="Enable cloud sync"
       >
-        <CloudOff className="h-3.5 w-3.5" />
+        <CloudOff className="h-4 w-4" />
         <span>Sync off</span>
       </button>
     )
@@ -44,21 +44,21 @@ export function SyncStatusBar() {
 
   const getStatusIcon = () => {
     if (uiState.isSyncing) {
-      return <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-400" />
+      return <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
     }
     if (!uiState.isOnline) {
-      return <CloudOff className="h-3.5 w-3.5 text-muted-foreground" />
+      return <CloudOff className="h-4 w-4 text-muted-foreground" />
     }
     if (uiState.lastError) {
-      return <AlertCircle className="h-3.5 w-3.5 text-red-400" />
+      return <AlertCircle className="h-4 w-4 text-red-400" />
     }
     if (hasConflicts) {
-      return <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
+      return <AlertCircle className="h-4 w-4 text-amber-400" />
     }
     if (uiState.pendingChanges > 0) {
-      return <Cloud className="h-3.5 w-3.5 text-blue-400" />
+      return <Cloud className="h-4 w-4 text-blue-400" />
     }
-    return <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+    return <CheckCircle className="h-4 w-4 text-emerald-400" />
   }
 
   const getStatusColor = () => {
@@ -104,8 +104,8 @@ export function SyncStatusBar() {
       >
         <RefreshCw
           className={cn(
-            'h-3.5 w-3.5 text-muted-foreground',
-            uiState.isSyncing && 'animate-spin text-blue-400',
+            'h-4 w-4 text-muted-foreground',
+            uiState.isSyncing && 'animate-spin text-blue-400'
           )}
         />
       </button>
@@ -117,7 +117,7 @@ export function SyncStatusBar() {
         onClick={() => setSyncSettingsOpen(true)}
         title="Sync settings"
       >
-        <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+        <Settings className="h-4 w-4 text-muted-foreground" />
       </button>
     </div>
   )
