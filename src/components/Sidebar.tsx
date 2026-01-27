@@ -1,13 +1,13 @@
 import type { LucideIcon } from 'lucide-react'
 import { useAtom } from 'jotai'
-import { ChevronDown, Info, MessageSquare, Settings, Sparkles, Star, Tag, X } from 'lucide-react'
+import { ChevronDown, Github, MessageSquare, Settings, Sparkles, Tag, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { browser } from 'wxt/browser'
 import {
   allTagsAtom,
   clearTagFiltersAtom,
   conversationCountsAtom,
-  favoriteCountsAtom,
   loadAllTagsAtom,
   selectedFilterTagsAtom,
   toggleTagFilterAtom,
@@ -18,7 +18,7 @@ interface NavItem {
   path: string
   label: string
   icon: LucideIcon
-  badgeAtom?: 'conversations' | 'favorites'
+  badgeAtom?: 'conversations'
 }
 
 const navItems: NavItem[] = [
@@ -28,14 +28,11 @@ const navItems: NavItem[] = [
     icon: MessageSquare,
     badgeAtom: 'conversations',
   },
-  { path: '/favorites', label: 'Favorites', icon: Star, badgeAtom: 'favorites' },
   { path: '/settings', label: 'Settings', icon: Settings },
-  { path: '/about', label: 'About', icon: Info },
 ]
 
 export function Sidebar() {
   const [conversationCounts] = useAtom(conversationCountsAtom)
-  const [favoriteCounts] = useAtom(favoriteCountsAtom)
   const [allTags] = useAtom(allTagsAtom)
   const [selectedTags] = useAtom(selectedFilterTagsAtom)
   const [, loadAllTags] = useAtom(loadAllTagsAtom)
@@ -49,14 +46,15 @@ export function Sidebar() {
     loadAllTags()
   }, [loadAllTags])
 
-  const getBadgeCount = (badgeAtom?: 'conversations' | 'favorites') => {
+  const getBadgeCount = (badgeAtom?: 'conversations') => {
     if (badgeAtom === 'conversations') return conversationCounts.total
-    if (badgeAtom === 'favorites') return favoriteCounts.total
     return undefined
   }
 
   // Only show tags section on conversations page
   const showTagsSection = location.pathname === '/conversations' || location.pathname === '/'
+
+  const version = browser.runtime.getManifest().version
 
   return (
     <aside className="gradient-mesh flex h-screen w-60 flex-col border-r border-border bg-card/50">
@@ -87,15 +85,16 @@ export function Sidebar() {
                       'kbd-focus group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
                       isActive
                         ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
-                    )}
+                        : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+                    )
+                  }
                 >
                   {({ isActive }) => (
                     <>
                       <item.icon
                         className={cn(
                           'h-4 w-4 transition-transform',
-                          isActive ? 'scale-110' : 'group-hover:scale-105',
+                          isActive ? 'scale-110' : 'group-hover:scale-105'
                         )}
                       />
                       <span>{item.label}</span>
@@ -105,7 +104,7 @@ export function Sidebar() {
                             'ml-auto min-w-[1.5rem] rounded-full px-2 py-0.5 text-center text-[10px] font-semibold tabular-nums',
                             isActive
                               ? 'bg-primary-foreground/20 text-primary-foreground'
-                              : 'bg-muted text-muted-foreground',
+                              : 'bg-muted text-muted-foreground'
                           )}
                         >
                           {badgeCount > 999 ? '999+' : badgeCount}
@@ -140,7 +139,7 @@ export function Sidebar() {
               <ChevronDown
                 className={cn(
                   'h-3 w-3 transition-transform duration-200',
-                  isTagsExpanded && 'rotate-180',
+                  isTagsExpanded && 'rotate-180'
                 )}
               />
             </button>
@@ -168,7 +167,7 @@ export function Sidebar() {
                           'flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-1.5 text-xs transition-colors',
                           isSelected
                             ? 'bg-primary/10 text-primary'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         )}
                         onClick={() => toggleTagFilter(tag)}
                         aria-pressed={isSelected}
@@ -191,17 +190,19 @@ export function Sidebar() {
       {/* Footer */}
       <div className="border-t border-border/50 p-4">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground">Version</p>
-            <p className="text-sm font-medium tabular-nums text-foreground">0.1.0</p>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            </span>
-            <span className="text-xs text-muted-foreground">Active</span>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            v<span className="font-medium tabular-nums text-foreground">{version}</span>
+          </p>
+          <a
+            href="https://github.com/flowKKo/chat-central"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg p-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label="View on GitHub"
+          >
+            <Github className="h-3.5 w-3.5" />
+            GitHub
+          </a>
         </div>
       </div>
     </aside>

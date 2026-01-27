@@ -83,9 +83,9 @@ export default function App() {
       filterAndSortConversations(
         conversations,
         { favoritesOnly: showFavoritesOnly },
-        { byFavoriteTime: showFavoritesOnly },
+        { byFavoriteTime: showFavoritesOnly }
       ),
-    [conversations, showFavoritesOnly],
+    [conversations, showFavoritesOnly]
   )
   const filteredConversations = sortedConversations
 
@@ -116,7 +116,8 @@ export default function App() {
                 type="button"
                 className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
                 onClick={() =>
-                  browser.tabs.create({ url: 'https://github.com/flowKKo/chat-central' })}
+                  browser.tabs.create({ url: 'https://github.com/flowKKo/chat-central' })
+                }
                 aria-label="View on GitHub"
               >
                 <Github className="h-4 w-4 text-muted-foreground" />
@@ -125,7 +126,8 @@ export default function App() {
                 type="button"
                 className="kbd-focus cursor-pointer rounded-lg p-2 transition-colors hover:bg-muted"
                 onClick={() =>
-                  browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/settings') })}
+                  browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/settings') })
+                }
                 aria-label="Open settings"
               >
                 <Settings className="h-4 w-4 text-muted-foreground" />
@@ -198,7 +200,7 @@ export default function App() {
                 'kbd-focus flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
                 showFavoritesOnly
                   ? 'bg-amber-500/20 text-amber-400'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
               onClick={() => setShowFavoritesOnly(true)}
             >
@@ -214,51 +216,45 @@ export default function App() {
           role="list"
           aria-label="Conversations"
         >
-          {isLoading && conversations.length === 0
-            ? (
-                <LoadingSkeleton />
-              )
-            : filteredConversations.length === 0
-              ? (
-                  <EmptyState searchQuery={searchQuery} onClearSearch={clearSearch} />
+          {isLoading && conversations.length === 0 ? (
+            <LoadingSkeleton />
+          ) : filteredConversations.length === 0 ? (
+            <EmptyState searchQuery={searchQuery} onClearSearch={clearSearch} />
+          ) : (
+            <div className="space-y-1 p-2">
+              {sortedConversations.map((conv, index) => {
+                const matchInfo = searchResults.find((r) => r.conversation.id === conv.id)
+                return (
+                  <ConversationItem
+                    key={conv.id}
+                    conversation={conv}
+                    searchQuery={activeSearchQuery}
+                    matchInfo={matchInfo}
+                    style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
+                  />
                 )
-              : (
-                  <div className="space-y-1 p-2">
-                    {sortedConversations.map((conv, index) => {
-                      const matchInfo = searchResults.find((r) => r.conversation.id === conv.id)
-                      return (
-                        <ConversationItem
-                          key={conv.id}
-                          conversation={conv}
-                          searchQuery={activeSearchQuery}
-                          matchInfo={matchInfo}
-                          style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
-                        />
-                      )
-                    })}
-                    {pagination.hasMore && (
-                      <div className="pb-1 pt-2">
-                        <button
-                          type="button"
-                          className="kbd-focus w-full cursor-pointer rounded-xl border border-dashed border-border px-3 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-                          onClick={() => loadConversations()}
-                          disabled={isLoading}
-                        >
-                          {isLoading
-                            ? (
-                                <span className="flex items-center justify-center gap-2">
-                                  <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" />
-                                  Loading...
-                                </span>
-                              )
-                            : (
-                                'Load more conversations'
-                              )}
-                        </button>
-                      </div>
+              })}
+              {pagination.hasMore && (
+                <div className="pb-1 pt-2">
+                  <button
+                    type="button"
+                    className="kbd-focus w-full cursor-pointer rounded-xl border border-dashed border-border px-3 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+                    onClick={() => loadConversations()}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" />
+                        Loading...
+                      </span>
+                    ) : (
+                      'Load more conversations'
                     )}
-                  </div>
-                )}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -270,13 +266,17 @@ export default function App() {
                 <span className="font-medium tabular-nums text-foreground">{counts.total}</span>
                 <span>conversations</span>
               </div>
+              <span className="text-[10px] tabular-nums text-muted-foreground/50">
+                {`v${browser.runtime.getManifest().version}`}
+              </span>
               <SyncStatusBar />
             </div>
             <button
               type="button"
               className="kbd-focus group flex cursor-pointer items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80"
               onClick={() =>
-                browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/conversations') })}
+                browser.tabs.create({ url: browser.runtime.getURL('/manage.html#/conversations') })
+              }
             >
               Manage
               <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
@@ -319,7 +319,7 @@ function PlatformTab({
           ? platform
             ? 'text-foreground'
             : 'bg-primary text-primary-foreground'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       )}
       style={
         isActive && platform
@@ -394,13 +394,11 @@ function ConversationItem({
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex min-w-0 items-center gap-2">
             <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-              {searchQuery
-                ? (
-                    <HighlightText text={conversation.title} query={searchQuery} />
-                  )
-                : (
-                    conversation.title
-                  )}
+              {searchQuery ? (
+                <HighlightText text={conversation.title} query={searchQuery} />
+              ) : (
+                conversation.title
+              )}
             </h3>
             <ExternalLink
               className="h-3 w-3 flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
@@ -409,29 +407,23 @@ function ConversationItem({
           </div>
 
           {/* Show message match snippet if available, otherwise show summary/preview */}
-          {hasMessageMatch && searchQuery
-            ? (
-                <div className="mb-2 line-clamp-2 rounded-md bg-muted/50 px-2 py-1 text-xs leading-relaxed text-muted-foreground">
-                  <HighlightText text={messageMatch.text} query={searchQuery} maxLength={80} />
-                </div>
-              )
-            : conversation.summary || conversation.preview
-              ? (
-                  <p className="mb-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                    {searchQuery
-                      ? (
-                          <HighlightText
-                            text={conversation.summary || conversation.preview}
-                            query={searchQuery}
-                            maxLength={100}
-                          />
-                        )
-                      : (
-                          conversation.summary || conversation.preview
-                        )}
-                  </p>
-                )
-              : null}
+          {hasMessageMatch && searchQuery ? (
+            <div className="mb-2 line-clamp-2 rounded-md bg-muted/50 px-2 py-1 text-xs leading-relaxed text-muted-foreground">
+              <HighlightText text={messageMatch.text} query={searchQuery} maxLength={80} />
+            </div>
+          ) : conversation.summary || conversation.preview ? (
+            <p className="mb-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+              {searchQuery ? (
+                <HighlightText
+                  text={conversation.summary || conversation.preview}
+                  query={searchQuery}
+                  maxLength={100}
+                />
+              ) : (
+                conversation.summary || conversation.preview
+              )}
+            </p>
+          ) : null}
 
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
             <span className="font-medium" style={{ color: platformConfig.color }}>
@@ -446,11 +438,7 @@ function ConversationItem({
                 <span className="opacity-50" aria-hidden="true">
                   ·
                 </span>
-                <span>
-                  {conversation.messageCount}
-                  {' '}
-                  messages
-                </span>
+                <span>{conversation.messageCount} messages</span>
               </>
             )}
           </div>
@@ -460,7 +448,7 @@ function ConversationItem({
           type="button"
           className={cn(
             'kbd-focus flex-shrink-0 cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-accent',
-            conversation.isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+            conversation.isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
           )}
           onClick={(event) => {
             event.stopPropagation()
@@ -472,7 +460,7 @@ function ConversationItem({
           <Star
             className={cn(
               'h-3.5 w-3.5 transition-colors',
-              conversation.isFavorite ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground',
+              conversation.isFavorite ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'
             )}
           />
         </button>
@@ -511,46 +499,44 @@ function EmptyState({
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
         <Search className="h-6 w-6 text-muted-foreground" />
       </div>
-      {searchQuery
-        ? (
-            <>
-              <h3 className="mb-1 font-heading font-medium text-foreground">No results found</h3>
-              <p className="mb-4 text-sm text-muted-foreground">Try a different search term</p>
+      {searchQuery ? (
+        <>
+          <h3 className="mb-1 font-heading font-medium text-foreground">No results found</h3>
+          <p className="mb-4 text-sm text-muted-foreground">Try a different search term</p>
+          <button
+            type="button"
+            className="kbd-focus cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+            onClick={onClearSearch}
+          >
+            Clear search
+          </button>
+        </>
+      ) : (
+        <>
+          <h3 className="mb-1 font-heading font-medium text-foreground">No conversations yet</h3>
+          <p className="mb-4 max-w-[240px] text-sm text-muted-foreground">
+            Visit Claude, ChatGPT, or Gemini to start syncing your conversations
+          </p>
+          <div className="flex items-center gap-2">
+            {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
               <button
                 type="button"
-                className="kbd-focus cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
-                onClick={onClearSearch}
+                key={platform}
+                className="kbd-focus flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
+                style={{ color: PLATFORM_CONFIG[platform].color }}
+                onClick={() => browser.tabs.create({ url: PLATFORM_CONFIG[platform].baseUrl })}
+                aria-label={`Open ${PLATFORM_CONFIG[platform].name}`}
               >
-                Clear search
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: PLATFORM_CONFIG[platform].color }}
+                />
+                {PLATFORM_CONFIG[platform].name}
               </button>
-            </>
-          )
-        : (
-            <>
-              <h3 className="mb-1 font-heading font-medium text-foreground">No conversations yet</h3>
-              <p className="mb-4 max-w-[240px] text-sm text-muted-foreground">
-                Visit Claude, ChatGPT, or Gemini to start syncing your conversations
-              </p>
-              <div className="flex items-center gap-2">
-                {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
-                  <button
-                    type="button"
-                    key={platform}
-                    className="kbd-focus flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
-                    style={{ color: PLATFORM_CONFIG[platform].color }}
-                    onClick={() => browser.tabs.create({ url: PLATFORM_CONFIG[platform].baseUrl })}
-                    aria-label={`Open ${PLATFORM_CONFIG[platform].name}`}
-                  >
-                    <span
-                      className="h-2 w-2 rounded-full"
-                      style={{ backgroundColor: PLATFORM_CONFIG[platform].color }}
-                    />
-                    {PLATFORM_CONFIG[platform].name}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }

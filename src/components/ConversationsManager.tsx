@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai'
-import { Calendar, CheckSquare, MessageSquare, RefreshCw, Search, X } from 'lucide-react'
+import { Calendar, CheckSquare, MessageSquare, RefreshCw, Search, Star, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   BatchActionBar,
@@ -48,11 +48,12 @@ import { exportConversations, downloadExport, exportBatchMarkdown } from '@/util
 import { downloadBlob } from '@/utils/sync/utils'
 import { useClickOutside } from '@/hooks/useClickOutside'
 
-export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 'favorites' }) {
-  const isFavorites = mode === 'favorites'
+export default function ConversationsManager() {
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const isFavorites = showFavoritesOnly
   const [conversations] = useAtom(isFavorites ? favoritesConversationsAtom : conversationsAtom)
   const [counts] = useAtom(
-    isFavorites ? filteredFavoriteCountsAtom : filteredConversationCountsAtom,
+    isFavorites ? filteredFavoriteCountsAtom : filteredConversationCountsAtom
   )
   const [, loadConversations] = useAtom(isFavorites ? loadFavoritesAtom : loadConversationsAtom)
   const [selectedConversation] = useAtom(selectedConversationAtom)
@@ -116,7 +117,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
   useClickOutside(
     dateFilterRef,
     isDateFilterOpen,
-    useCallback(() => setIsDateFilterOpen(false), []),
+    useCallback(() => setIsDateFilterOpen(false), [])
   )
 
   // Memoize array conversion to avoid repeated Set->Array conversions
@@ -150,20 +151,19 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
           tags: selectedFilterTags,
           dateRange: filters.dateRange,
         },
-        { byFavoriteTime: isFavorites },
+        { byFavoriteTime: isFavorites }
       ),
-    [conversations, isFavorites, searchQuery, selectedFilterTags, filters.dateRange],
+    [conversations, isFavorites, searchQuery, selectedFilterTags, filters.dateRange]
   )
 
   // Check if all visible conversations are selected
-  const isAllSelected
-    = sortedConversations.length > 0 && sortedConversations.every((c) => batchSelectedIds.has(c.id))
+  const isAllSelected =
+    sortedConversations.length > 0 && sortedConversations.every((c) => batchSelectedIds.has(c.id))
 
   const handleToggleSelectAll = useCallback(() => {
     if (isAllSelected) {
       clearBatchSelection()
-    }
-    else {
+    } else {
       const ids = sortedConversations.map((c) => c.id)
       selectAllVisible(ids)
     }
@@ -173,22 +173,17 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
     (platform: Platform | 'all') => {
       setPlatformFilter(platform)
     },
-    [setPlatformFilter],
+    [setPlatformFilter]
   )
 
   const emptyLabel = isFavorites ? 'No favorites yet' : 'No conversations found'
-  const pageTitle = isFavorites ? 'Favorites' : 'Conversations'
 
   return (
     <div className="h-full">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="mb-1 font-heading text-2xl font-bold tracking-tight">{pageTitle}</h1>
-        <p className="text-sm text-muted-foreground">
-          {isFavorites
-            ? 'Your starred conversations for quick access'
-            : 'Browse and manage all your AI conversations'}
-        </p>
+        <h1 className="mb-1 font-heading text-2xl font-bold tracking-tight">Conversations</h1>
+        <p className="text-sm text-muted-foreground">Browse and manage all your AI conversations</p>
       </div>
 
       <div className="flex h-[calc(100vh-180px)] gap-6">
@@ -235,7 +230,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                   type="button"
                   className={cn(
                     'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
-                    hasDateFilter && 'border-primary bg-primary/10 text-primary',
+                    hasDateFilter && 'border-primary bg-primary/10 text-primary'
                   )}
                   onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
                   aria-label="Date filter"
@@ -260,18 +255,31 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                 )}
               </div>
 
+              {/* Favorites toggle */}
+              <button
+                type="button"
+                className={cn(
+                  'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
+                  showFavoritesOnly && 'border-amber-400 bg-amber-500/10 text-amber-400'
+                )}
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                aria-label={showFavoritesOnly ? 'Show all conversations' : 'Show favorites only'}
+                aria-pressed={showFavoritesOnly}
+              >
+                <Star className={cn('h-4 w-4', showFavoritesOnly && 'fill-amber-400')} />
+              </button>
+
               {/* Batch select toggle */}
               <button
                 type="button"
                 className={cn(
                   'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
-                  isBatchMode && 'border-primary bg-primary/10 text-primary',
+                  isBatchMode && 'border-primary bg-primary/10 text-primary'
                 )}
                 onClick={() => {
                   if (isBatchMode) {
                     clearBatchSelection()
-                  }
-                  else {
+                  } else {
                     const firstConv = sortedConversations[0]
                     if (firstConv) {
                       toggleBatchSelect(firstConv.id)
@@ -288,7 +296,7 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                 type="button"
                 className={cn(
                   'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
-                  isLoading && 'animate-pulse',
+                  isLoading && 'animate-pulse'
                 )}
                 onClick={() => loadConversations({ reset: true })}
                 aria-label="Refresh conversations"
@@ -317,49 +325,44 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
               role="list"
               aria-label="Conversation list"
             >
-              {isLoading && conversations.length === 0
-                ? (
-                    <ConversationListSkeleton />
-                  )
-                : sortedConversations.length === 0
-                  ? (
-                      <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50">
-                          <MessageSquare className="h-5 w-5 text-muted-foreground/50" />
-                        </div>
-                        <p className="text-sm text-muted-foreground">{emptyLabel}</p>
-                      </div>
+              {isLoading && conversations.length === 0 ? (
+                <ConversationListSkeleton />
+              ) : sortedConversations.length === 0 ? (
+                <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50">
+                    <MessageSquare className="h-5 w-5 text-muted-foreground/50" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">{emptyLabel}</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border/50">
+                  {sortedConversations.map((conv, index) => {
+                    const matchInfo = searchResults.find((r) => r.conversation.id === conv.id)
+                    const messageMatch = matchInfo?.matches.find((m) => m.type === 'message')
+                    return (
+                      <ConversationListItem
+                        key={conv.id}
+                        conversation={conv}
+                        isSelected={selectedConversation?.id === conv.id}
+                        onClick={() => {
+                          if (isBatchMode) {
+                            toggleBatchSelect(conv.id)
+                          } else {
+                            loadDetail(conv.id, messageMatch?.messageId)
+                          }
+                        }}
+                        onToggleFavorite={() => toggleFavorite(conv.id)}
+                        searchQuery={activeSearchQuery}
+                        matchInfo={matchInfo}
+                        style={{ animationDelay: `${Math.min(index * 20, 200)}ms` }}
+                        isBatchMode={isBatchMode}
+                        isChecked={batchSelectedIds.has(conv.id)}
+                        onToggleCheck={() => toggleBatchSelect(conv.id)}
+                      />
                     )
-                  : (
-                      <div className="divide-y divide-border/50">
-                        {sortedConversations.map((conv, index) => {
-                          const matchInfo = searchResults.find((r) => r.conversation.id === conv.id)
-                          const messageMatch = matchInfo?.matches.find((m) => m.type === 'message')
-                          return (
-                            <ConversationListItem
-                              key={conv.id}
-                              conversation={conv}
-                              isSelected={selectedConversation?.id === conv.id}
-                              onClick={() => {
-                                if (isBatchMode) {
-                                  toggleBatchSelect(conv.id)
-                                }
-                                else {
-                                  loadDetail(conv.id, messageMatch?.messageId)
-                                }
-                              }}
-                              onToggleFavorite={() => toggleFavorite(conv.id)}
-                              searchQuery={activeSearchQuery}
-                              matchInfo={matchInfo}
-                              style={{ animationDelay: `${Math.min(index * 20, 200)}ms` }}
-                              isBatchMode={isBatchMode}
-                              isChecked={batchSelectedIds.has(conv.id)}
-                              onToggleCheck={() => toggleBatchSelect(conv.id)}
-                            />
-                          )
-                        })}
-                      </div>
-                    )}
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -372,16 +375,14 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
                 onClick={() => loadConversations()}
                 disabled={isLoading}
               >
-                {isLoading
-                  ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-                        Loading...
-                      </span>
-                    )
-                  : (
-                      'Load more conversations'
-                    )}
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+                    Loading...
+                  </span>
+                ) : (
+                  'Load more conversations'
+                )}
               </button>
             </div>
           )}
@@ -389,25 +390,23 @@ export default function ConversationsManager({ mode = 'all' }: { mode?: 'all' | 
 
         {/* Right: Detail View */}
         <div className="min-w-0 flex-1">
-          {selectedConversation
-            ? (
-                <ConversationDetail
-                  conversation={selectedConversation}
-                  messages={selectedMessages}
-                  searchQuery={activeSearchQuery}
-                />
-              )
-            : (
-                <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/10 text-muted-foreground">
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50">
-                    <MessageSquare className="h-7 w-7 text-muted-foreground/40" />
-                  </div>
-                  <p className="mb-1 text-sm font-medium">Select a conversation</p>
-                  <p className="text-xs text-muted-foreground/60">
-                    Choose from the list to view details
-                  </p>
-                </div>
-              )}
+          {selectedConversation ? (
+            <ConversationDetail
+              conversation={selectedConversation}
+              messages={selectedMessages}
+              searchQuery={activeSearchQuery}
+            />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/10 text-muted-foreground">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50">
+                <MessageSquare className="h-7 w-7 text-muted-foreground/40" />
+              </div>
+              <p className="mb-1 text-sm font-medium">Select a conversation</p>
+              <p className="text-xs text-muted-foreground/60">
+                Choose from the list to view details
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
