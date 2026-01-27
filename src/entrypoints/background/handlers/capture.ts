@@ -1,3 +1,4 @@
+import { browser } from 'wxt/browser'
 import { getAdapterForUrl, type PlatformAdapter } from '@/utils/platform-adapters'
 import { createLogger } from '@/utils/logger'
 import { CaptureApiResponseSchema, type CaptureApiResponseMessage } from '../schemas'
@@ -6,11 +7,25 @@ import { upsertConversationMerged, applyConversationUpdate } from '../services'
 const log = createLogger('ChatCentral')
 
 /**
+ * Notify extension pages that a conversation's detail was synced
+ */
+function notifyConversationSynced(conversationId: string): void {
+  browser.runtime
+    .sendMessage({
+      action: 'CONVERSATION_DETAIL_SYNCED',
+      conversationId,
+    })
+    .catch(() => {
+      // No receivers (manage page not open) — safe to ignore
+    })
+}
+
+/**
  * Handle captured API response from content script
  */
 export async function handleCapturedResponse(
-  rawMessage: unknown,
-): Promise<{ success: boolean, count?: number, error?: string }> {
+  rawMessage: unknown
+): Promise<{ success: boolean; count?: number; error?: string }> {
   const parseResult = CaptureApiResponseSchema.safeParse(rawMessage)
   if (!parseResult.success) {
     log.warn('Invalid capture message:', parseResult.error.message)
@@ -44,8 +59,7 @@ export async function handleCapturedResponse(
         log.warn('Unknown endpoint type:', endpointType)
         return await processUnknownResponse(adapter, data, url)
     }
-  }
-  catch (e) {
+  } catch (e) {
     log.error('Failed to process response:', e)
     return { success: false }
   }
@@ -56,8 +70,8 @@ export async function handleCapturedResponse(
  */
 async function processConversationList(
   adapter: PlatformAdapter,
-  data: unknown,
-): Promise<{ success: boolean, count: number }> {
+  data: unknown
+): Promise<{ success: boolean; count: number }> {
   const conversations = adapter.parseConversationList(data)
 
   if (conversations.length === 0) {
@@ -79,8 +93,8 @@ async function processConversationList(
  */
 async function processConversationDetail(
   adapter: PlatformAdapter,
-  data: unknown,
-): Promise<{ success: boolean, count: number }> {
+  data: unknown
+): Promise<{ success: boolean; count: number }> {
   const result = adapter.parseConversationDetail(data)
 
   if (!result) {
@@ -93,6 +107,7 @@ async function processConversationDetail(
   log.info(`Parsed conversation "${conversation.title}" with ${messages.length} messages`)
 
   await applyConversationUpdate(conversation, messages, 'full')
+  notifyConversationSynced(conversation.id)
 
   return { success: true, count: messages.length }
 }
@@ -103,8 +118,8 @@ async function processConversationDetail(
 async function processStreamResponse(
   adapter: PlatformAdapter,
   data: unknown,
-  url: string,
-): Promise<{ success: boolean, count: number }> {
+  url: string
+): Promise<{ success: boolean; count: number }> {
   if (!adapter.parseStreamResponse) {
     log.info('Stream response not supported for adapter')
     return { success: false, count: 0 }
@@ -118,6 +133,7 @@ async function processStreamResponse(
 
   const { conversation, messages } = result
   await applyConversationUpdate(conversation, messages, 'partial')
+  notifyConversationSynced(conversation.id)
 
   return { success: true, count: messages.length }
 }
@@ -128,14 +144,15 @@ async function processStreamResponse(
 async function processUnknownResponse(
   adapter: PlatformAdapter,
   data: unknown,
-  url: string,
-): Promise<{ success: boolean, count: number }> {
+  url: string
+): Promise<{ success: boolean; count: number }> {
   let handled = false
   let count = 0
 
   const detail = adapter.parseConversationDetail(data)
   if (detail) {
     await applyConversationUpdate(detail.conversation, detail.messages, 'full')
+    notifyConversationSynced(detail.conversation.id)
     handled = true
     count = detail.messages.length
   }
@@ -153,6 +170,7 @@ async function processUnknownResponse(
     const stream = adapter.parseStreamResponse(data, url)
     if (stream) {
       await applyConversationUpdate(stream.conversation, stream.messages, 'partial')
+      notifyConversationSynced(stream.conversation.id)
       return { success: true, count: stream.messages.length }
     }
   }

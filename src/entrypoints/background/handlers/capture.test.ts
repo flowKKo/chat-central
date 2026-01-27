@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Conversation, Message } from '@/types'
 import { handleCapturedResponse } from './capture'
 
+vi.mock('wxt/browser', () => ({
+  browser: {
+    runtime: {
+      sendMessage: vi.fn().mockResolvedValue(undefined),
+    },
+  },
+}))
+
 // Mock platform adapters
 vi.mock('@/utils/platform-adapters', () => ({
   getAdapterForUrl: vi.fn(),
@@ -22,10 +30,11 @@ vi.mock('@/utils/logger', () => ({
   }),
 }))
 
-const { getAdapterForUrl }
-  = await vi.importMock<typeof import('@/utils/platform-adapters')>('@/utils/platform-adapters')
-const { upsertConversationMerged, applyConversationUpdate }
-  = await vi.importMock<typeof import('../services')>('../services')
+const { getAdapterForUrl } = await vi.importMock<typeof import('@/utils/platform-adapters')>(
+  '@/utils/platform-adapters'
+)
+const { upsertConversationMerged, applyConversationUpdate } =
+  await vi.importMock<typeof import('../services')>('../services')
 
 function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
   return {
