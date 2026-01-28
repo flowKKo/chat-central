@@ -15,15 +15,12 @@ import { conversationSchema, messageSchema } from '@/types'
 import { addConflict, db } from '@/utils/db'
 import { mergeConversation, mergeMessage } from './merge'
 import { parseJsonl, sha256, syncLogger } from './utils'
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const SUPPORTED_VERSIONS = ['1.0']
-const FILENAME_CONVERSATIONS = 'conversations.jsonl'
-const FILENAME_MESSAGES = 'messages.jsonl'
-const FILENAME_MANIFEST = 'manifest.json'
+import {
+  FILENAME_CONVERSATIONS,
+  FILENAME_MANIFEST,
+  FILENAME_MESSAGES,
+  SUPPORTED_VERSIONS,
+} from './constants'
 
 // ============================================================================
 // Import Functions
@@ -34,7 +31,7 @@ const FILENAME_MANIFEST = 'manifest.json'
  */
 export async function importData(
   file: File,
-  options: ImportOptions = { conflictStrategy: 'merge' },
+  options: ImportOptions = { conflictStrategy: 'merge' }
 ): Promise<ImportResult> {
   const result = createEmptyImportResult()
 
@@ -69,8 +66,7 @@ export async function importData(
         return result
       }
       manifest = validated.data
-    }
-    catch {
+    } catch {
       result.errors.push({
         type: 'parse_error',
         message: 'Failed to parse manifest.json',
@@ -80,7 +76,7 @@ export async function importData(
     }
 
     // Validate version
-    if (!SUPPORTED_VERSIONS.includes(manifest.version)) {
+    if (!(SUPPORTED_VERSIONS as readonly string[]).includes(manifest.version)) {
       result.errors.push({
         type: 'version_incompatible',
         message: `Unsupported export version: ${manifest.version}. Supported: ${SUPPORTED_VERSIONS.join(', ')}`,
@@ -132,10 +128,11 @@ export async function importData(
       conversationsRaw,
       conversationSchema,
       (line, msg) =>
-        result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line }),
+        result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
     )
     const messages = parseJsonl<Message>(messagesRaw, messageSchema, (line, msg) =>
-      result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line }))
+      result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
+    )
 
     // Import within a transaction
     await db.transaction('rw', [db.conversations, db.messages, db.conflicts], async () => {
@@ -153,8 +150,7 @@ export async function importData(
     })
 
     return result
-  }
-  catch (error) {
+  } catch (error) {
     result.success = false
     result.errors.push({
       type: 'parse_error',
@@ -191,7 +187,7 @@ async function importEntity<T extends { id: string }>(
   table: ImportTable<T>,
   mergeFn: (existing: T, record: T) => ImportMergeResult<T>,
   options: ImportOptions,
-  result: ImportResult,
+  result: ImportResult
 ): Promise<ImportStatus> {
   const existing = await table.get(record.id)
 
@@ -250,7 +246,7 @@ function importConversation(record: Conversation, options: ImportOptions, result
       }
     },
     options,
-    result,
+    result
   )
 }
 
@@ -269,7 +265,7 @@ function importMessage(record: Message, options: ImportOptions, result: ImportRe
       }
     },
     options,
-    result,
+    result
   )
 }
 
@@ -288,7 +284,7 @@ interface SimpleExportFormat {
  */
 export async function importFromJson(
   file: File,
-  options: ImportOptions = { conflictStrategy: 'merge' },
+  options: ImportOptions = { conflictStrategy: 'merge' }
 ): Promise<ImportResult> {
   const result = createEmptyImportResult()
 
@@ -315,8 +311,7 @@ export async function importFromJson(
     })
 
     return result
-  }
-  catch (error) {
+  } catch (error) {
     syncLogger.error('Failed to import JSON file', error)
     result.success = false
     result.errors.push({
@@ -396,7 +391,7 @@ export async function validateImportFile(file: File): Promise<{
     const manifestRaw = await manifestFile.async('string')
     const manifest = JSON.parse(manifestRaw) as ExportManifest
 
-    if (!SUPPORTED_VERSIONS.includes(manifest.version)) {
+    if (!(SUPPORTED_VERSIONS as readonly string[]).includes(manifest.version)) {
       errors.push({
         type: 'version_incompatible',
         message: `Unsupported export version: ${manifest.version}`,
@@ -413,8 +408,7 @@ export async function validateImportFile(file: File): Promise<{
     }
 
     return { valid: true, manifest, errors }
-  }
-  catch (error) {
+  } catch (error) {
     errors.push({
       type: 'parse_error',
       message: error instanceof Error ? error.message : 'Unknown error',

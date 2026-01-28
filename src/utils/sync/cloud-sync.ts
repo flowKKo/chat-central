@@ -15,14 +15,7 @@ import {
 } from './providers/cloud-types'
 import { createGoogleDriveProvider } from './providers/google-drive'
 import { syncLogger } from './utils'
-
-// ============================================================================
-// Constants
-// ============================================================================
-
-const STORAGE_KEY = 'cloudSyncState'
-const SYNC_FILENAME = 'chat-central-sync.json'
-const EXPORT_VERSION = '1.0'
+import { CLOUD_SYNC_FILENAME, CLOUD_SYNC_STORAGE_KEY, EXPORT_VERSION } from './constants'
 
 // ============================================================================
 // Provider Management
@@ -130,7 +123,7 @@ export async function syncToCloud(): Promise<CloudSyncResult> {
 
   try {
     // Step 1: Check if cloud has newer data
-    const cloudModified = await activeProvider.getLastModified(SYNC_FILENAME)
+    const cloudModified = await activeProvider.getLastModified(CLOUD_SYNC_FILENAME)
     const state = await loadCloudSyncState()
     const lastSync = state.lastSyncAt
 
@@ -149,12 +142,12 @@ export async function syncToCloud(): Promise<CloudSyncResult> {
     const exportData = await createExportData()
 
     // Step 4: Upload to cloud
-    await activeProvider.upload(JSON.stringify(exportData, null, 2), SYNC_FILENAME)
+    await activeProvider.upload(JSON.stringify(exportData, null, 2), CLOUD_SYNC_FILENAME)
 
     result.stats.conversationsUploaded = exportData.conversations.length
     result.stats.messagesUploaded = exportData.conversations.reduce(
       (sum, c) => sum + (c.messages?.length ?? 0),
-      0,
+      0
     )
 
     // Update last sync time
@@ -166,8 +159,7 @@ export async function syncToCloud(): Promise<CloudSyncResult> {
 
     syncLogger.info('Cloud sync completed successfully', result.stats)
     return result
-  }
-  catch (error) {
+  } catch (error) {
     const syncError = CloudSyncError.fromError(error)
     syncLogger.error('Cloud sync failed', syncError)
 
@@ -203,7 +195,7 @@ async function downloadAndMerge(): Promise<CloudSyncResult> {
   }
 
   try {
-    const cloudData = await activeProvider.download(SYNC_FILENAME)
+    const cloudData = await activeProvider.download(CLOUD_SYNC_FILENAME)
 
     if (!cloudData) {
       syncLogger.info('No data found in cloud')
@@ -229,8 +221,7 @@ async function downloadAndMerge(): Promise<CloudSyncResult> {
     }
 
     return result
-  }
-  catch (error) {
+  } catch (error) {
     const syncError = CloudSyncError.fromError(error)
     return {
       ...result,
@@ -304,11 +295,10 @@ async function createExportData(): Promise<CloudExportData> {
  */
 export async function loadCloudSyncState(): Promise<CloudSyncState> {
   try {
-    const result = await browser.storage.local.get(STORAGE_KEY)
-    const state = result[STORAGE_KEY] as CloudSyncState | undefined
+    const result = await browser.storage.local.get(CLOUD_SYNC_STORAGE_KEY)
+    const state = result[CLOUD_SYNC_STORAGE_KEY] as CloudSyncState | undefined
     return state ?? DEFAULT_CLOUD_SYNC_STATE
-  }
-  catch (error) {
+  } catch (error) {
     syncLogger.error('Failed to load cloud sync state', error)
     return DEFAULT_CLOUD_SYNC_STATE
   }
@@ -319,9 +309,8 @@ export async function loadCloudSyncState(): Promise<CloudSyncState> {
  */
 export async function saveCloudSyncState(state: CloudSyncState): Promise<void> {
   try {
-    await browser.storage.local.set({ [STORAGE_KEY]: state })
-  }
-  catch (error) {
+    await browser.storage.local.set({ [CLOUD_SYNC_STORAGE_KEY]: state })
+  } catch (error) {
     syncLogger.error('Failed to save cloud sync state', error)
   }
 }
@@ -331,7 +320,7 @@ export async function saveCloudSyncState(state: CloudSyncState): Promise<void> {
  */
 export async function updateAutoSyncSettings(
   enabled: boolean,
-  intervalMinutes?: number,
+  intervalMinutes?: number
 ): Promise<void> {
   const state = await loadCloudSyncState()
   await saveCloudSyncState({
@@ -356,8 +345,7 @@ export async function initializeCloudSync(): Promise<void> {
       // Try to reconnect
       await connectCloudProvider(state.provider)
       syncLogger.info('Restored cloud connection')
-    }
-    catch (error) {
+    } catch (error) {
       syncLogger.warn('Failed to restore cloud connection', error)
       // Clear connected state
       await saveCloudSyncState({
