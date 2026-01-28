@@ -1,29 +1,26 @@
 import { useAtom } from 'jotai'
-import { Search, Settings, LayoutDashboard, Star, Sparkles, X, Github } from 'lucide-react'
+import { Github, LayoutDashboard, Search, Settings, Sparkles, Star, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { browser } from 'wxt/browser'
-import type { SearchResultWithMatches } from '@/utils/db'
-import { MS_PER_MINUTE, MS_PER_HOUR, MS_PER_DAY } from '@/utils/date'
-import { HighlightText } from '@/components/HighlightText'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { ConflictResolverModal, SyncSettingsModal, SyncStatusBar } from '@/components/sync'
-import { type Conversation, type Platform, PLATFORM_CONFIG } from '@/types'
+import { Tooltip } from '@/components/ui/Tooltip'
+import type { Platform } from '@/types'
+import { PLATFORM_CONFIG } from '@/types'
 import {
   activeSearchQueryAtom,
   conversationCountsAtom,
   conversationsAtom,
+  currentPlatformFilterAtom,
   isLoadingConversationsAtom,
   loadConversationsAtom,
   paginationAtom,
   performSearchAtom,
   searchResultsAtom,
-  toggleFavoriteAtom,
-  currentPlatformFilterAtom,
   setPlatformFilterAtom,
 } from '@/utils/atoms'
 import { initializeSyncAtom } from '@/utils/atoms/sync'
-import { Tooltip } from '@/components/ui/Tooltip'
-import { cn } from '@/utils/cn'
+import { ConversationItem, EmptyState, LoadingSkeleton, PlatformTab } from './components'
 
 export default function App() {
   const [conversations] = useAtom(conversationsAtom)
@@ -262,264 +259,4 @@ export default function App() {
       </div>
     </ThemeProvider>
   )
-}
-
-function PlatformTab({
-  label,
-  platform,
-  count,
-  isActive,
-  onClick,
-}: {
-  label?: string
-  platform?: Platform
-  count: number
-  isActive: boolean
-  onClick: () => void
-}) {
-  const config = platform ? PLATFORM_CONFIG[platform] : null
-  const displayLabel = label || config?.name || ''
-
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={isActive}
-      className={cn(
-        'kbd-focus flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
-        isActive
-          ? platform
-            ? 'text-foreground'
-            : 'bg-primary text-primary-foreground'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-      )}
-      style={
-        isActive && platform
-          ? { backgroundColor: `${config?.color}25`, color: config?.color }
-          : undefined
-      }
-      onClick={onClick}
-    >
-      {platform && (
-        <span
-          className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: config?.color }}
-          aria-hidden="true"
-        />
-      )}
-      <span>{displayLabel}</span>
-      <span className={cn('text-[10px] tabular-nums', isActive ? 'opacity-90' : 'opacity-70')}>
-        {count}
-      </span>
-    </button>
-  )
-}
-
-function ConversationItem({
-  conversation,
-  searchQuery,
-  matchInfo,
-  style,
-}: {
-  conversation: Conversation
-  searchQuery?: string
-  matchInfo?: SearchResultWithMatches
-  style?: React.CSSProperties
-}) {
-  const platformConfig = PLATFORM_CONFIG[conversation.platform as Platform]
-  const [, toggleFavorite] = useAtom(toggleFavoriteAtom)
-
-  // Get message match snippet
-  const messageMatch = matchInfo?.matches.find((m) => m.type === 'message')
-  const hasMessageMatch = !!messageMatch
-
-  const handleClick = () => {
-    if (conversation.url) {
-      browser.tabs.create({ url: conversation.url })
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      handleClick()
-    }
-  }
-
-  return (
-    <div
-      role="listitem"
-      tabIndex={0}
-      className="kbd-focus group relative animate-fade-in cursor-pointer rounded-xl p-3 transition-all hover:bg-muted"
-      style={style}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-    >
-      {/* Platform indicator line */}
-      <div
-        className="absolute bottom-3 left-0 top-3 w-0.5 rounded-full"
-        style={{ backgroundColor: platformConfig.color }}
-        aria-hidden="true"
-      />
-
-      <div className="flex items-start gap-2 pl-2">
-        <div className="min-w-0 flex-1">
-          <h3 className="mb-1 min-w-0 truncate text-sm font-medium text-foreground">
-            {searchQuery ? (
-              <HighlightText text={conversation.title} query={searchQuery} />
-            ) : (
-              conversation.title
-            )}
-          </h3>
-
-          {/* Show message match snippet if available, otherwise show summary/preview */}
-          {hasMessageMatch && searchQuery ? (
-            <div className="mb-2 line-clamp-2 rounded-md bg-muted/50 px-2 py-1 text-xs leading-relaxed text-muted-foreground">
-              <HighlightText text={messageMatch.text} query={searchQuery} maxLength={80} />
-            </div>
-          ) : conversation.summary || conversation.preview ? (
-            <p className="mb-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-              {searchQuery ? (
-                <HighlightText
-                  text={conversation.summary || conversation.preview}
-                  query={searchQuery}
-                  maxLength={100}
-                />
-              ) : (
-                conversation.summary || conversation.preview
-              )}
-            </p>
-          ) : null}
-
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-            <span className="font-medium" style={{ color: platformConfig.color }}>
-              {platformConfig.name}
-            </span>
-            <span className="opacity-50" aria-hidden="true">
-              ·
-            </span>
-            <span>{formatDate(conversation.updatedAt)}</span>
-            {conversation.messageCount > 0 && (
-              <>
-                <span className="opacity-50" aria-hidden="true">
-                  ·
-                </span>
-                <span>{conversation.messageCount} messages</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className={cn(
-            'kbd-focus flex-shrink-0 cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-accent',
-            conversation.isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-          )}
-          onClick={(event) => {
-            event.stopPropagation()
-            toggleFavorite(conversation.id)
-          }}
-          aria-label={conversation.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-          aria-pressed={conversation.isFavorite}
-        >
-          <Star
-            className={cn(
-              'h-3.5 w-3.5 transition-colors',
-              conversation.isFavorite ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'
-            )}
-          />
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-2 p-3" aria-busy="true" aria-label="Loading conversations">
-      {['s1', 's2', 's3', 's4', 's5'].map((id) => (
-        <div key={id} className="rounded-xl p-3">
-          <div className="flex items-start gap-3 pl-2">
-            <div className="flex-1 space-y-2">
-              <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-              <div className="h-3 w-full animate-pulse rounded bg-muted" />
-              <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function EmptyState({
-  searchQuery,
-  onClearSearch,
-}: {
-  searchQuery: string
-  onClearSearch: () => void
-}) {
-  return (
-    <div className="flex h-full animate-fade-in flex-col items-center justify-center p-8 text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-        <Search className="h-6 w-6 text-muted-foreground" />
-      </div>
-      {searchQuery ? (
-        <>
-          <h3 className="mb-1 font-heading font-medium text-foreground">No results found</h3>
-          <p className="mb-4 text-sm text-muted-foreground">Try a different search term</p>
-          <button
-            type="button"
-            className="kbd-focus cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
-            onClick={onClearSearch}
-          >
-            Clear search
-          </button>
-        </>
-      ) : (
-        <>
-          <h3 className="mb-1 font-heading font-medium text-foreground">No conversations yet</h3>
-          <p className="mb-4 max-w-[240px] text-sm text-muted-foreground">
-            Visit Claude, ChatGPT, or Gemini to start syncing your conversations
-          </p>
-          <div className="flex items-center gap-2">
-            {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
-              <button
-                type="button"
-                key={platform}
-                className="kbd-focus flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
-                style={{ color: PLATFORM_CONFIG[platform].color }}
-                onClick={() => browser.tabs.create({ url: PLATFORM_CONFIG[platform].baseUrl })}
-                aria-label={`Open ${PLATFORM_CONFIG[platform].name}`}
-              >
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: PLATFORM_CONFIG[platform].color }}
-                />
-                {PLATFORM_CONFIG[platform].name}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
-function formatDate(timestamp: number): string {
-  const date = new Date(timestamp)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-
-  const minutes = Math.floor(diff / MS_PER_MINUTE)
-  const hours = Math.floor(diff / MS_PER_HOUR)
-  const days = Math.floor(diff / MS_PER_DAY)
-
-  if (minutes < 1) return 'Just now'
-  if (minutes < 60) return `${minutes}m ago`
-  if (hours < 24) return `${hours}h ago`
-  if (days < 7) return `${days}d ago`
-
-  return date.toLocaleDateString()
 }
