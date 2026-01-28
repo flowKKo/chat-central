@@ -1,8 +1,8 @@
-import { browser } from 'wxt/browser'
 import { getAdapterForUrl, type PlatformAdapter } from '@/utils/platform-adapters'
 import { createLogger } from '@/utils/logger'
 import { CaptureApiResponseSchema, type CaptureApiResponseMessage } from '../schemas'
-import { upsertConversationMerged, applyConversationUpdate } from '../services'
+import { applyConversationUpdate, upsertConversationMerged } from '../services'
+import { notifyExtensionPages } from './utils'
 
 const log = createLogger('ChatCentral')
 
@@ -10,14 +10,7 @@ const log = createLogger('ChatCentral')
  * Notify extension pages that a conversation's detail was synced
  */
 function notifyConversationSynced(conversationId: string): void {
-  browser.runtime
-    .sendMessage({
-      action: 'CONVERSATION_DETAIL_SYNCED',
-      conversationId,
-    })
-    .catch(() => {
-      // No receivers (manage page not open) — safe to ignore
-    })
+  notifyExtensionPages('CONVERSATION_DETAIL_SYNCED', { conversationId })
 }
 
 /**
