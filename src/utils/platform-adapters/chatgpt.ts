@@ -1,5 +1,6 @@
 import type { PlatformAdapter } from './types'
 import { extractSsePayloads, normalizeListPayload, parseJsonIfString } from './helpers'
+import { extractChatGPTContent } from './common'
 import type { Conversation, Message } from '@/types'
 import { createLogger } from '@/utils/logger'
 
@@ -30,20 +31,6 @@ function parseChatGptTimestamp(value: unknown, fallback: number): number {
     if (!Number.isNaN(parsed)) return parsed
   }
   return fallback
-}
-
-function extractContent(msg: unknown): string {
-  if (!msg || typeof msg !== 'object') return ''
-  const obj = msg as Record<string, unknown>
-  const content = obj.content as Record<string, unknown> | string | undefined
-  if (content && typeof content === 'object' && Array.isArray(content.parts)) {
-    return content.parts.filter((p: unknown) => typeof p === 'string').join('\n')
-  }
-  if (content && typeof content === 'object' && typeof content.text === 'string') {
-    return content.text
-  }
-  if (typeof content === 'string') return content
-  return ''
 }
 
 export const chatgptAdapter: PlatformAdapter = {
@@ -103,8 +90,7 @@ export const chatgptAdapter: PlatformAdapter = {
           }
 
           return conversation
-        }
-        catch (e) {
+        } catch (e) {
           log.warn('Failed to parse conversation', e)
           return null
         }
@@ -113,8 +99,8 @@ export const chatgptAdapter: PlatformAdapter = {
   },
 
   parseConversationDetail(
-    data: unknown,
-  ): { conversation: Conversation, messages: Message[] } | null {
+    data: unknown
+  ): { conversation: Conversation; messages: Message[] } | null {
     // ChatGPT conversation detail format
     // { title, create_time, update_time, mapping: { [node_id]: { message, parent, children } }, ... }
     const parsed = parseJsonIfString(data)
@@ -135,8 +121,7 @@ export const chatgptAdapter: PlatformAdapter = {
 
       if (eventWithMapping) {
         item = eventWithMapping as Record<string, unknown>
-      }
-      else {
+      } else {
         // If mapping not found, it might be incremental update, currently unable to process
         // Unless we can build full message from increment
         log.warn('Stream events do not contain full mapping')
@@ -197,7 +182,7 @@ export const chatgptAdapter: PlatformAdapter = {
           const role = author === 'user' ? 'user' : 'assistant'
 
           // Content is in content.parts array
-          const content = extractContent(msg)
+          const content = extractChatGPTContent(msg)
 
           if (!content) continue
 
@@ -209,8 +194,7 @@ export const chatgptAdapter: PlatformAdapter = {
             createdAt: parseChatGptTimestamp(msg.create_time, now),
             _raw: msg,
           })
-        }
-        catch (e) {
+        } catch (e) {
           log.warn('Failed to parse message', e)
         }
       }
@@ -232,8 +216,8 @@ export const chatgptAdapter: PlatformAdapter = {
 
   parseStreamResponse(
     data: unknown,
-    url: string,
-  ): { conversation: Conversation, messages: Message[] } | null {
+    url: string
+  ): { conversation: Conversation; messages: Message[] } | null {
     const payloads = extractSsePayloads(data)
     if (!payloads) return null
 
@@ -247,8 +231,7 @@ export const chatgptAdapter: PlatformAdapter = {
       let eventData: Record<string, unknown> | null = null
       try {
         eventData = JSON.parse(payload) as Record<string, unknown>
-      }
-      catch {
+      } catch {
         continue
       }
 
@@ -270,7 +253,7 @@ export const chatgptAdapter: PlatformAdapter = {
       if (!author || author === 'system') continue
 
       const role = author === 'user' ? 'user' : 'assistant'
-      const content = extractContent(msg)
+      const content = extractChatGPTContent(msg)
       if (!content) continue
 
       const createdAt = parseChatGptTimestamp(msg.create_time, now)

@@ -1,7 +1,7 @@
 import type { PlatformAdapter } from './types'
 import type { Conversation, Message } from '@/types'
 import { extractSsePayloads, normalizeListPayload, parseJsonIfString } from './helpers'
-import { extractRole } from './common'
+import { extractClaudeMessageContent, extractClaudeStreamContent, extractRole } from './common'
 import { createLogger } from '@/utils/logger'
 
 const log = createLogger('Claude')
@@ -23,73 +23,6 @@ const API_PATTERNS = {
     /\/api\/organizations\/[^/]+\/chat_conversations\/([a-f0-9-]+)\/messages(?:\?.*)?$/,
   // Match message stream
   stream: /\/api\/organizations\/[^/]+\/chat_conversations\/([a-f0-9-]+)\/completion(?:\?.*)?$/,
-}
-
-function extractClaudeContent(payload: unknown): string {
-  if (!payload || typeof payload !== 'object') return ''
-  const obj = payload as Record<string, unknown>
-  if (typeof obj.completion === 'string') return obj.completion
-  const delta = obj.delta as Record<string, unknown> | undefined
-  if (typeof delta?.text === 'string') return delta.text
-
-  const message = (obj.message ?? obj) as Record<string, unknown>
-  if (typeof message.text === 'string') return message.text
-  if (typeof message.content === 'string') return message.content
-  if (Array.isArray(message.content)) {
-    return message.content
-      .map((part: unknown) => {
-        if (typeof part === 'string') return part
-        if (part && typeof part === 'object') {
-          const partObj = part as Record<string, unknown>
-          if (partObj.type === 'text') return partObj.text as string
-        }
-        return ''
-      })
-      .join('\n')
-  }
-
-  return ''
-}
-
-function extractClaudeMessageContent(message: unknown): string {
-  if (!message || typeof message !== 'object') return ''
-  const msg = message as Record<string, unknown>
-  if (typeof msg.text === 'string' && msg.text.trim()) return msg.text
-  if (typeof msg.content === 'string' && msg.content.trim()) return msg.content
-  const contentObj = msg.content as Record<string, unknown> | unknown[] | undefined
-  if (contentObj && typeof contentObj === 'object' && !Array.isArray(contentObj)) {
-    if (typeof contentObj.text === 'string' && contentObj.text.trim()) {
-      return contentObj.text
-    }
-  }
-  if (Array.isArray(msg.content)) {
-    const joined = msg.content
-      .map((part: unknown) => {
-        if (typeof part === 'string') return part
-        if (part && typeof part === 'object') {
-          const partObj = part as Record<string, unknown>
-          if (typeof partObj.text === 'string') return partObj.text
-          if (partObj.type === 'text' && typeof partObj.text === 'string') return partObj.text
-        }
-        return ''
-      })
-      .join('\n')
-    if (joined.trim()) return joined
-  }
-  if (Array.isArray(msg.blocks)) {
-    const joined = msg.blocks
-      .map((part: unknown) => {
-        if (part && typeof part === 'object') {
-          const partObj = part as Record<string, unknown>
-          return partObj.type === 'text' ? (partObj.text as string) : ''
-        }
-        return ''
-      })
-      .filter(Boolean)
-      .join('\n')
-    if (joined.trim()) return joined
-  }
-  return ''
 }
 
 function normalizeMessageList(payload: unknown): unknown[] | null {
@@ -114,11 +47,11 @@ function extractConversationIdFromMessage(message: unknown): string | null {
   if (!message || typeof message !== 'object') return null
   const msg = message as Record<string, unknown>
   return (
-    (msg.conversation_id as string | undefined)
-    || (msg.conversationId as string | undefined)
-    || (msg.chat_conversation_uuid as string | undefined)
-    || (msg.chatConversationUuid as string | undefined)
-    || null
+    (msg.conversation_id as string | undefined) ||
+    (msg.conversationId as string | undefined) ||
+    (msg.chat_conversation_uuid as string | undefined) ||
+    (msg.chatConversationUuid as string | undefined) ||
+    null
   )
 }
 
@@ -190,8 +123,7 @@ export const claudeAdapter: PlatformAdapter = {
           }
 
           return conversation
-        }
-        catch (e) {
+        } catch (e) {
           log.warn('Failed to parse conversation', e)
           return null
         }
@@ -200,8 +132,8 @@ export const claudeAdapter: PlatformAdapter = {
   },
 
   parseConversationDetail(
-    data: unknown,
-  ): { conversation: Conversation, messages: Message[] } | null {
+    data: unknown
+  ): { conversation: Conversation; messages: Message[] } | null {
     // Claude conversation detail format
     // { uuid, name, created_at, updated_at, chat_messages: [...] }
     const parsed = parseJsonIfString(data)
@@ -213,14 +145,14 @@ export const claudeAdapter: PlatformAdapter = {
     const item = parsed as Record<string, unknown>
     const base = (item.conversation || item.chat_conversation || item) as Record<string, unknown>
     const itemData = item.data as Record<string, unknown> | undefined
-    const rawMessages
-      = item.chat_messages
-        || item.messages
-        || item.items
-        || item.message_history
-        || itemData?.messages
-        || itemData?.items
-        || (Array.isArray(item) ? item : null)
+    const rawMessages =
+      item.chat_messages ||
+      item.messages ||
+      item.items ||
+      item.message_history ||
+      itemData?.messages ||
+      itemData?.items ||
+      (Array.isArray(item) ? item : null)
 
     const messageList = normalizeMessageList(rawMessages)
 
@@ -229,12 +161,12 @@ export const claudeAdapter: PlatformAdapter = {
       return null
     }
 
-    let originalId
-      = base?.uuid
-        || base?.id
-        || base?.conversation_id
-        || base?.conversationId
-        || base?.chat_conversation_uuid
+    let originalId =
+      base?.uuid ||
+      base?.id ||
+      base?.conversation_id ||
+      base?.conversationId ||
+      base?.chat_conversation_uuid
 
     const now = Date.now()
     const messages: Message[] = []
@@ -245,8 +177,8 @@ export const claudeAdapter: PlatformAdapter = {
       try {
         if (!msg || typeof msg !== 'object') continue
         const msgObj = msg as Record<string, unknown>
-        const messageId
-          = (msgObj.uuid as string) || (msgObj.id as string) || (msgObj.message_id as string)
+        const messageId =
+          (msgObj.uuid as string) || (msgObj.id as string) || (msgObj.message_id as string)
         const role = extractRole(msg)
         const content = extractClaudeMessageContent(msg)
         if (!role || !content) continue
@@ -275,8 +207,7 @@ export const claudeAdapter: PlatformAdapter = {
           createdAt,
           _raw: msg,
         })
-      }
-      catch (e) {
+      } catch (e) {
         log.warn('Failed to parse message', e)
       }
     }
@@ -331,8 +262,8 @@ export const claudeAdapter: PlatformAdapter = {
 
   parseStreamResponse(
     data: unknown,
-    url: string,
-  ): { conversation: Conversation, messages: Message[] } | null {
+    url: string
+  ): { conversation: Conversation; messages: Message[] } | null {
     const payloads = extractSsePayloads(data)
     if (!payloads) return null
 
@@ -349,8 +280,7 @@ export const claudeAdapter: PlatformAdapter = {
       let eventData: Record<string, unknown> | null = null
       try {
         eventData = JSON.parse(payload) as Record<string, unknown>
-      }
-      catch {
+      } catch {
         continue
       }
 
@@ -369,13 +299,12 @@ export const claudeAdapter: PlatformAdapter = {
         }
       }
 
-      const chunk = extractClaudeContent(eventData)
+      const chunk = extractClaudeStreamContent(eventData)
       if (chunk) {
         const delta = eventData?.delta as Record<string, unknown> | undefined
         if (typeof eventData?.completion === 'string' || typeof delta?.text === 'string') {
           content += chunk
-        }
-        else if (chunk.length > content.length) {
+        } else if (chunk.length > content.length) {
           content = chunk
         }
       }

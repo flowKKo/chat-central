@@ -1,5 +1,14 @@
 // Content extraction utilities
-export { extractMessageContent, extractRole, truncateText } from './content'
+export {
+  extractChatGPTContent,
+  extractClaudeMessageContent,
+  extractClaudeStreamContent,
+  extractContentWithConfig,
+  extractMessageContent,
+  extractRole,
+  truncateText,
+} from './content'
+export type { ContentExtractionConfig } from './content'
 
 // JSON parsing utilities
 export {
