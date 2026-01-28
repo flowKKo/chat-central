@@ -1,0 +1,5 @@
+export { AppearanceSettings } from './AppearanceSettings'
+export { DangerZoneSettings } from './DangerZoneSettings'
+export { DataTransferSettings } from './DataTransferSettings'
+export { PlatformDataSettings } from './PlatformDataSettings'
+export { PrivacyNotice } from './PrivacyNotice'
