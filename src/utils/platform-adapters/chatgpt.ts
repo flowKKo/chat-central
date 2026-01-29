@@ -1,6 +1,6 @@
 import type { PlatformAdapter } from './types'
 import { extractSsePayloads, normalizeListPayload, parseJsonIfString } from './helpers'
-import { extractChatGPTContent } from './common'
+import { extractChatGPTContent, toEpochMillisWithFallback } from './common'
 import type { Conversation, Message } from '@/types'
 import { createLogger } from '@/utils/logger'
 
@@ -20,17 +20,6 @@ const API_PATTERNS = {
   detail: /\/backend-api\/conversation\/([a-f0-9-]+)\/?(?:\?.*)?$/,
   // Match message stream POST
   stream: /\/backend-api\/conversation\/?(?:\?.*)?$/,
-}
-
-function parseChatGptTimestamp(value: unknown, fallback: number): number {
-  if (typeof value === 'number') {
-    return value > 1e12 ? value : value * 1000
-  }
-  if (typeof value === 'string') {
-    const parsed = Date.parse(value)
-    if (!Number.isNaN(parsed)) return parsed
-  }
-  return fallback
 }
 
 export const chatgptAdapter: PlatformAdapter = {
@@ -67,8 +56,8 @@ export const chatgptAdapter: PlatformAdapter = {
           const originalId = obj.id as string | undefined
           if (!originalId) return null
 
-          const createdAt = parseChatGptTimestamp(obj.create_time, now)
-          const updatedAt = parseChatGptTimestamp(obj.update_time, createdAt)
+          const createdAt = toEpochMillisWithFallback(obj.create_time, now)
+          const updatedAt = toEpochMillisWithFallback(obj.update_time, createdAt)
           const previewSource = (obj.snippet as string) || (obj.title as string) || ''
 
           const conversation: Conversation = {
@@ -134,8 +123,8 @@ export const chatgptAdapter: PlatformAdapter = {
 
     const now = Date.now()
 
-    const createdAt = parseChatGptTimestamp(item.create_time, now)
-    const updatedAt = parseChatGptTimestamp(item.update_time, createdAt)
+    const createdAt = toEpochMillisWithFallback(item.create_time, now)
+    const updatedAt = toEpochMillisWithFallback(item.update_time, createdAt)
 
     const conversation: Conversation = {
       id: `chatgpt_${originalId}`,
@@ -191,7 +180,7 @@ export const chatgptAdapter: PlatformAdapter = {
             conversationId: conversation.id,
             role,
             content,
-            createdAt: parseChatGptTimestamp(msg.create_time, now),
+            createdAt: toEpochMillisWithFallback(msg.create_time, now),
             _raw: msg,
           })
         } catch (e) {
@@ -256,7 +245,7 @@ export const chatgptAdapter: PlatformAdapter = {
       const content = extractChatGPTContent(msg)
       if (!content) continue
 
-      const createdAt = parseChatGptTimestamp(msg.create_time, now)
+      const createdAt = toEpochMillisWithFallback(msg.create_time, now)
       const id = `chatgpt_${messageId}`
 
       const existing = messagesById.get(id)

@@ -27,4 +27,5 @@ export {
   parseDate,
   readTimestampFromObject,
   toEpochMillis,
+  toEpochMillisWithFallback,
 } from './timestamp'

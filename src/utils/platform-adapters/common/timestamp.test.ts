@@ -4,6 +4,7 @@ import {
   parseDate,
   readTimestampFromObject,
   toEpochMillis,
+  toEpochMillisWithFallback,
 } from './timestamp'
 
 describe('timestamp utilities', () => {
@@ -182,6 +183,47 @@ describe('timestamp utilities', () => {
 
     it('should handle single element array', () => {
       expect(findMaxTimestampInArray([1609459200000])).toBe(1609459200000)
+    })
+  })
+
+  describe('toEpochMillisWithFallback', () => {
+    const fallback = 9999
+
+    it('should return milliseconds for 13-digit number', () => {
+      expect(toEpochMillisWithFallback(1609459200000, fallback)).toBe(1609459200000)
+    })
+
+    it('should convert seconds to milliseconds for 10-digit number', () => {
+      expect(toEpochMillisWithFallback(1609459200, fallback)).toBe(1609459200000)
+    })
+
+    it('should parse ISO date string', () => {
+      const iso = '2021-01-01T00:00:00.000Z'
+      expect(toEpochMillisWithFallback(iso, fallback)).toBe(new Date(iso).getTime())
+    })
+
+    it('should return fallback for null', () => {
+      expect(toEpochMillisWithFallback(null, fallback)).toBe(fallback)
+    })
+
+    it('should return fallback for undefined', () => {
+      expect(toEpochMillisWithFallback(undefined, fallback)).toBe(fallback)
+    })
+
+    it('should return fallback for invalid string', () => {
+      expect(toEpochMillisWithFallback('not-a-date', fallback)).toBe(fallback)
+    })
+
+    it('should return fallback for small number', () => {
+      expect(toEpochMillisWithFallback(42, fallback)).toBe(fallback)
+    })
+
+    it('should return fallback for boolean', () => {
+      expect(toEpochMillisWithFallback(true, fallback)).toBe(fallback)
+    })
+
+    it('should handle [seconds, nanos] array', () => {
+      expect(toEpochMillisWithFallback([1609459200, 500000000], fallback)).toBe(1609459200000 + 500)
     })
   })
 

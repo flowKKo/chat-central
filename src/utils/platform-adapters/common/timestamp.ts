@@ -74,6 +74,17 @@ export function findMaxTimestampInArray(value: unknown[]): number | null {
 }
 
 /**
+ * Convert various timestamp formats to epoch milliseconds, returning a fallback
+ * value when the input cannot be parsed.
+ *
+ * Convenience wrapper around `toEpochMillis` for call sites that need a
+ * guaranteed numeric result (e.g. ChatGPT adapter timestamps).
+ */
+export function toEpochMillisWithFallback(value: unknown, fallback: number): number {
+  return toEpochMillis(value) ?? fallback
+}
+
+/**
  * Parse date from various formats (string or number)
  */
 export function parseDate(value: unknown): number | null {
