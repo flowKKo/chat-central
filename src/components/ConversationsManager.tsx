@@ -1,13 +1,13 @@
 import { useAtom } from 'jotai'
-import { Calendar, CheckSquare, MessageSquare, RefreshCw, Search, Star, X } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { MessageSquare } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   BatchActionBar,
   ConversationDetail,
-  ConversationListItem,
-  ConversationListSkeleton,
-  PlatformFilterDropdown,
+  ConversationList,
+  FilterToolbar,
+  SearchBar,
 } from './conversations'
 import type { Platform } from '@/types'
 import {
@@ -30,13 +30,9 @@ import {
   currentPlatformFilterAtom,
   setPlatformFilterAtom,
 } from '@/utils/atoms'
-import { DateRangePicker } from './ui/DateRangePicker'
-import { Tooltip } from './ui/Tooltip'
-import { cn } from '@/utils/cn'
 import { filterAndSortConversations } from '@/utils/filters'
 import { exportConversations, downloadExport, exportBatchMarkdown } from '@/utils/sync/export'
 import { downloadBlob } from '@/utils/sync/utils'
-import { useClickOutside } from '@/hooks/useClickOutside'
 import { useConversationSource } from '@/hooks/useConversationSource'
 
 export default function ConversationsManager() {
@@ -90,8 +86,6 @@ export default function ConversationsManager() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlatform] = useAtom(currentPlatformFilterAtom)
   const [, setPlatformFilter] = useAtom(setPlatformFilterAtom)
-  const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
-  const dateFilterRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadConversations({ reset: true })
@@ -105,27 +99,6 @@ export default function ConversationsManager() {
     }, 300)
     return () => clearTimeout(timer)
   }, [searchQuery, searchConversations, isFavorites])
-
-  // Close dropdowns on Escape key
-  useEffect(() => {
-    if (!isDateFilterOpen) return
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsDateFilterOpen(false)
-      }
-    }
-
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [isDateFilterOpen])
-
-  // Close date filter dropdown when clicking outside
-  useClickOutside(
-    dateFilterRef,
-    isDateFilterOpen,
-    useCallback(() => setIsDateFilterOpen(false), [])
-  )
 
   // Memoize array conversion to avoid repeated Set->Array conversions
   const selectedIdsArray = useMemo(() => Array.from(batchSelectedIds), [batchSelectedIds])
@@ -183,6 +156,32 @@ export default function ConversationsManager() {
     [setPlatformFilter]
   )
 
+  const handleToggleBatchMode = useCallback(() => {
+    if (isBatchMode) {
+      clearBatchSelection()
+    } else {
+      const firstConv = sortedConversations[0]
+      if (firstConv) {
+        toggleBatchSelect(firstConv.id)
+      }
+    }
+  }, [isBatchMode, clearBatchSelection, sortedConversations, toggleBatchSelect])
+
+  const handleItemClick = useCallback(
+    (conversationId: string, messageId: string | undefined) => {
+      loadDetail(conversationId, messageId)
+    },
+    [loadDetail]
+  )
+
+  const handleRefresh = useCallback(() => {
+    loadConversations({ reset: true })
+  }, [loadConversations])
+
+  const handleLoadMore = useCallback(() => {
+    loadConversations()
+  }, [loadConversations])
+
   const emptyLabel = isFavorites ? 'No favorites yet' : 'No conversations found'
 
   return (
@@ -198,127 +197,21 @@ export default function ConversationsManager() {
         <div className="flex w-[380px] flex-shrink-0 flex-col">
           {/* Search and Filters */}
           <div className="mb-4 space-y-3">
-            <div className="relative">
-              <label htmlFor="manage-search" className="sr-only">
-                Search conversations
-              </label>
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                id="manage-search"
-                type="text"
-                placeholder="Search conversations..."
-                className="w-full rounded-xl border border-border bg-muted/50 py-2.5 pl-10 pr-8 text-sm transition-all placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/50"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1 transition-colors hover:bg-muted"
-                  onClick={() => setSearchQuery('')}
-                  aria-label="Clear search"
-                >
-                  <X className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              {/* Platform Filter Dropdown */}
-              <PlatformFilterDropdown
-                selectedPlatform={selectedPlatform}
-                counts={counts}
-                onSelectPlatform={handlePlatformSelect}
-              />
-
-              {/* Date filter */}
-              <div className="relative" ref={dateFilterRef}>
-                <Tooltip label="Date filter">
-                  <button
-                    type="button"
-                    className={cn(
-                      'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
-                      hasDateFilter && 'border-primary bg-primary/10 text-primary'
-                    )}
-                    onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
-                    aria-label="Date filter"
-                    aria-haspopup="dialog"
-                    aria-expanded={isDateFilterOpen}
-                  >
-                    <Calendar className="h-4 w-4" />
-                  </button>
-                </Tooltip>
-
-                {isDateFilterOpen && (
-                  <div
-                    role="dialog"
-                    aria-label="Date range filter"
-                    className="absolute right-0 top-full z-10 mt-1 w-72 animate-scale-in rounded-xl border border-border bg-card p-4 shadow-lg"
-                  >
-                    <DateRangePicker
-                      startDate={filters.dateRange.start}
-                      endDate={filters.dateRange.end}
-                      onChange={setDateRange}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Favorites toggle */}
-              <Tooltip label={showFavoritesOnly ? 'Show all' : 'Favorites'}>
-                <button
-                  type="button"
-                  className={cn(
-                    'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
-                    showFavoritesOnly && 'border-amber-400 bg-amber-500/10 text-amber-400'
-                  )}
-                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                  aria-label={showFavoritesOnly ? 'Show all conversations' : 'Show favorites only'}
-                  aria-pressed={showFavoritesOnly}
-                >
-                  <Star className={cn('h-4 w-4', showFavoritesOnly && 'fill-amber-400')} />
-                </button>
-              </Tooltip>
-
-              {/* Batch select toggle */}
-              <Tooltip label={isBatchMode ? 'Exit selection' : 'Batch select'}>
-                <button
-                  type="button"
-                  className={cn(
-                    'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
-                    isBatchMode && 'border-primary bg-primary/10 text-primary'
-                  )}
-                  onClick={() => {
-                    if (isBatchMode) {
-                      clearBatchSelection()
-                    } else {
-                      const firstConv = sortedConversations[0]
-                      if (firstConv) {
-                        toggleBatchSelect(firstConv.id)
-                      }
-                    }
-                  }}
-                  aria-label={isBatchMode ? 'Exit selection mode' : 'Enter selection mode'}
-                  aria-pressed={isBatchMode}
-                >
-                  <CheckSquare className="h-4 w-4" />
-                </button>
-              </Tooltip>
-
-              <Tooltip label="Refresh">
-                <button
-                  type="button"
-                  className={cn(
-                    'kbd-focus cursor-pointer rounded-xl border border-border p-2.5 transition-all hover:bg-muted/80',
-                    isLoading && 'animate-pulse'
-                  )}
-                  onClick={() => loadConversations({ reset: true })}
-                  aria-label="Refresh conversations"
-                >
-                  <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
-                </button>
-              </Tooltip>
-            </div>
+            <SearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+            <FilterToolbar
+              selectedPlatform={selectedPlatform}
+              counts={counts}
+              onSelectPlatform={handlePlatformSelect}
+              filters={filters}
+              onSetDateRange={setDateRange}
+              hasDateFilter={hasDateFilter}
+              showFavoritesOnly={showFavoritesOnly}
+              onToggleFavorites={setShowFavoritesOnly}
+              isBatchMode={isBatchMode}
+              onToggleBatchMode={handleToggleBatchMode}
+              isLoading={isLoading}
+              onRefresh={handleRefresh}
+            />
           </div>
 
           {/* Batch operation bar */}
@@ -333,74 +226,22 @@ export default function ConversationsManager() {
             />
           )}
 
-          {/* Conversation List */}
-          <div className="flex-1 overflow-hidden rounded-2xl border border-border bg-card/30">
-            <div
-              className="scrollbar-thin h-full overflow-y-auto"
-              role="list"
-              aria-label="Conversation list"
-            >
-              {isLoading && conversations.length === 0 ? (
-                <ConversationListSkeleton />
-              ) : sortedConversations.length === 0 ? (
-                <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50">
-                    <MessageSquare className="h-5 w-5 text-muted-foreground/50" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">{emptyLabel}</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border/50">
-                  {sortedConversations.map((conv, index) => {
-                    const matchInfo = searchResultsMap.get(conv.id)
-                    const messageMatch = matchInfo?.matches.find((m) => m.type === 'message')
-                    return (
-                      <ConversationListItem
-                        key={conv.id}
-                        conversation={conv}
-                        isSelected={selectedConversation?.id === conv.id}
-                        onClick={() => {
-                          if (isBatchMode) {
-                            toggleBatchSelect(conv.id)
-                          } else {
-                            loadDetail(conv.id, messageMatch?.messageId)
-                          }
-                        }}
-                        onToggleFavorite={() => toggleFavorite(conv.id)}
-                        searchQuery={activeSearchQuery}
-                        matchInfo={matchInfo}
-                        style={{ animationDelay: `${Math.min(index * 20, 200)}ms` }}
-                        isBatchMode={isBatchMode}
-                        isChecked={batchSelectedIds.has(conv.id)}
-                        onToggleCheck={() => toggleBatchSelect(conv.id)}
-                      />
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Load More */}
-          {pagination.hasMore && (
-            <div className="mt-3">
-              <button
-                type="button"
-                className="kbd-focus w-full cursor-pointer rounded-xl border border-dashed border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
-                onClick={() => loadConversations()}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-                    Loading...
-                  </span>
-                ) : (
-                  'Load more conversations'
-                )}
-              </button>
-            </div>
-          )}
+          <ConversationList
+            conversations={sortedConversations}
+            isLoading={isLoading}
+            hasLoadedConversations={conversations.length > 0}
+            emptyLabel={emptyLabel}
+            selectedConversationId={selectedConversation?.id}
+            searchQuery={activeSearchQuery}
+            searchResultsMap={searchResultsMap}
+            isBatchMode={isBatchMode}
+            batchSelectedIds={batchSelectedIds}
+            onItemClick={handleItemClick}
+            onToggleFavorite={toggleFavorite}
+            onToggleBatchSelect={toggleBatchSelect}
+            hasMore={pagination.hasMore}
+            onLoadMore={handleLoadMore}
+          />
         </div>
 
         {/* Right: Detail View */}
