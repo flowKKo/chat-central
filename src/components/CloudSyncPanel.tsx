@@ -114,7 +114,7 @@ export function CloudSyncPanel() {
         </div>
       )}
 
-      {!isConnected ? (
+      {!isConnected && (
         // Not Connected State
         <div className="space-y-4">
           <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-4">
@@ -158,7 +158,9 @@ export function CloudSyncPanel() {
             )}
           </button>
         </div>
-      ) : (
+      )}
+
+      {isConnected && (
         // Connected State
         <div className="space-y-4">
           {/* Connection Status */}
