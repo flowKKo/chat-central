@@ -130,7 +130,7 @@ Strictly adhere to these protocols to prevent errors and ensure data integrity.
 ## 6. Testing Strategy
 
 **Framework**: Vitest (jsdom environment)
-**Current**: 650 tests across 38 test files (all passing)
+**Current**: 990 tests across 51 test files (all passing)
 
 ### TDD Workflow Guidelines
 
@@ -239,15 +239,34 @@ chat-central/
 │   │   └── styles/globals.css         #   CSS variables for theming (light/dark, platform colors)
 │   │
 │   ├── components/                    # React Components
-│   │   ├── conversations/             #   Conversation UI (ListItem, Detail, MessageBubble, SummaryBlock, BatchActionBar)
-│   │   ├── sync/                      #   Sync UI (SyncStatusBar, SyncSettings, ImportExport, ConflictResolver)
+│   │   ├── conversations/             #   Conversation UI
+│   │   │   ├── SearchBar.tsx          #     Search input with clear button
+│   │   │   ├── FilterToolbar.tsx      #     Platform, date, favorites, batch filters
+│   │   │   ├── ConversationList.tsx   #     Scrollable list with loading/empty states
+│   │   │   ├── ConversationListItem   #     Individual conversation row
+│   │   │   ├── ConversationDetail     #     Full conversation view with messages
+│   │   │   ├── MessageBubble.tsx      #     Chat message display
+│   │   │   ├── SummaryBlock.tsx       #     Collapsible AI summary
+│   │   │   └── BatchActionBar.tsx     #     Batch selection actions
+│   │   ├── sync/                      #   Sync UI
+│   │   │   ├── ImportExport.tsx       #     Composition of ExportPanel + ImportPanel
+│   │   │   ├── ExportPanel.tsx        #     Export button with error display
+│   │   │   ├── ImportPanel.tsx        #     Import with validation and results
+│   │   │   ├── SyncStatusBar.tsx      #     Sync status display
+│   │   │   └── ConflictResolver.tsx   #     Conflict resolution UI
+│   │   ├── settings/                  #   Settings sub-components
+│   │   │   ├── AppearanceSettings     #     Theme selection
+│   │   │   ├── DataTransferSettings   #     Import/export settings
+│   │   │   ├── PlatformDataSettings   #     Platform data management
+│   │   │   ├── DangerZoneSettings     #     Destructive operations
+│   │   │   └── PrivacyNotice.tsx      #     Privacy information
 │   │   ├── ui/                        #   Generic UI (DateRangePicker, Checkbox, TagPill, Tooltip, SettingsSection)
 │   │   ├── providers/                 #   Context Providers (ThemeProvider)
-│   │   ├── ConversationsManager.tsx   #   Main conversation list with search & batch actions
+│   │   ├── ConversationsManager.tsx   #   Main conversation orchestrator (uses subcomponents)
 │   │   ├── CloudSyncPanel.tsx         #   Cloud sync settings and status
 │   │   ├── ErrorBoundary.tsx          #   React Error Boundary (crash prevention)
 │   │   ├── HighlightText.tsx          #   Search result highlighting
-│   │   ├── SettingsPanel.tsx          #   Settings UI
+│   │   ├── SettingsPanel.tsx          #   Settings UI (uses settings/ subcomponents)
 │   │   ├── AboutPanel.tsx             #   About page
 │   │   ├── DashboardLayout.tsx        #   Dashboard layout (routing wrapper)
 │   │   └── Sidebar.tsx                #   Navigation sidebar
@@ -261,6 +280,8 @@ chat-central/
 │   │   ├── interceptor.content/       #   Network Interceptor (MAIN world, API capture)
 │   │   ├── observer.content/          #   DOM Observer (page state changes)
 │   │   ├── popup/                     #   Extension Popup UI
+│   │   │   ├── components/            #     Popup subcomponents (PlatformTab, ConversationItem, etc.)
+│   │   │   └── App.tsx               #     Main popup app
 │   │   ├── manage/                    #   Full-page Manager (/conversations, /settings, /about)
 │   │   └── options/                   #   Settings Page
 │   │
@@ -281,7 +302,15 @@ chat-central/
 │   │   │   └── index.ts              #     Re-exports all operations
 │   │   │
 │   │   ├── sync/                      #   Sync engine & cloud providers
-│   │   │   ├── engine.ts             #     Sync cycle: pull -> merge -> push
+│   │   │   ├── engine/               #     Sync engine (modular)
+│   │   │   │   ├── cycle.ts          #       syncCycle, pullOnly, pushOnly
+│   │   │   │   ├── pull.ts           #       Pull remote changes
+│   │   │   │   ├── merge.ts          #       Merge remote into local
+│   │   │   │   ├── push.ts           #       Push local changes
+│   │   │   │   ├── resolve.ts        #       Conflict resolution
+│   │   │   │   ├── types.ts          #       Engine type definitions
+│   │   │   │   └── index.ts          #       Public API re-exports
+│   │   │   ├── engine.ts             #     Re-export shim (backward compat)
 │   │   │   ├── merge.ts              #     Field-level merge (LWW, union, max, min, or, and)
 │   │   │   ├── cloud-sync.ts         #     Cloud sync orchestration + auto-sync
 │   │   │   ├── export.ts             #     Export to ZIP (JSONL + manifest)
@@ -290,12 +319,28 @@ chat-central/
 │   │   │   ├── types.ts              #     Sync types (SyncRecord, SyncState, ConflictRecord, etc.)
 │   │   │   └── providers/            #     Cloud storage providers
 │   │   │       ├── cloud-types.ts    #       CloudStorageProvider interface & error types
-│   │   │       ├── google-drive.ts   #       Google Drive (chrome.identity + REST API v3)
+│   │   │       ├── google-drive/     #       Google Drive provider (modular)
+│   │   │       │   ├── auth.ts       #         OAuth2 via chrome.identity
+│   │   │       │   ├── file-operations.ts #    File CRUD via REST API v3
+│   │   │       │   ├── retry.ts      #         Retry with exponential backoff
+│   │   │       │   ├── provider.ts   #         GoogleDriveProvider class
+│   │   │       │   └── index.ts      #         Re-exports
+│   │   │       ├── google-drive.ts   #       Re-export shim (backward compat)
 │   │   │       ├── rest.ts           #       REST API provider template
 │   │   │       └── mock.ts           #       Mock provider for testing
 │   │   │
 │   │   ├── atoms/                     #   Jotai State Management
-│   │   │   ├── conversations/         #     Conversation atoms (state, actions, batch)
+│   │   │   ├── conversations/         #     Conversation atoms
+│   │   │   │   ├── state.ts           #       Base state atoms
+│   │   │   │   ├── actions/           #       Action atoms (modular)
+│   │   │   │   │   ├── loadingActions   #       Load/paginate conversations
+│   │   │   │   │   ├── searchActions    #       Search operations
+│   │   │   │   │   ├── detailActions    #       Detail view operations
+│   │   │   │   │   ├── favoritesActions #       Favorites operations
+│   │   │   │   │   ├── filterActions    #       Tag/date filtering
+│   │   │   │   │   ├── updateActions    #       Conversation updates
+│   │   │   │   │   └── helpers.ts       #       Shared helpers
+│   │   │   │   └── batch.ts           #       Batch selection atoms
 │   │   │   ├── cloud-sync.ts         #     Cloud sync state & operation atoms
 │   │   │   ├── theme.ts              #     Theme state (light/dark/system)
 │   │   │   ├── config.ts             #     App configuration
@@ -311,6 +356,9 @@ chat-central/
 │   │
 │   ├── hooks/                         # Custom React Hooks
 │   │   ├── useClickOutside.ts         #   Click-outside detection
+│   │   ├── useBatchSelection.ts       #   Batch selection state & actions
+│   │   ├── useConversationFilters.ts  #   Filter state (tags, dates, platform)
+│   │   ├── useConversationSearch.ts   #   Search state & actions
 │   │   ├── useConversationFilter.ts   #   Conversation filtering hook
 │   │   └── useConversationSource.ts   #   Favorites/all atom source selector
 │   │
@@ -331,25 +379,26 @@ chat-central/
 
 ### Where to Look (Task Map)
 
-| Task                               | File Path / Directory                                                    |
-| ---------------------------------- | ------------------------------------------------------------------------ |
-| **Add support for new AI**         | `src/utils/platform-adapters/` (Create new adapter)                      |
-| **Fix message parsing**            | `src/utils/platform-adapters/{platform}.ts`                              |
-| **Modify database schema**         | `src/utils/db/schema.ts`                                                 |
-| **Add DB operations**              | `src/utils/db/repositories/` (conversations, messages, sync)             |
-| **Update UI state**                | `src/utils/atoms/`                                                       |
-| **Change network interception**    | `src/entrypoints/interceptor.content/index.ts`                           |
-| **Update extension permissions**   | `wxt.config.ts`                                                          |
-| **Adjust UI styles / theming**     | `src/assets/styles/globals.css` or `tailwind.config.js`                  |
-| **Modify theme behavior**          | `src/utils/atoms/theme.ts`, `src/components/providers/ThemeProvider.tsx` |
-| **Update search functionality**    | `src/utils/db/search.ts`, `src/utils/atoms/conversations/`               |
-| **Modify sync behavior**           | `src/utils/sync/`                                                        |
-| **Cloud sync providers**           | `src/utils/sync/providers/` (google-drive.ts, cloud-types.ts)            |
-| **Update conversation manager UI** | `src/components/ConversationsManager.tsx`                                |
-| **Change popup UI**                | `src/entrypoints/popup/App.tsx`                                          |
-| **Change manage page UI**          | `src/entrypoints/manage/App.tsx`, `src/components/DashboardLayout.tsx`   |
-| **Modify dev workflow**            | `scripts/dev-reload.ts`, `src/entrypoints/background/index.ts`           |
-| **Add cloud sync UI**              | `src/components/CloudSyncPanel.tsx`, `src/components/sync/`              |
+| Task                               | File Path / Directory                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------- |
+| **Add support for new AI**         | `src/utils/platform-adapters/` (Create new adapter)                        |
+| **Fix message parsing**            | `src/utils/platform-adapters/{platform}.ts`                                |
+| **Modify database schema**         | `src/utils/db/schema.ts`                                                   |
+| **Add DB operations**              | `src/utils/db/repositories/` (conversations, messages, sync)               |
+| **Update UI state**                | `src/utils/atoms/`                                                         |
+| **Change network interception**    | `src/entrypoints/interceptor.content/index.ts`                             |
+| **Update extension permissions**   | `wxt.config.ts`                                                            |
+| **Adjust UI styles / theming**     | `src/assets/styles/globals.css` or `tailwind.config.js`                    |
+| **Modify theme behavior**          | `src/utils/atoms/theme.ts`, `src/components/providers/ThemeProvider.tsx`   |
+| **Update search functionality**    | `src/utils/db/search.ts`, `src/utils/atoms/conversations/`                 |
+| **Modify sync behavior**           | `src/utils/sync/`                                                          |
+| **Cloud sync providers**           | `src/utils/sync/providers/` (google-drive/, cloud-types.ts)                |
+| **Modify sync engine**             | `src/utils/sync/engine/` (cycle.ts, pull.ts, merge.ts, push.ts)            |
+| **Update conversation manager UI** | `src/components/ConversationsManager.tsx`, `src/components/conversations/` |
+| **Change popup UI**                | `src/entrypoints/popup/App.tsx`                                            |
+| **Change manage page UI**          | `src/entrypoints/manage/App.tsx`, `src/components/DashboardLayout.tsx`     |
+| **Modify dev workflow**            | `scripts/dev-reload.ts`, `src/entrypoints/background/index.ts`             |
+| **Add cloud sync UI**              | `src/components/CloudSyncPanel.tsx`, `src/components/sync/`                |
 
 ---
 
@@ -364,17 +413,21 @@ chat-central/
 - `src/utils/atoms/conversations/`: Conversation state, actions, and batch atoms.
 - `src/utils/atoms/cloud-sync.ts`: Cloud sync state and operation atoms.
 - `src/utils/atoms/theme.ts`: Theme state management (light/dark/system).
-- `src/utils/sync/engine.ts`: Core sync cycle (pull -> merge -> push).
+- `src/utils/sync/engine/`: Modular sync engine (cycle, pull, merge, push, resolve, types).
 - `src/utils/sync/merge.ts`: Field-level merge strategies for conflict resolution.
 - `src/utils/sync/cloud-sync.ts`: Cloud sync orchestration (download, merge, upload, auto-sync).
+- `src/utils/sync/manager.ts`: Sync state management (singleton, auto-sync, retry, events).
 - `src/utils/sync/providers/cloud-types.ts`: `CloudStorageProvider` interface and error categorization.
-- `src/utils/sync/providers/google-drive.ts`: Google Drive provider (chrome.identity + REST API v3).
+- `src/utils/sync/providers/google-drive/`: Google Drive provider (auth, file-operations, retry, provider).
 - `src/utils/sync/types.ts`: Sync domain types (SyncRecord, SyncState, ConflictRecord, OperationLog).
 - `src/components/ErrorBoundary.tsx`: React Error Boundary for crash prevention.
 - `src/components/conversations/SummaryBlock.tsx`: Collapsible AI summary display with accessibility.
 - `src/components/ui/Tooltip.tsx`: Accessible tooltip with `aria-describedby` and position variants.
 - `src/components/ui/SettingsSection.tsx`: Reusable settings section with icon header pattern.
 - `src/hooks/useConversationSource.ts`: Atom source selector for favorites/all views.
+- `src/hooks/useConversationSearch.ts`: Search state, results, and actions.
+- `src/hooks/useBatchSelection.ts`: Batch selection state and actions.
+- `src/hooks/useConversationFilters.ts`: Filter state (tags, dates, platform).
 - `src/utils/logger.ts`: Structured logging (`createLogger` factory).
 - `src/assets/styles/globals.css`: CSS variables for theming and platform colors.
 - `scripts/dev-reload.ts`: Development reload server (WebSocket on port 3717).
