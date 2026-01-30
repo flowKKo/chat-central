@@ -1,3 +1,5 @@
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 # Chat Central
 
 Unified AI conversation manager — automatically capture, search, tag, and export your conversations across Claude, ChatGPT, and Gemini.
@@ -106,7 +108,7 @@ pnpm dev:reload      # Manual build + auto reload (for testing with login state)
 pnpm validate        # Type-check + lint + test
 pnpm type-check      # TypeScript only
 pnpm lint            # ESLint only
-pnpm test            # Vitest (650+ tests)
+pnpm test            # Vitest (990+ tests)
 ```
 
 ## Tech Stack
