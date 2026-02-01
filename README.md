@@ -8,6 +8,13 @@
   Unified AI conversation manager — automatically capture, search, tag, and export your conversations across Claude, ChatGPT, and Gemini.
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License">
+  <img src="https://img.shields.io/badge/tests-990%2B%20passed-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/chrome-Manifest%20V3-yellow" alt="Chrome MV3">
+  <img src="https://img.shields.io/badge/platforms-Claude%20%7C%20ChatGPT%20%7C%20Gemini-purple" alt="Platforms">
+</p>
+
 ## Features
 
 ### Capture & Search
@@ -36,14 +43,6 @@
 - **AI Summary** — Collapsible AI-generated summary for each conversation
 - **Themes** — Light, dark, and system modes with platform-specific accent colors
 
-## Supported Platforms
-
-| Platform | List Sync | Detail Sync | Stream Capture |
-| -------- | --------- | ----------- | -------------- |
-| Claude   | Yes       | Yes         | Yes            |
-| ChatGPT  | Yes       | Yes         | Yes            |
-| Gemini   | Yes       | Yes         | —              |
-
 ## Installation
 
 ### Chrome Web Store
@@ -51,10 +50,6 @@
 Coming soon.
 
 ### Manual Install
-
-<p align="center">
-  <img src="docs/images/installation.svg" alt="Installation Steps" width="800">
-</p>
 
 1. Download the latest release from [Releases](https://github.com/flowKKo/chat-central/releases)
 2. Unzip the file
@@ -80,13 +75,14 @@ pnpm build:firefox  # Firefox
 - No data sent to any third-party server
 - Fully open source
 
-## Development
+## Contributing
+
+Contributions are welcome! Feel free to open an [issue](https://github.com/flowKKo/chat-central/issues) or submit a pull request.
 
 ```bash
 pnpm install         # Install dependencies
 pnpm dev             # Dev server with HMR
-pnpm validate        # Type-check + lint + test
-pnpm test            # 990+ tests
+pnpm validate        # Type-check + lint + test (run before submitting)
 ```
 
 See `CLAUDE.md` for architecture details.

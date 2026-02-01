@@ -8,6 +8,13 @@
   统一的 AI 对话管理器 — 自动捕获、搜索、标签、导出你在 Claude、ChatGPT 和 Gemini 上的对话。
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License">
+  <img src="https://img.shields.io/badge/tests-990%2B%20passed-brightgreen" alt="Tests">
+  <img src="https://img.shields.io/badge/chrome-Manifest%20V3-yellow" alt="Chrome MV3">
+  <img src="https://img.shields.io/badge/platforms-Claude%20%7C%20ChatGPT%20%7C%20Gemini-purple" alt="Platforms">
+</p>
+
 ## 功能特性
 
 ### 捕获与搜索
@@ -36,14 +43,6 @@
 - **AI 摘要** — 每个对话的可折叠 AI 生成摘要
 - **主题** — 亮色、暗色和跟随系统模式，配有平台专属强调色
 
-## 支持平台
-
-| 平台    | 列表同步 | 详情同步 | 流式捕获 |
-| ------- | -------- | -------- | -------- |
-| Claude  | 是       | 是       | 是       |
-| ChatGPT | 是       | 是       | 是       |
-| Gemini  | 是       | 是       | —        |
-
 ## 安装
 
 ### Chrome Web Store
@@ -51,10 +50,6 @@
 即将上线。
 
 ### 手动安装
-
-<p align="center">
-  <img src="docs/images/installation.svg" alt="安装步骤" width="800">
-</p>
 
 1. 从 [Releases](https://github.com/flowKKo/chat-central/releases) 下载最新版本
 2. 解压文件
@@ -80,13 +75,14 @@ pnpm build:firefox  # Firefox
 - 不会向任何第三方服务器发送数据
 - 完全开源
 
-## 开发
+## 参与贡献
+
+欢迎贡献！请随时提交 [Issue](https://github.com/flowKKo/chat-central/issues) 或 Pull Request。
 
 ```bash
 pnpm install         # 安装依赖
 pnpm dev             # 启动开发服务器（HMR）
-pnpm validate        # 类型检查 + lint + 测试
-pnpm test            # 990+ 测试用例
+pnpm validate        # 类型检查 + lint + 测试（提交前请运行）
 ```
 
 架构详情请参阅 `CLAUDE.md`。
