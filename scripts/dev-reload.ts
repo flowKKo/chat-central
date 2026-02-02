@@ -88,7 +88,7 @@ function build(): Promise<boolean> {
     logInfo('Building...')
     const startTime = Date.now()
 
-    const child = spawn('pnpm', ['build'], {
+    const child = spawn('pnpm', ['wxt', 'build', '-m', 'development'], {
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 
@@ -109,8 +109,7 @@ function build(): Promise<boolean> {
       if (code === 0) {
         logSuccess(`Build completed in ${duration}s`)
         resolve(true)
-      }
-      else {
+      } else {
         logError(`Build failed (exit code: ${code})`)
         if (stderr) {
           console.log(colors.dim + stderr + colors.reset)
