@@ -1,5 +1,6 @@
 import { db } from '../schema'
 import type { Conversation, Platform } from '@/types'
+import { invalidateSearchIndex, removeFromSearchIndex, updateSearchIndex } from '../search-index'
 
 /**
  * Get conversations with optional filtering and pagination
@@ -98,6 +99,7 @@ export async function getConversationByOriginalId(
  */
 export async function upsertConversation(conversation: Conversation): Promise<void> {
   await db.conversations.put(conversation)
+  updateSearchIndex(conversation)
 }
 
 /**
@@ -105,6 +107,7 @@ export async function upsertConversation(conversation: Conversation): Promise<vo
  */
 export async function upsertConversations(conversations: Conversation[]): Promise<void> {
   await db.conversations.bulkPut(conversations)
+  invalidateSearchIndex()
 }
 
 /**
@@ -120,6 +123,7 @@ export async function updateConversationFavorite(
   const favoriteAt = isFavorite ? (existing.favoriteAt ?? Date.now()) : null
   const updated = { ...existing, isFavorite, favoriteAt }
   await db.conversations.put(updated)
+  updateSearchIndex(updated)
   return updated
 }
 
@@ -131,6 +135,7 @@ export async function deleteConversation(id: string): Promise<void> {
     await db.messages.where('conversationId').equals(id).delete()
     await db.conversations.delete(id)
   })
+  removeFromSearchIndex(id)
 }
 
 /**
@@ -191,6 +196,7 @@ export async function softDeleteConversation(id: string): Promise<void> {
       syncedAt: null,
     })
   })
+  removeFromSearchIndex(id)
 }
 
 /**
@@ -208,6 +214,7 @@ export async function permanentlyDeleteConversation(id: string): Promise<void> {
     await db.messages.where('conversationId').equals(id).delete()
     await db.conversations.delete(id)
   })
+  removeFromSearchIndex(id)
 }
 
 /**
@@ -272,5 +279,6 @@ export async function updateConversationTags(
     dirty: true,
   }
   await db.conversations.put(updated)
+  updateSearchIndex(updated)
   return updated
 }

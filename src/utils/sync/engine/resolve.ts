@@ -1,6 +1,6 @@
 import type { ConflictRecord, SyncRecord } from '../types'
 import type { Conversation, Message } from '@/types'
-import { db } from '@/utils/db'
+import { db, invalidateSearchIndex } from '@/utils/db'
 import { mergeRemoteConversation, mergeRemoteMessage } from './merge'
 
 // ============================================================================
@@ -52,6 +52,10 @@ export async function applyConflictResolution(
       resolvedAt: Date.now(),
     })
   })
+
+  if (conflict.entityType === 'conversation') {
+    invalidateSearchIndex()
+  }
 }
 
 /**

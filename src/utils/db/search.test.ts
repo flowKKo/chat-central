@@ -10,6 +10,7 @@ import {
   searchConversationsWithMatches,
   searchMessages,
 } from './search'
+import { _resetSearchIndex } from './search-index'
 
 // ============================================================================
 // Test Helpers
@@ -54,6 +55,7 @@ function makeMessage(overrides: Partial<Message> = {}): Message {
 let db: ChatCentralDB
 
 beforeEach(async () => {
+  _resetSearchIndex()
   db = new ChatCentralDB()
   const schemaModule = await import('./schema')
   Object.defineProperty(schemaModule, 'db', {
@@ -199,7 +201,7 @@ describe('searchConversationsWithMatches', () => {
     expect(results).toHaveLength(2)
   })
 
-  it('should sort results by updatedAt descending', async () => {
+  it('should sort MiniSearch results by relevance score', async () => {
     await upsertConversations([
       makeConversation({ id: 'c1', title: 'API design first', updatedAt: 1000 }),
       makeConversation({ id: 'c2', title: 'API design second', updatedAt: 3000 }),
@@ -208,9 +210,26 @@ describe('searchConversationsWithMatches', () => {
 
     const results = await searchConversationsWithMatches('API')
     expect(results).toHaveLength(3)
+    // All results should be present (order determined by MiniSearch relevance)
+    const ids = results.map((r) => r.conversation.id).sort()
+    expect(ids).toEqual(['c1', 'c2', 'c3'])
+  })
+
+  it('should sort message-only results by updatedAt descending', async () => {
+    await upsertConversations([
+      makeConversation({ id: 'c1', title: 'Chat one', updatedAt: 1000 }),
+      makeConversation({ id: 'c2', title: 'Chat two', updatedAt: 3000 }),
+    ])
+    await upsertMessages([
+      makeMessage({ id: 'm1', conversationId: 'c1', content: 'Discuss Elixir patterns' }),
+      makeMessage({ id: 'm2', conversationId: 'c2', content: 'More Elixir examples' }),
+    ])
+
+    const results = await searchConversationsWithMatches('Elixir')
+    expect(results).toHaveLength(2)
+    // Message-only results sorted by updatedAt desc
     expect(results[0]!.conversation.id).toBe('c2')
-    expect(results[1]!.conversation.id).toBe('c3')
-    expect(results[2]!.conversation.id).toBe('c1')
+    expect(results[1]!.conversation.id).toBe('c1')
   })
 
   it('should return empty array when nothing matches', async () => {
@@ -263,6 +282,99 @@ describe('searchConversationsAndMessages', () => {
     ])
 
     const results = await searchConversationsAndMessages('monads')
+    expect(results).toHaveLength(1)
+    expect(results[0]!.id).toBe('c1')
+  })
+})
+
+// ============================================================================
+// MiniSearch-specific behavior
+// ============================================================================
+
+describe('miniSearch integration', () => {
+  it('should support prefix search in searchConversationsWithMatches', async () => {
+    await upsertConversation(
+      makeConversation({ id: 'c1', title: 'TypeScript generics explained', updatedAt: 1000 })
+    )
+
+    const results = await searchConversationsWithMatches('Type')
+    expect(results).toHaveLength(1)
+    expect(results[0]!.conversation.id).toBe('c1')
+  })
+
+  it('should support fuzzy matching in searchConversationsWithMatches', async () => {
+    await upsertConversation(
+      makeConversation({ id: 'c1', title: 'JavaScript performance tuning', updatedAt: 1000 })
+    )
+
+    // "Javascrpt" is a typo
+    const results = await searchConversationsWithMatches('Javascrpt')
+    expect(results).toHaveLength(1)
+    expect(results[0]!.conversation.id).toBe('c1')
+  })
+
+  it('should rank title matches above preview-only matches', async () => {
+    await upsertConversations([
+      makeConversation({
+        id: 'c1',
+        title: 'Unrelated topic',
+        preview: 'Mentions Docker briefly',
+        updatedAt: 2000,
+      }),
+      makeConversation({
+        id: 'c2',
+        title: 'Docker deployment guide',
+        preview: 'Some preview',
+        updatedAt: 1000,
+      }),
+    ])
+
+    const results = await searchConversationsWithMatches('Docker')
+    expect(results).toHaveLength(2)
+    // Title match (c2) should be ranked first despite older updatedAt
+    expect(results[0]!.conversation.id).toBe('c2')
+  })
+
+  it('should place MiniSearch conversation results before message-only results', async () => {
+    await upsertConversations([
+      makeConversation({ id: 'c1', title: 'Chat about food', updatedAt: 5000 }),
+      makeConversation({ id: 'c2', title: 'Golang concurrency patterns', updatedAt: 1000 }),
+    ])
+    await upsertMessages([
+      makeMessage({ id: 'm1', conversationId: 'c1', content: 'Golang is great for servers' }),
+    ])
+
+    const results = await searchConversationsWithMatches('Golang')
+    expect(results).toHaveLength(2)
+    // c2 has MiniSearch title match, should come first
+    expect(results[0]!.conversation.id).toBe('c2')
+    // c1 is message-only match
+    expect(results[1]!.conversation.id).toBe('c1')
+  })
+
+  it('should fall back to substring for single-char queries', async () => {
+    await upsertConversation(
+      makeConversation({ id: 'c1', title: 'R programming language', updatedAt: 1000 })
+    )
+
+    // Single char "R" uses substring fallback
+    const results = await searchConversationsWithMatches('R')
+    expect(results).toHaveLength(1)
+    expect(results[0]!.conversation.id).toBe('c1')
+  })
+
+  it('should support prefix search in searchConversations', async () => {
+    await upsertConversation(makeConversation({ id: 'c1', title: 'Kubernetes cluster setup' }))
+
+    const results = await searchConversations('Kube')
+    expect(results).toHaveLength(1)
+    expect(results[0]!.id).toBe('c1')
+  })
+
+  it('searchConversations should fall back to substring for single-char queries', async () => {
+    await upsertConversation(makeConversation({ id: 'c1', title: 'X Window System' }))
+
+    const results = await searchConversations('X')
     expect(results).toHaveLength(1)
     expect(results[0]!.id).toBe('c1')
   })

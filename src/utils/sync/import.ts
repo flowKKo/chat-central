@@ -12,7 +12,7 @@ import {
 import type { Conversation, Message } from '@/types'
 import JSZip from 'jszip'
 import { conversationSchema, messageSchema } from '@/types'
-import { addConflict, db } from '@/utils/db'
+import { addConflict, db, invalidateSearchIndex } from '@/utils/db'
 import { mergeConversation, mergeMessage } from './merge'
 import { parseJsonl, sha256, syncLogger } from './utils'
 import {
@@ -148,6 +148,8 @@ export async function importData(
         updateImportStats(result, status, 'messages')
       }
     })
+
+    invalidateSearchIndex()
 
     return result
   } catch (error) {
@@ -309,6 +311,8 @@ export async function importFromJson(
         }
       }
     })
+
+    invalidateSearchIndex()
 
     return result
   } catch (error) {

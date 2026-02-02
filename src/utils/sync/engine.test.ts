@@ -74,6 +74,7 @@ vi.mock('@/utils/db', () => ({
   })),
   getPendingOperations: vi.fn(() => []),
   markOperationsSynced: vi.fn(),
+  invalidateSearchIndex: vi.fn(),
 }))
 
 // ============================================================================

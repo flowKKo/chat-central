@@ -29,6 +29,7 @@ vi.mock('@/utils/db', () => ({
     transaction: vi.fn((_mode: string, _tables: unknown[], callback: () => void) => callback()),
   },
   addConflict: vi.fn(),
+  invalidateSearchIndex: vi.fn(),
 }))
 
 describe('sync/import', () => {

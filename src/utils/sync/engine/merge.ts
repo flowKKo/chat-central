@@ -1,7 +1,7 @@
 import type { ConflictRecord, EntityType, SyncRecord } from '../types'
 import { mergeConversation, mergeMessage } from '../merge'
 import type { Conversation, Message } from '@/types'
-import { db, addConflict } from '@/utils/db'
+import { db, addConflict, invalidateSearchIndex } from '@/utils/db'
 import type { EntityTable, MergeEntityResult, MergeRecordResult, MergeRemoteResult } from './types'
 
 // ============================================================================
@@ -48,6 +48,10 @@ export async function mergeRemoteChanges(
       }
     }
   })
+
+  if (result.applied.conversations > 0) {
+    invalidateSearchIndex()
+  }
 
   return result
 }

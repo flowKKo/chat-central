@@ -79,5 +79,8 @@ export {
   type SearchResultWithMatches,
 } from './search'
 
+// Search index
+export { invalidateSearchIndex, removeFromSearchIndex, updateSearchIndex } from './search-index'
+
 // Statistics
 export { type DBStats, getDBStats } from './stats'

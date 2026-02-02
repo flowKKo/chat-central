@@ -41,6 +41,7 @@ import {
   updateSyncState,
 } from './repositories/sync'
 import { searchConversations, searchConversationsWithMatches, searchMessages } from './search'
+import { _resetSearchIndex } from './search-index'
 import { getDBStats } from './stats'
 
 // ============================================================================
@@ -84,6 +85,7 @@ function makeMessage(overrides: Partial<Message> = {}): Message {
 let db: ChatCentralDB
 
 beforeEach(async () => {
+  _resetSearchIndex()
   // Create a fresh database for each test
   db = new ChatCentralDB()
 
@@ -593,15 +595,13 @@ describe('search', () => {
       expect(results[0]!.matches.some((m) => m.type === 'summary')).toBe(true)
     })
 
-    it('should sort results by updatedAt desc', async () => {
+    it('should return all matching results', async () => {
       const results = await searchConversationsWithMatches('how')
       // "how" appears in c1 preview (updatedAt: 3000) and c3 preview (updatedAt: 1000)
       expect(results.length).toBeGreaterThanOrEqual(2)
-      for (let i = 1; i < results.length; i++) {
-        expect(results[i - 1]!.conversation.updatedAt).toBeGreaterThanOrEqual(
-          results[i]!.conversation.updatedAt
-        )
-      }
+      const ids = results.map((r) => r.conversation.id)
+      expect(ids).toContain('c1')
+      expect(ids).toContain('c3')
     })
   })
 

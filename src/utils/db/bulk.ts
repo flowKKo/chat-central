@@ -1,5 +1,6 @@
 import type { Platform } from '@/types'
 import { db } from './schema'
+import { invalidateSearchIndex } from './search-index'
 
 /**
  * Clear all data from the database
@@ -9,6 +10,7 @@ export async function clearAllData(): Promise<void> {
     await db.conversations.clear()
     await db.messages.clear()
   })
+  invalidateSearchIndex()
 }
 
 /**
@@ -24,4 +26,5 @@ export async function clearPlatformData(platform: Platform): Promise<void> {
 
     await db.conversations.where('platform').equals(platform).delete()
   })
+  invalidateSearchIndex()
 }

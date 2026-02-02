@@ -19,6 +19,7 @@ vi.mock('@/utils/db', () => ({
   updateConversationFavorite: vi.fn(),
   updateConversationTags: vi.fn(),
   getAllTags: vi.fn(),
+  searchConversations: vi.fn(),
 }))
 
 vi.mock('@/utils/logger', () => ({
@@ -38,6 +39,7 @@ const {
   updateConversationFavorite,
   updateConversationTags,
   getAllTags,
+  searchConversations,
 } = await vi.importMock<typeof import('@/utils/db')>('@/utils/db')
 
 function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
@@ -150,35 +152,34 @@ describe('data handlers', () => {
   })
 
   describe('handleSearch', () => {
-    it('should filter conversations by query', async () => {
-      const convs = [
+    it('should return search results from searchConversations', async () => {
+      const matched = [
         makeConversation({ id: 'c1', title: 'React hooks guide' }),
-        makeConversation({ id: 'c2', title: 'Vue composition', preview: 'About Vue' }),
         makeConversation({ id: 'c3', title: 'CSS tricks', preview: 'Cool react tips' }),
       ]
-      getConversations.mockResolvedValue(convs)
+      searchConversations.mockResolvedValue(matched)
 
       const result = await handleSearch({
         action: 'SEARCH',
         query: 'react',
       })
 
+      expect(searchConversations).toHaveBeenCalledWith('react')
       expect(result).toHaveProperty('results')
       const results = (result as { results: Conversation[] }).results
       expect(results).toHaveLength(2)
       expect(results.map((r) => r.id)).toEqual(['c1', 'c3'])
     })
 
-    it('should be case-insensitive', async () => {
-      getConversations.mockResolvedValue([
-        makeConversation({ title: 'UPPERCASE Title' }),
-      ])
+    it('should pass query to searchConversations', async () => {
+      searchConversations.mockResolvedValue([makeConversation({ title: 'UPPERCASE Title' })])
 
       const result = await handleSearch({
         action: 'SEARCH',
         query: 'uppercase',
       })
 
+      expect(searchConversations).toHaveBeenCalledWith('uppercase')
       expect((result as { results: Conversation[] }).results).toHaveLength(1)
     })
 
