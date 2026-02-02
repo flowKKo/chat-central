@@ -5,6 +5,30 @@ import { createLogger } from '@/utils/logger'
 
 const log = createLogger('Observer')
 
+// Track extension lifecycle to avoid repeated errors after reload/update
+let contextInvalidated = false
+let domObserver: MutationObserver | null = null
+let messageHandler: ((event: MessageEvent) => void) | null = null
+
+function isContextInvalidatedError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('Extension context invalidated')
+}
+
+function teardown() {
+  if (contextInvalidated) return
+  contextInvalidated = true
+  log.warn('Extension context invalidated. Reload the page to reconnect.')
+
+  if (domObserver) {
+    domObserver.disconnect()
+    domObserver = null
+  }
+  if (messageHandler) {
+    window.removeEventListener('message', messageHandler)
+    messageHandler = null
+  }
+}
+
 /**
  * Observer Content Script
  *
@@ -37,8 +61,7 @@ export default defineContentScript({
       document.addEventListener('DOMContentLoaded', () => {
         setupDOMObserver(platform)
       })
-    }
-    else {
+    } else {
       setupDOMObserver(platform)
     }
   },
@@ -48,7 +71,9 @@ export default defineContentScript({
  * Setup postMessage listener
  */
 function setupMessageListener() {
-  window.addEventListener('message', (event) => {
+  messageHandler = (event: MessageEvent) => {
+    if (contextInvalidated) return
+
     // Only accept messages from the same origin
     if (event.source !== window) return
     if (event.data?.type !== 'CHAT_CENTRAL_CAPTURE') return
@@ -66,21 +91,29 @@ function setupMessageListener() {
         timestamp,
       })
       .catch((e: unknown) => {
-        log.error('Failed to send to background:', e)
+        if (isContextInvalidatedError(e)) {
+          teardown()
+        } else {
+          log.error('Failed to send to background:', e)
+        }
       })
-  })
+  }
+  window.addEventListener('message', messageHandler)
 }
 
 /**
  * Setup DOM observer (as a backup data source)
  */
 function setupDOMObserver(platform: string) {
+  if (contextInvalidated) return
+
   // Set different selectors based on platform
   const selectors = getSelectors(platform)
   if (!selectors) return
 
   // Use MutationObserver to monitor conversation changes
-  const observer = new MutationObserver((mutations) => {
+  domObserver = new MutationObserver((mutations) => {
+    if (contextInvalidated) return
     for (const mutation of mutations) {
       if (mutation.addedNodes.length > 0) {
         handleDOMMutation(mutation, platform, selectors)
@@ -90,9 +123,10 @@ function setupDOMObserver(platform: string) {
 
   // Wait for container to appear
   waitForElement(selectors.container).then((container) => {
+    if (contextInvalidated || !domObserver) return
     if (container) {
       log.info('DOM observer started')
-      observer.observe(container, {
+      domObserver.observe(container, {
         childList: true,
         subtree: true,
       })
@@ -138,7 +172,7 @@ function getSelectors(platform: string): PlatformSelectors | null {
 function handleDOMMutation(
   mutation: MutationRecord,
   _platform: string,
-  _selectors: PlatformSelectors,
+  _selectors: PlatformSelectors
 ) {
   // Simple debounce
   // Full implementation requires parsing DOM content and merging with API data
