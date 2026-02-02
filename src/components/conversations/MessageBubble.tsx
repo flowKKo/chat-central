@@ -1,16 +1,14 @@
 import { User, Bot } from 'lucide-react'
 import type { Message } from '@/types'
 import { cn } from '@/utils/cn'
-import { HighlightText } from '../HighlightText'
 import { MarkdownContent } from './MarkdownContent'
 
 interface MessageBubbleProps {
   message: Message
   platformColor: string
-  searchQuery?: string
 }
 
-export function MessageBubble({ message, platformColor, searchQuery }: MessageBubbleProps) {
+export function MessageBubble({ message, platformColor }: MessageBubbleProps) {
   const isUser = message.role === 'user'
 
   return (
@@ -50,12 +48,8 @@ export function MessageBubble({ message, platformColor, searchQuery }: MessageBu
             </span>
           )}
         </div>
-        <div className={cn('text-sm leading-relaxed', searchQuery && 'whitespace-pre-wrap')}>
-          {searchQuery ? (
-            <HighlightText text={message.content} query={searchQuery} />
-          ) : (
-            <MarkdownContent content={message.content} />
-          )}
+        <div className="text-sm leading-relaxed">
+          <MarkdownContent content={message.content} />
         </div>
       </div>
     </div>

@@ -278,7 +278,6 @@ export function ConversationDetail({
                 key={message.id}
                 message={message}
                 platformColor={platformConfig.color}
-                searchQuery={searchQuery}
               />
             ))}
           </div>

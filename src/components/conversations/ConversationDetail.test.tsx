@@ -84,11 +84,10 @@ vi.mock('../TagManager', () => ({
 }))
 
 vi.mock('./MessageBubble', () => ({
-  MessageBubble: ({ message, searchQuery }: { message: Message; searchQuery?: string }) => (
+  MessageBubble: ({ message }: { message: Message }) => (
     <div data-testid={`message-${message.id}`} data-message-id={message.id}>
       <span>{message.role === 'user' ? 'You' : 'Assistant'}</span>
       <span>{message.content}</span>
-      {searchQuery && <span data-testid="search-highlight">{searchQuery}</span>}
     </div>
   ),
 }))
@@ -202,7 +201,7 @@ describe('conversationDetail', () => {
     expect(screen.queryByTestId('summary-block')).not.toBeInTheDocument()
   })
 
-  it('should pass searchQuery to message bubbles', () => {
+  it('should render messages normally even when searching', () => {
     const messages = [createMessage({ id: 'msg-1', role: 'user', content: 'Hello world' })]
     render(
       <ConversationDetail
@@ -212,8 +211,8 @@ describe('conversationDetail', () => {
       />
     )
 
-    expect(screen.getByTestId('search-highlight')).toBeInTheDocument()
-    expect(screen.getByTestId('search-highlight')).toHaveTextContent('world')
+    expect(screen.getByTestId('message-msg-1')).toBeInTheDocument()
+    expect(screen.getByText('Hello world')).toBeInTheDocument()
   })
 
   it('should show sync warning when detailStatus is not full', () => {

@@ -51,12 +51,11 @@ describe('messageBubble', () => {
     expect(element).toBeInTheDocument()
   })
 
-  it('should use HighlightText when searchQuery is provided', () => {
-    const message = createMessage({ content: 'Hello world test' })
-    render(<MessageBubble message={message} platformColor="#0ea5e9" searchQuery="world" />)
+  it('should always render markdown content', () => {
+    const message = createMessage({ content: 'Hello **bold** test' })
+    render(<MessageBubble message={message} platformColor="#0ea5e9" />)
 
-    expect(screen.getByText(/world/i)).toBeInTheDocument()
-    expect(screen.queryByTestId('markdown')).not.toBeInTheDocument()
+    expect(screen.getByTestId('markdown')).toBeInTheDocument()
   })
 
   it('should display message time', () => {
