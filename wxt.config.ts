@@ -1,4 +1,19 @@
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { defineConfig } from 'wxt'
+
+// Load .env into process.env (no external dependencies)
+const envPath = resolve(process.cwd(), '.env')
+if (existsSync(envPath)) {
+  for (const line of readFileSync(envPath, 'utf-8').split('\n')) {
+    const match = line.match(/^([^#=\s]+)\s*=(.*)$/)
+    if (match && !process.env[match[1]]) {
+      process.env[match[1]] = match[2].trim().replace(/^(['"])(.*)\1$/, '$2')
+    }
+  }
+}
+
+const googleClientId = process.env.GOOGLE_CLIENT_ID
 
 export default defineConfig({
   srcDir: 'src',
@@ -13,28 +28,28 @@ export default defineConfig({
     version: '0.1.0',
 
     // Chrome/Edge fixed dev ID (development environment)
-    ...(mode === 'development'
-      && (browser === 'chrome' || browser === 'edge')
-      && {
+    ...(mode === 'development' &&
+      (browser === 'chrome' || browser === 'edge') &&
+      {
         // Can generate fixed dev key later
       }),
 
-    permissions: ['storage', 'unlimitedStorage', 'tabs', 'contextMenus', 'identity', 'alarms'],
+    permissions: [
+      'storage',
+      'unlimitedStorage',
+      'tabs',
+      'contextMenus',
+      'alarms',
+      ...(googleClientId ? ['identity' as const] : []),
+    ],
 
-    // OAuth2 configuration for Google Drive cloud sync
-    // NOTE: Replace with your own client ID from Google Cloud Console
-    // 1. Create a project at https://console.cloud.google.com/
-    // 2. Enable Google Drive API
-    // 3. Create OAuth 2.0 credentials (Chrome extension type)
-    // 4. Set the client ID below
-    oauth2: {
-      client_id: 'YOUR_CLIENT_ID.apps.googleusercontent.com',
-      scopes: ['https://www.googleapis.com/auth/drive.appdata'],
-    },
-
-    // Extension key for consistent extension ID during development
-    // Generate with: openssl rand -base64 32 | head -c 32
-    // key: 'YOUR_EXTENSION_KEY',
+    // OAuth2 — only included when GOOGLE_CLIENT_ID is set in .env
+    ...(googleClientId && {
+      oauth2: {
+        client_id: googleClientId,
+        scopes: ['https://www.googleapis.com/auth/drive.appdata'],
+      },
+    }),
 
     host_permissions: [
       'https://claude.ai/*',

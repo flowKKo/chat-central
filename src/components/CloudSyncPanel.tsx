@@ -5,11 +5,13 @@ import {
   CheckCircle2,
   Cloud,
   CloudOff,
+  Info,
   Loader2,
   RefreshCw,
   WifiOff,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { browser } from 'wxt/browser'
 import {
   autoSyncEnabledAtom,
   autoSyncIntervalAtom,
@@ -27,6 +29,15 @@ import {
 } from '@/utils/atoms/cloud-sync'
 import { cn } from '@/utils/cn'
 import { SettingsSection } from './ui/SettingsSection'
+
+function isOAuthConfigured(): boolean {
+  try {
+    const manifest = browser.runtime.getManifest() as { oauth2?: { client_id?: string } }
+    return !!manifest.oauth2?.client_id
+  } catch {
+    return false
+  }
+}
 
 export function CloudSyncPanel() {
   const [isOnline, setIsOnline] = useState(
@@ -114,8 +125,41 @@ export function CloudSyncPanel() {
         </div>
       )}
 
-      {!isConnected && (
-        // Not Connected State
+      {!isConnected && !isOAuthConfigured() && (
+        <div className="space-y-3">
+          <div className="flex items-start gap-3 rounded-xl bg-muted/30 p-4">
+            <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
+            <div className="flex-1 space-y-2 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">Setup required</p>
+              <ol className="list-inside list-decimal space-y-1">
+                <li>
+                  Create a project at{' '}
+                  <a
+                    href="https://console.cloud.google.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline underline-offset-2"
+                  >
+                    Google Cloud Console
+                  </a>
+                </li>
+                <li>Enable the Google Drive API</li>
+                <li>Create OAuth 2.0 credentials (Chrome extension type)</li>
+                <li>
+                  Add{' '}
+                  <code className="rounded bg-muted px-1 py-0.5 text-xs">
+                    GOOGLE_CLIENT_ID=your-id.apps.googleusercontent.com
+                  </code>{' '}
+                  to <code className="rounded bg-muted px-1 py-0.5 text-xs">.env</code>
+                </li>
+                <li>Rebuild the extension</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isConnected && isOAuthConfigured() && (
         <div className="space-y-4">
           <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-4">
             <CloudOff className="h-5 w-5 text-muted-foreground" />
@@ -127,7 +171,6 @@ export function CloudSyncPanel() {
             </div>
           </div>
 
-          {/* Connect Error */}
           {connectError && (
             <div className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3">
               <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
@@ -135,7 +178,6 @@ export function CloudSyncPanel() {
             </div>
           )}
 
-          {/* Google Connect Button */}
           <button
             type="button"
             onClick={handleConnect}

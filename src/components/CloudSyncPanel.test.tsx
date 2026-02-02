@@ -13,10 +13,12 @@ import {
 } from '@/utils/atoms/cloud-sync'
 
 // Mock wxt/browser (required by cloud-sync atoms)
+const mockGetManifest = vi.fn()
 vi.mock('wxt/browser', () => ({
   browser: {
     runtime: {
       sendMessage: vi.fn().mockResolvedValue({}),
+      getManifest: (...args: unknown[]) => mockGetManifest(...args),
     },
   },
 }))
@@ -49,6 +51,8 @@ describe('cloudSyncPanel', () => {
 
   beforeEach(() => {
     store = createStore()
+    // Default: OAuth configured
+    mockGetManifest.mockReturnValue({ oauth2: { client_id: 'test.apps.googleusercontent.com' } })
     // Set default disconnected state
     store.set(isCloudConnectedAtom, false)
     store.set(cloudSyncStatusAtom, 'idle')
@@ -187,6 +191,24 @@ describe('cloudSyncPanel', () => {
     it('should not show connect button when connected', () => {
       renderWithStore(store)
       expect(screen.queryByText('Connect with Google')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('oauth not configured', () => {
+    beforeEach(() => {
+      mockGetManifest.mockReturnValue({})
+    })
+
+    it('should show setup instructions when OAuth is not configured', () => {
+      renderWithStore(store)
+      expect(screen.getByText('Setup required')).toBeInTheDocument()
+      expect(screen.getByText(/Enable the Google Drive API/)).toBeInTheDocument()
+    })
+
+    it('should not show connect button when OAuth is not configured', () => {
+      renderWithStore(store)
+      expect(screen.queryByText('Connect with Google')).not.toBeInTheDocument()
+      expect(screen.queryByText('Not connected')).not.toBeInTheDocument()
     })
   })
 
