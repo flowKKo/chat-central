@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Shadow DOM host — replicate CSS variables from globals.css since
+   Shadow DOM boundaries prevent inheritance of custom properties. */
+:host {
+  /* Light Mode */
+  --background: 210 20% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 221 83% 53%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 221 83% 53%;
+  --radius: 0.625rem;
+
+  /* Platform Colors */
+  --claude: 16 65% 59%;
+  --chatgpt: 160 85% 35%;
+  --gemini: 217 89% 61%;
+
+  font-family:
+    'DM Sans',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:host(.dark) {
+  --background: 222 47% 11%;
+  --foreground: 210 20% 98%;
+  --card: 222 47% 13%;
+  --card-foreground: 210 20% 98%;
+  --popover: 222 47% 13%;
+  --popover-foreground: 210 20% 98%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 222 47% 11%;
+  --secondary: 217 33% 20%;
+  --secondary-foreground: 210 20% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 217 33% 20%;
+  --accent-foreground: 210 20% 98%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 210 20% 98%;
+  --border: 217 33% 24%;
+  --input: 217 33% 24%;
+  --ring: 217 91% 60%;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+    box-sizing: border-box;
+  }
+}
+
+/* ─── FAB: edge-hugging, semi-transparent until hover ─── */
+.widget-fab-container {
+  /* Poke out just 12px from the right edge */
+  transform: translateY(-50%) translateX(28px);
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
+  opacity: 0.25;
+}
+
+.widget-fab-container:hover,
+.widget-fab-container:has(.widget-fab[data-open]) {
+  transform: translateY(-50%) translateX(0px);
+  opacity: 1;
+}
+
+.widget-fab {
+  cursor: pointer;
+  box-shadow: -2px 0 12px -2px hsl(var(--foreground) / 0.1);
+}
+
+.widget-fab:active {
+  transform: scale(0.95);
+}
+
+/* ─── Close menu: pop in from the right ─── */
+@keyframes widget-close-menu-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) translateX(8px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0) scale(1);
+  }
+}
+
+.widget-close-menu {
+  animation: widget-close-menu-in 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ─── Panel: slide-in from right with glassmorphism ─── */
+@keyframes widget-panel-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) translateX(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+.widget-panel {
+  animation: widget-panel-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Position to the left of the FAB strip */
+  right: 44px;
+}
+
+/* Panel button hover lift */
+.widget-panel-btn:hover {
+  transform: scale(1.05);
+}
+
+.widget-panel-btn:active {
+  transform: scale(0.95);
+}
+
+/* ─── Legacy animation classes (kept for compatibility) ─── */
+.widget-animate-in {
+  animation: widget-panel-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Scrollbar */
+.widget-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.widget-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.widget-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 2px;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
