@@ -6,6 +6,7 @@ import {
   DataTransferSettings,
   PlatformDataSettings,
   PrivacyNotice,
+  WidgetSettings,
 } from './settings'
 
 export function SettingsPanel() {
@@ -20,6 +21,7 @@ export function SettingsPanel() {
       {/* Settings Sections */}
       <div className="space-y-4">
         <AppearanceSettings />
+        <WidgetSettings />
         <DataTransferSettings />
         <CloudSyncPanel />
         <PlatformDataSettings />
