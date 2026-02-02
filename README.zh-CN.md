@@ -10,8 +10,6 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License">
-  <img src="https://img.shields.io/badge/tests-990%2B%20passed-brightgreen" alt="Tests">
-  <img src="https://img.shields.io/badge/chrome-Manifest%20V3-yellow" alt="Chrome MV3">
   <img src="https://img.shields.io/badge/platforms-Claude%20%7C%20ChatGPT%20%7C%20Gemini-purple" alt="Platforms">
 </p>
 
