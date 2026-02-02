@@ -9,10 +9,35 @@ const log = createLogger('ChatCentral')
 const CONFIG_STORAGE_KEY = 'config'
 
 /**
- * Config Atom
- * Uses optimistic updates + persistence
+ * Config Atom (internal)
  */
-export const configAtom = atom<Config>(DEFAULT_CONFIG)
+const baseConfigAtom = atom<Config>(DEFAULT_CONFIG)
+
+let hydrated = false
+
+/**
+ * Config Atom
+ * Self-hydrating: loads from storage on first read and watches for external changes.
+ */
+export const configAtom = atom(
+  (get) => get(baseConfigAtom),
+  (_get, set, value: Config) => set(baseConfigAtom, value)
+)
+
+/**
+ * Hydrate config from storage and watch for external changes.
+ * Safe to call multiple times — only runs once.
+ */
+export function hydrateConfig(set: (config: Config) => void): () => void {
+  if (hydrated) return () => {}
+  hydrated = true
+
+  // Load initial value
+  loadConfig().then(set)
+
+  // Watch for changes from other contexts (widget, popup, etc.)
+  return watchConfig(set)
+}
 
 // Write version number, used to prevent old writes from overwriting new values
 let writeVersion = 0
@@ -22,12 +47,12 @@ let writeVersion = 0
  * Implements optimistic updates and serialized writing
  */
 export const writeConfigAtom = atom(null, async (get, set, patch: Partial<Config>) => {
-  const currentConfig = get(configAtom)
+  const currentConfig = get(baseConfigAtom)
   const currentVersion = ++writeVersion
 
   // 1. Optimistic update UI
   const optimisticNext = deepmerge(currentConfig, patch) as Config
-  set(configAtom, optimisticNext)
+  set(baseConfigAtom, optimisticNext)
 
   // 2. Validate and persist
   try {
@@ -38,12 +63,11 @@ export const writeConfigAtom = atom(null, async (get, set, patch: Partial<Config
     }
 
     await storage.setItem(`local:${CONFIG_STORAGE_KEY}`, parsed.data)
-  }
-  catch (e) {
+  } catch (e) {
     log.error('Failed to save config:', e)
     // If save fails and version is still the current version, rollback
     if (writeVersion === currentVersion) {
-      set(configAtom, currentConfig)
+      set(baseConfigAtom, currentConfig)
     }
   }
 })
@@ -60,8 +84,7 @@ export async function loadConfig(): Promise<Config> {
         return parsed.data
       }
     }
-  }
-  catch (e) {
+  } catch (e) {
     log.error('Failed to load config:', e)
   }
   return DEFAULT_CONFIG
