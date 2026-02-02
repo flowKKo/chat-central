@@ -255,7 +255,11 @@ export function ConversationDetail({
           </div>
         )}
 
-        {conversation.summary && <SummaryBlock summary={conversation.summary} />}
+        {conversation.summary &&
+          (!searchQuery ||
+            conversation.summary.toLowerCase().includes(searchQuery.toLowerCase())) && (
+            <SummaryBlock summary={conversation.summary} />
+          )}
       </div>
 
       {/* Messages */}

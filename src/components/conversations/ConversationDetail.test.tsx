@@ -276,6 +276,36 @@ describe('conversationDetail', () => {
     expect(screen.getByText('ai')).toBeInTheDocument()
   })
 
+  it('should hide summary block when searching and summary does not contain query', () => {
+    const conversation = createConversation({
+      summary: 'This conversation is about AI topics',
+    })
+    render(
+      <ConversationDetail conversation={conversation} messages={[]} searchQuery="algorithms" />
+    )
+
+    expect(screen.queryByTestId('summary-block')).not.toBeInTheDocument()
+  })
+
+  it('should show summary block when searching and summary contains query', () => {
+    const conversation = createConversation({
+      summary: 'This conversation is about AI topics',
+    })
+    render(<ConversationDetail conversation={conversation} messages={[]} searchQuery="AI" />)
+
+    expect(screen.getByTestId('summary-block')).toBeInTheDocument()
+    expect(screen.getByText('This conversation is about AI topics')).toBeInTheDocument()
+  })
+
+  it('should show summary block when not searching', () => {
+    const conversation = createConversation({
+      summary: 'This conversation is about AI topics',
+    })
+    render(<ConversationDetail conversation={conversation} messages={[]} />)
+
+    expect(screen.getByTestId('summary-block')).toBeInTheDocument()
+  })
+
   it('should render open in platform button', () => {
     render(<ConversationDetail conversation={createConversation()} messages={[]} />)
 

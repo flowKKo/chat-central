@@ -1,4 +1,5 @@
 import type { Conversation } from '@/types'
+import type { SearchResultWithMatches } from '@/utils/db'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { ConversationListItem } from './ConversationListItem'
@@ -78,7 +79,7 @@ describe('conversationListItem', () => {
         conversation={conversation}
         {...defaultProps}
         onToggleFavorite={onToggleFavorite}
-      />,
+      />
     )
 
     const favoriteButton = screen.getByRole('button', { name: /add to favorites/i })
@@ -96,7 +97,7 @@ describe('conversationListItem', () => {
   it('should have selected indicator when isSelected is true', () => {
     const conversation = createConversation()
     const { container } = render(
-      <ConversationListItem conversation={conversation} {...defaultProps} isSelected />,
+      <ConversationListItem conversation={conversation} {...defaultProps} isSelected />
     )
 
     // Check for selected state class
@@ -107,9 +108,109 @@ describe('conversationListItem', () => {
   it('should highlight search query in title', () => {
     const conversation = createConversation({ title: 'Hello World Chat' })
     render(
-      <ConversationListItem conversation={conversation} {...defaultProps} searchQuery="World" />,
+      <ConversationListItem conversation={conversation} {...defaultProps} searchQuery="World" />
     )
 
     expect(screen.getByText(/World/i)).toBeInTheDocument()
+  })
+
+  describe('search result display priority', () => {
+    it('should show message match snippet in muted box when message match exists', () => {
+      const conversation = createConversation({
+        summary: 'A summary about coding',
+        preview: 'Some preview text',
+      })
+      const matchInfo: SearchResultWithMatches = {
+        conversation,
+        matches: [{ type: 'message', text: 'matched message content', messageId: 'msg-1' }],
+      }
+      const { container } = render(
+        <ConversationListItem
+          conversation={conversation}
+          {...defaultProps}
+          searchQuery="matched"
+          matchInfo={matchInfo}
+        />
+      )
+
+      // Message match should be shown in a rounded muted box
+      const matchBox = container.querySelector('.rounded-md.bg-muted\\/50')
+      expect(matchBox).toBeInTheDocument()
+      expect(screen.getByText(/matched/i)).toBeInTheDocument()
+
+      // Summary and preview should NOT be shown
+      expect(screen.queryByText('A summary about coding')).not.toBeInTheDocument()
+      expect(screen.queryByText('Some preview text')).not.toBeInTheDocument()
+    })
+
+    it('should show highlighted summary when summary matches query and no message match', () => {
+      const conversation = createConversation({
+        summary: 'A summary about coding patterns',
+        preview: 'Some preview text',
+      })
+      render(
+        <ConversationListItem conversation={conversation} {...defaultProps} searchQuery="coding" />
+      )
+
+      // Summary should be shown with highlight
+      expect(screen.getByText(/coding/i)).toBeInTheDocument()
+      // Preview should NOT be shown
+      expect(screen.queryByText('Some preview text')).not.toBeInTheDocument()
+    })
+
+    it('should show highlighted preview when only title/preview matches (not summary)', () => {
+      const conversation = createConversation({
+        summary: 'Unrelated summary text',
+        preview: 'Preview about algorithms',
+      })
+      render(
+        <ConversationListItem
+          conversation={conversation}
+          {...defaultProps}
+          searchQuery="algorithms"
+        />
+      )
+
+      // Preview should be shown highlighted
+      expect(screen.getByText(/algorithms/i)).toBeInTheDocument()
+      // Summary should NOT be shown
+      expect(screen.queryByText('Unrelated summary text')).not.toBeInTheDocument()
+    })
+
+    it('should show summary or preview without highlight when not searching', () => {
+      const conversation = createConversation({
+        summary: 'A nice summary',
+        preview: 'Some preview',
+      })
+      render(<ConversationListItem conversation={conversation} {...defaultProps} />)
+
+      // Summary should be shown (takes priority over preview)
+      expect(screen.getByText('A nice summary')).toBeInTheDocument()
+    })
+
+    it('should show preview when no summary and not searching', () => {
+      const conversation = createConversation({
+        summary: undefined,
+        preview: 'Fallback preview text',
+      })
+      render(<ConversationListItem conversation={conversation} {...defaultProps} />)
+
+      expect(screen.getByText('Fallback preview text')).toBeInTheDocument()
+    })
+
+    it('should show nothing when searching and no preview available', () => {
+      const conversation = createConversation({
+        title: 'Match title here',
+        summary: undefined,
+        preview: '',
+      })
+      const { container } = render(
+        <ConversationListItem conversation={conversation} {...defaultProps} searchQuery="Match" />
+      )
+
+      // No snippet section should be rendered (only title highlight)
+      const snippetElements = container.querySelectorAll('.line-clamp-2')
+      expect(snippetElements).toHaveLength(0)
+    })
   })
 })

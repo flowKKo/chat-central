@@ -41,6 +41,11 @@ export function ConversationListItem({
   // Get match snippet to display
   const messageMatch = matchInfo?.matches.find((m) => m.type === 'message')
   const hasMessageMatch = !!messageMatch
+  const hasSummaryMatch = !!(
+    searchQuery &&
+    conversation.summary &&
+    conversation.summary.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   return (
     <div
@@ -48,7 +53,7 @@ export function ConversationListItem({
       tabIndex={0}
       className={cn(
         'kbd-focus group relative animate-fade-in cursor-pointer p-3.5 transition-all',
-        isSelected ? 'bg-primary/10' : 'hover:bg-muted/50',
+        isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'
       )}
       style={style}
       onClick={onClick}
@@ -78,7 +83,7 @@ export function ConversationListItem({
         <div
           className={cn(
             'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-all',
-            isSelected ? 'scale-105' : 'group-hover:scale-105',
+            isSelected ? 'scale-105' : 'group-hover:scale-105'
           )}
           style={{ backgroundColor: `${platformConfig.color}15` }}
         >
@@ -90,13 +95,11 @@ export function ConversationListItem({
 
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-medium">
-            {searchQuery
-              ? (
-                  <HighlightText text={conversation.title} query={searchQuery} />
-                )
-              : (
-                  conversation.title
-                )}
+            {searchQuery ? (
+              <HighlightText text={conversation.title} query={searchQuery} />
+            ) : (
+              conversation.title
+            )}
           </h3>
           <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
             <span className="font-medium" style={{ color: platformConfig.color }}>
@@ -108,23 +111,68 @@ export function ConversationListItem({
             <span className="tabular-nums">
               {new Date(conversation.updatedAt).toLocaleDateString()}
             </span>
+
+            {/* Action buttons — inline, far right */}
+            <div className="-my-1 ml-auto flex items-center gap-0.5">
+              <button
+                type="button"
+                className="kbd-focus cursor-pointer rounded-md p-1 opacity-0 transition-all hover:bg-muted group-hover:opacity-100"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  if (conversation.url) {
+                    browser.tabs.create({ url: conversation.url })
+                  }
+                }}
+                aria-label="Open in platform"
+              >
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  'kbd-focus cursor-pointer rounded-md p-1 transition-all hover:bg-muted',
+                  conversation.isFavorite ? '' : 'opacity-0 group-hover:opacity-100'
+                )}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onToggleFavorite()
+                }}
+                aria-label={conversation.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                aria-pressed={conversation.isFavorite}
+              >
+                <Star
+                  className={cn(
+                    'h-3.5 w-3.5 transition-colors',
+                    conversation.isFavorite
+                      ? 'fill-amber-400 text-amber-400'
+                      : 'text-muted-foreground'
+                  )}
+                />
+              </button>
+            </div>
           </div>
 
-          {/* Summary or preview */}
-          {(conversation.summary || conversation.preview) && (
-            <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/80">
-              {searchQuery
-                ? (
-                    <HighlightText
-                      text={conversation.summary || conversation.preview}
-                      query={searchQuery}
-                      maxLength={120}
-                    />
-                  )
-                : (
-                    conversation.summary || conversation.preview
-                  )}
-            </p>
+          {/* Search result snippet or default summary/preview */}
+          {searchQuery ? (
+            hasMessageMatch ? (
+              <div className="mt-1.5 line-clamp-2 rounded-md bg-muted/50 px-2 py-1 text-xs leading-relaxed text-muted-foreground">
+                <HighlightText text={messageMatch.text} query={searchQuery} maxLength={120} />
+              </div>
+            ) : hasSummaryMatch ? (
+              <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/80">
+                <HighlightText text={conversation.summary!} query={searchQuery} maxLength={120} />
+              </p>
+            ) : conversation.preview ? (
+              <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/80">
+                <HighlightText text={conversation.preview} query={searchQuery} maxLength={120} />
+              </p>
+            ) : null
+          ) : (
+            (conversation.summary || conversation.preview) && (
+              <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/80">
+                {conversation.summary || conversation.preview}
+              </p>
+            )
           )}
 
           {/* Tags display */}
@@ -135,58 +183,11 @@ export function ConversationListItem({
               ))}
               {conversation.tags.length > 3 && (
                 <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  +
-                  {conversation.tags.length - 3}
+                  +{conversation.tags.length - 3}
                 </span>
               )}
             </div>
           )}
-
-          {/* Show message match snippet if searching by message content */}
-          {hasMessageMatch && searchQuery && (
-            <div className="mt-1.5 line-clamp-2 border-l-2 border-muted-foreground/20 pl-2 text-xs text-muted-foreground">
-              <HighlightText text={messageMatch.text} query={searchQuery} maxLength={120} />
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-shrink-0 items-center gap-1">
-          {/* External link button */}
-          <button
-            type="button"
-            className="kbd-focus cursor-pointer rounded-lg p-1.5 opacity-0 transition-colors hover:bg-muted group-hover:opacity-100"
-            onClick={(event) => {
-              event.stopPropagation()
-              if (conversation.url) {
-                browser.tabs.create({ url: conversation.url })
-              }
-            }}
-            aria-label="Open in platform"
-          >
-            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-
-          {/* Favorite button */}
-          <button
-            type="button"
-            className={cn(
-              'kbd-focus cursor-pointer rounded-lg p-1.5 transition-colors hover:bg-muted',
-              conversation.isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-            )}
-            onClick={(event) => {
-              event.stopPropagation()
-              onToggleFavorite()
-            }}
-            aria-label={conversation.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-            aria-pressed={conversation.isFavorite}
-          >
-            <Star
-              className={cn(
-                'h-4 w-4 transition-colors',
-                conversation.isFavorite ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground',
-              )}
-            />
-          </button>
         </div>
       </div>
     </div>
