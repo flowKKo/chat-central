@@ -195,7 +195,7 @@ export default function App() {
             <EmptyState searchQuery={searchQuery} onClearSearch={clearSearch} />
           ) : (
             <div className="space-y-1 p-2">
-              {conversations.map((conv, index) => {
+              {conversations.map((conv) => {
                 const matchInfo = searchResultsMap.get(conv.id)
                 return (
                   <ConversationItem
@@ -203,7 +203,6 @@ export default function App() {
                     conversation={conv}
                     searchQuery={activeSearchQuery}
                     matchInfo={matchInfo}
-                    style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                   />
                 )
               })}

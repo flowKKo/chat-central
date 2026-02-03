@@ -13,15 +13,9 @@ interface ConversationItemProps {
   conversation: Conversation
   searchQuery?: string
   matchInfo?: SearchResultWithMatches
-  style?: React.CSSProperties
 }
 
-export function ConversationItem({
-  conversation,
-  searchQuery,
-  matchInfo,
-  style,
-}: ConversationItemProps) {
+export function ConversationItem({ conversation, searchQuery, matchInfo }: ConversationItemProps) {
   const platformConfig = PLATFORM_CONFIG[conversation.platform as Platform]
   const [, toggleFavorite] = useAtom(toggleFavoriteAtom)
 
@@ -46,8 +40,7 @@ export function ConversationItem({
     <div
       role="listitem"
       tabIndex={0}
-      className="kbd-focus group relative animate-fade-in cursor-pointer rounded-xl p-3 transition-all hover:bg-muted"
-      style={style}
+      className="kbd-focus group relative cursor-pointer rounded-xl p-3 transition-all hover:bg-muted"
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
