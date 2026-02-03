@@ -18,7 +18,7 @@ export function HighlightText({
   text,
   query,
   className,
-  highlightClassName = 'bg-amber-500/30 text-foreground rounded-sm px-0.5',
+  highlightClassName = 'bg-yellow-300/80 text-foreground dark:bg-yellow-400/50',
   maxLength,
   fadeEdges = false,
 }: HighlightTextProps) {
