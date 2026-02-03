@@ -31,13 +31,11 @@ vi.mock('@/utils/db', () => ({
 }))
 
 vi.mock('@/utils/sync/export', () => ({
-  exportData: vi
-    .fn()
-    .mockResolvedValue({
-      blob: new Blob(),
-      filename: 'export.zip',
-      stats: { conversations: 0, messages: 0, sizeBytes: 0 },
-    }),
+  exportData: vi.fn().mockResolvedValue({
+    blob: new Blob(),
+    filename: 'export.zip',
+    stats: { conversations: 0, messages: 0, sizeBytes: 0 },
+  }),
   downloadExport: vi.fn(),
 }))
 
@@ -184,13 +182,11 @@ describe('dangerZoneSettings', () => {
 
 describe('dataTransferSettings', () => {
   beforeEach(() => {
-    mockExportData
-      .mockReset()
-      .mockResolvedValue({
-        blob: new Blob(),
-        filename: 'export.zip',
-        stats: { conversations: 0, messages: 0, sizeBytes: 0 },
-      })
+    mockExportData.mockReset().mockResolvedValue({
+      blob: new Blob(),
+      filename: 'export.zip',
+      stats: { conversations: 0, messages: 0, sizeBytes: 0 },
+    })
     mockDownloadExport.mockReset()
     mockImportData.mockReset()
     mockImportFromJson.mockReset()
