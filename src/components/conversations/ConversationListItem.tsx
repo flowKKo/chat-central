@@ -15,7 +15,6 @@ interface ConversationListItemProps {
   onToggleFavorite: () => void
   searchQuery?: string
   matchInfo?: SearchResultWithMatches
-  style?: React.CSSProperties
   /** Whether batch selection mode is active */
   isBatchMode?: boolean
   /** Whether this item is checked in batch mode */
@@ -31,7 +30,6 @@ export function ConversationListItem({
   onToggleFavorite,
   searchQuery,
   matchInfo,
-  style,
   isBatchMode = false,
   isChecked = false,
   onToggleCheck,
@@ -52,10 +50,9 @@ export function ConversationListItem({
       role="listitem"
       tabIndex={0}
       className={cn(
-        'kbd-focus group relative animate-fade-in cursor-pointer p-3.5 transition-all',
+        'kbd-focus group relative cursor-pointer p-3.5 transition-all',
         isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'
       )}
-      style={style}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

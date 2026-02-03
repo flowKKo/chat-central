@@ -57,7 +57,7 @@ export function ConversationList({
             </div>
           ) : (
             <div className="divide-y divide-border/50">
-              {conversations.map((conv, index) => {
+              {conversations.map((conv) => {
                 const matchInfo = searchResultsMap.get(conv.id)
                 const messageMatch = matchInfo?.matches.find((m) => m.type === 'message')
                 return (
@@ -75,7 +75,6 @@ export function ConversationList({
                     onToggleFavorite={() => onToggleFavorite(conv.id)}
                     searchQuery={searchQuery}
                     matchInfo={matchInfo}
-                    style={{ animationDelay: `${Math.min(index * 20, 200)}ms` }}
                     isBatchMode={isBatchMode}
                     isChecked={batchSelectedIds.has(conv.id)}
                     onToggleCheck={() => onToggleBatchSelect(conv.id)}
