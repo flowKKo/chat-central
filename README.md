@@ -1,6 +1,6 @@
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-<img src="docs/images/banner.svg" alt="Chat Central" width="100%">
+![Chat Central](docs/images/banner.svg)
 
 <p align="center">
   Unified AI conversation manager: automatically capture, search, tag, and export your AI conversations.
