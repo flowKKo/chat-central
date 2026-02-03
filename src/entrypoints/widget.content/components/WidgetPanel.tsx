@@ -11,7 +11,7 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   // Click-outside close (within Shadow DOM)
   useEffect(() => {
     const handlePointerDown = (e: PointerEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+      if (panelRef.current && !e.composedPath().includes(panelRef.current)) {
         onClose()
       }
     }
