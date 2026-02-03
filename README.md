@@ -1,11 +1,9 @@
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-<p align="center">
-  <img src="docs/images/banner.svg" alt="Chat Central" width="800">
-</p>
+<img src="docs/images/banner.svg" alt="Chat Central" width="100%">
 
 <p align="center">
-  Unified AI conversation manager — automatically capture, search, tag, and export your conversations across Claude, ChatGPT, and Gemini.
+  Unified AI conversation manager: automatically capture, search, tag, and export your AI conversations.
 </p>
 
 <p align="center">
