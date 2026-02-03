@@ -84,29 +84,29 @@ export function ConversationList({
               })}
             </div>
           )}
+
+          {/* Load More — inside scroll area so it appears at the bottom */}
+          {hasMore && conversations.length > 0 && (
+            <div className="p-3">
+              <button
+                type="button"
+                className="kbd-focus w-full cursor-pointer rounded-xl border border-dashed border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
+                onClick={onLoadMore}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+                    Loading...
+                  </span>
+                ) : (
+                  'Load more conversations'
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Load More */}
-      {hasMore && (
-        <div className="mt-3">
-          <button
-            type="button"
-            className="kbd-focus w-full cursor-pointer rounded-xl border border-dashed border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
-            onClick={onLoadMore}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-                Loading...
-              </span>
-            ) : (
-              'Load more conversations'
-            )}
-          </button>
-        </div>
-      )}
     </>
   )
 }
