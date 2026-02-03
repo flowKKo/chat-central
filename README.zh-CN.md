@@ -1,6 +1,6 @@
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-![Chat Central](docs/images/banner.svg)
+![Chat Central](docs/images/banner.png)
 
 <p align="center">
   统一的 AI 对话管理器：自动捕获、搜索、标签、导出你的 AI 对话。
