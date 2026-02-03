@@ -2,6 +2,7 @@ import { atom } from 'jotai'
 import { searchConversationsWithMatches } from '@/utils/db'
 import { createLogger } from '@/utils/logger'
 import { parseSearchQuery } from '@/utils/search-parser'
+import { DEFAULT_PAGE_SIZE } from '@/utils/constants'
 import {
   activeSearchQueryAtom,
   conversationsAtom,
@@ -71,6 +72,8 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
     // Reset search state but keep filters applied
     set(activeSearchQueryAtom, '')
     set(searchResultsAtom, [])
+    // Reset pagination limit (search overrides it with results.length)
+    set(paginationAtom, { offset: 0, limit: DEFAULT_PAGE_SIZE, hasMore: true })
     await set(loadConversationsAtom, { reset: true })
     return
   }
@@ -113,5 +116,6 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
 export const clearSearchAtom = atom(null, async (_get, set) => {
   set(activeSearchQueryAtom, '')
   set(searchResultsAtom, [])
+  set(paginationAtom, { offset: 0, limit: DEFAULT_PAGE_SIZE, hasMore: true })
   await set(loadConversationsAtom, { reset: true })
 })
