@@ -18,7 +18,7 @@ export function registerContextMenus() {
   const createMenu = () => {
     menus.create({
       id: FAVORITE_MENU_ID,
-      title: '收藏当前对话',
+      title: 'Favorite this conversation',
       contexts: ['page'],
       documentUrlPatterns: [
         'https://claude.ai/*',
@@ -31,8 +31,7 @@ export function registerContextMenus() {
 
   if (clear && typeof (clear as Promise<void>).then === 'function') {
     ;(clear as Promise<void>).then(createMenu).catch(createMenu)
-  }
-  else {
+  } else {
     createMenu()
   }
 }
@@ -58,13 +57,16 @@ export async function handleContextMenuShown(_info: unknown, tab?: unknown) {
 
   const parsed = parseConversationFromUrl(tabObj.url)
   if (!parsed) {
-    browser.contextMenus.update(FAVORITE_MENU_ID, { title: '收藏当前对话', enabled: false })
+    browser.contextMenus.update(FAVORITE_MENU_ID, {
+      title: 'Favorite this conversation',
+      enabled: false,
+    })
     browser.contextMenus.refresh()
     return
   }
 
   const existing = await getConversationById(parsed.conversationId)
-  const title = existing?.isFavorite ? '取消收藏' : '收藏当前对话'
+  const title = existing?.isFavorite ? 'Unfavorite this conversation' : 'Favorite this conversation'
   browser.contextMenus.update(FAVORITE_MENU_ID, { title, enabled: true })
   browser.contextMenus.refresh()
 }

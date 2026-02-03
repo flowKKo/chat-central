@@ -1,4 +1,5 @@
 import { Info } from 'lucide-react'
+import { APP_VERSION } from '@/utils/constants'
 import { CloudSyncPanel } from './CloudSyncPanel'
 import {
   AppearanceSettings,
@@ -31,7 +32,7 @@ export function SettingsPanel() {
         {/* Version Info */}
         <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
           <Info className="h-3.5 w-3.5" />
-          <span>Chat Central v0.1.0</span>
+          <span>{`Chat Central v${APP_VERSION}`}</span>
         </div>
       </div>
     </div>
