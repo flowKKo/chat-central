@@ -1,15 +1,18 @@
-[English](README.md) | [简体中文](README.zh-CN.md)
+<div align="center"><a name="readme-top"></a>
 
-![Chat Central](docs/images/banner.png)
+[![Chat Central](docs/images/banner.png)](https://www.chatcentral.cc)
 
-<p align="center">
-  Unified AI conversation manager: automatically capture, search, tag, and export your AI conversations.
-</p>
+Unified AI conversation manager: automatically capture, search, tag, and export your AI conversations.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License">
-  <img src="https://img.shields.io/badge/platforms-Claude%20%7C%20ChatGPT%20%7C%20Gemini-purple" alt="Platforms">
-</p>
+**English** · [简体中文](README.zh-CN.md) · [Official Website](https://www.chatcentral.cc) · [Tutorial](https://www.chatcentral.cc/tutorial) · [Privacy](https://www.chatcentral.cc/privacy)
+
+[![][license-shield]][license-link]
+[![][website-shield]][website-link]
+[![][platforms-shield]][website-link]
+[![][stars-shield]][stars-link]
+[![][issues-shield]][issues-link]
+
+</div>
 
 ## Features
 
@@ -86,3 +89,15 @@ See `CLAUDE.md` for architecture details.
 ## License
 
 [GPL-3.0](LICENSE)
+
+<!-- LINK GROUP -->
+
+[license-shield]: https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square&labelColor=black
+[license-link]: ./LICENSE
+[website-shield]: https://img.shields.io/badge/Website-chatcentral.cc-blue?style=flat-square&labelColor=black
+[website-link]: https://www.chatcentral.cc
+[platforms-shield]: https://img.shields.io/badge/platforms-Claude%20%7C%20ChatGPT%20%7C%20Gemini-purple?style=flat-square&labelColor=black
+[stars-shield]: https://img.shields.io/github/stars/nicepkg/chat-central?style=flat-square&label=stars&color=yellow&labelColor=black
+[stars-link]: https://github.com/nicepkg/chat-central/stargazers
+[issues-shield]: https://img.shields.io/github/issues/nicepkg/chat-central?style=flat-square&labelColor=black
+[issues-link]: https://github.com/nicepkg/chat-central/issues

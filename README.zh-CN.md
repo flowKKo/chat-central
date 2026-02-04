@@ -1,15 +1,18 @@
-[English](README.md) | [简体中文](README.zh-CN.md)
+<div align="center"><a name="readme-top"></a>
 
-![Chat Central](docs/images/banner.png)
+[![Chat Central](docs/images/banner.png)](https://www.chatcentral.cc/zh/)
 
-<p align="center">
-  统一的 AI 对话管理器：自动捕获、搜索、标签、导出你的 AI 对话。
-</p>
+统一的 AI 对话管理器：自动捕获、搜索、标签、导出你的 AI 对话。
 
-<p align="center">
-  <img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License">
-  <img src="https://img.shields.io/badge/platforms-Claude%20%7C%20ChatGPT%20%7C%20Gemini-purple" alt="Platforms">
-</p>
+[English](README.md) · **简体中文** · [官方网站](https://www.chatcentral.cc/zh/) · [教程](https://www.chatcentral.cc/zh/tutorial) · [隐私政策](https://www.chatcentral.cc/zh/privacy)
+
+[![][license-shield]][license-link]
+[![][website-shield]][website-link]
+[![][platforms-shield]][website-link]
+[![][stars-shield]][stars-link]
+[![][issues-shield]][issues-link]
+
+</div>
 
 ## 功能特性
 
@@ -86,3 +89,15 @@ pnpm validate        # 类型检查 + lint + 测试（提交前请运行）
 ## 许可证
 
 [GPL-3.0](LICENSE)
+
+<!-- LINK GROUP -->
+
+[license-shield]: https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square&labelColor=black
+[license-link]: ./LICENSE
+[website-shield]: https://img.shields.io/badge/官网-chatcentral.cc-blue?style=flat-square&labelColor=black
+[website-link]: https://www.chatcentral.cc/zh/
+[platforms-shield]: https://img.shields.io/badge/platforms-Claude%20%7C%20ChatGPT%20%7C%20Gemini-purple?style=flat-square&labelColor=black
+[stars-shield]: https://img.shields.io/github/stars/nicepkg/chat-central?style=flat-square&label=stars&color=yellow&labelColor=black
+[stars-link]: https://github.com/nicepkg/chat-central/stargazers
+[issues-shield]: https://img.shields.io/github/issues/nicepkg/chat-central?style=flat-square&labelColor=black
+[issues-link]: https://github.com/nicepkg/chat-central/issues
