@@ -1,149 +1,106 @@
 # Privacy Policy
 
-**Chat Central Browser Extension**
+**Effective Date:** February 4, 2026
 
-**Effective Date**: February 2, 2026
-**Version**: 1.0
+## What Chat Central Does
 
----
+Chat Central automatically captures AI conversations from Claude, ChatGPT, and Gemini as you chat. All data is stored locally in your browser. The extension provides search, tagging, favorites, export, and optional Google Drive cloud sync.
 
-## Overview
+## Data Collection
 
-Chat Central is an open-source browser extension (licensed under GPL-3.0) that helps you manage, search, and export your AI conversations from Claude, ChatGPT, and Gemini. This privacy policy explains what data the extension handles, how it is stored, and what controls you have over it.
+Chat Central captures **AI conversation content** (your prompts and AI responses) from supported platforms by reading API responses your browser already receives. It does not make any additional network requests to these platforms.
 
-The core principle is simple: **your data stays on your device unless you explicitly choose otherwise**.
+Captured data includes:
 
----
+- **Conversation metadata** — Titles, timestamps, platform, message counts, preview text
+- **Conversation content** — Full message text (your prompts and AI responses)
+- **User-created data** — Tags, favorites, organizational labels
+- **Preferences** — Theme, language, widget, and sync settings
 
-## 1. What Data Is Collected
+**We do NOT collect:**
 
-Chat Central captures and stores the following data locally in your browser:
-
-- **Conversation metadata**: Titles, timestamps, platform of origin (Claude, ChatGPT, or Gemini), message counts, and preview text.
-- **Conversation content**: The full text of messages exchanged between you and the AI platforms, including both your prompts and the AI responses.
-- **User-created data**: Tags, favorites, and any organizational labels you apply to conversations within the extension.
-- **Application preferences**: Theme settings, sync configuration, and other extension preferences.
-
-Chat Central captures this data by intercepting API responses between your browser and the supported AI platforms. The extension reads the responses that your browser already receives from these services. It does not make any additional network requests to these platforms on your behalf.
-
-**Chat Central does NOT collect**:
-
-- Personal identity information (name, email, address)
-- Browser history or activity outside of the supported AI platforms
+- Personal information (name, email, address, age)
+- Health, financial, or authentication information
+- Browser history or location data
+- Keystroke, click, or mouse tracking data
 - Analytics, telemetry, or usage statistics
-- Credentials or authentication tokens for any service
 
----
+## Data Storage
 
-## 2. How Data Is Stored
+All data is stored **locally** in your browser using IndexedDB:
 
-All captured conversation data is stored **locally** in your browser using IndexedDB, a standard browser storage mechanism. This means:
+- Data resides entirely on your device
+- Nothing is transmitted to any external server by default
+- Data persists across browser sessions, tied to your browser profile
+- Uninstalling the extension removes all locally stored data
 
-- Your data resides entirely on your device.
-- Your data is not transmitted to any external server by default.
-- Your data persists across browser sessions and is tied to your browser profile.
-- Uninstalling the extension will remove all locally stored data.
+The extension also uses `chrome.storage` to persist small configuration values (theme, sync settings).
 
-The extension also uses the browser's `chrome.storage` API to persist small configuration values such as theme preferences and sync settings.
+## Cloud Sync (Optional)
 
----
+Google Drive sync is entirely opt-in and disabled by default.
 
-## 3. Cloud Sync (Optional, User-Initiated)
+When you enable it:
 
-Chat Central offers an **optional** cloud sync feature using Google Drive. This feature is entirely opt-in and does nothing unless you explicitly enable it and authorize the connection.
+- OAuth 2.0 authentication via `chrome.identity` — the extension never sees your Google password
+- Data is stored in a **private app folder** (`drive.appdata`) that only Chat Central can access, not visible in your Drive
+- Sync occurs only when you manually trigger it or explicitly enable auto-sync
+- You can disconnect at any time via [Google Account permissions](https://myaccount.google.com/permissions)
 
-When you enable Google Drive sync:
+No data is sent to any server owned by Chat Central developers.
 
-- The extension uses OAuth 2.0 via the `chrome.identity` API to authenticate with your Google account. The extension never sees or stores your Google password.
-- Data is stored in the **Google Drive Application Data folder**, a special folder that only the Chat Central extension can access. Other applications, including other Google Drive apps, cannot read this data.
-- The OAuth scope requested is `https://www.googleapis.com/auth/drive.appdata`, which grants access only to the application-specific data folder, not to any other files in your Google Drive.
-- Sync operations (upload and download) occur only when you initiate them manually or when you have explicitly enabled automatic sync.
-- You can revoke the extension's access to your Google account at any time through your Google Account permissions page (https://myaccount.google.com/permissions).
+## Permissions
 
-No data is sent to any server owned or operated by Chat Central or its developers. The only external service involved is Google Drive, and only when you choose to use it.
+| Permission           | Purpose                                                                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **storage**          | Persist user preferences (theme, language, widget settings) and sync state across browser sessions, shared between popup, dashboard, and widget       |
+| **unlimitedStorage** | Store large conversation databases locally in IndexedDB without hitting browser quota limits                                                          |
+| **tabs**             | Open URLs in new tabs when you click a conversation, navigate to the dashboard, or click platform links from the popup — only on explicit user action |
+| **contextMenus**     | Add a right-click "Add to Favorites" / "Remove from Favorites" menu on AI chat pages (claude.ai, chatgpt.com, gemini.google.com)                      |
+| **alarms**           | Power optional automatic cloud sync at user-configured intervals — only active when cloud sync is explicitly enabled, no alarms set by default        |
+| **identity**         | OAuth2 authentication with Google Drive when you enable cloud sync, scoped to `drive.appdata` only — never triggered unless you explicitly connect    |
+| **Host permissions** | Run content scripts on claude.ai, chatgpt.com, chat.openai.com, and gemini.google.com to capture conversation data from API responses                 |
 
----
+### Host Permissions Detail
 
-## 4. Third-Party Services
+Content scripts run **only** on these four AI chat domains:
 
-Chat Central does not integrate with, send data to, or receive data from any third-party services, with the following exception:
+1. **Interceptor** — Reads API responses containing conversation content as you chat (runs in page context)
+2. **Observer** — Relays captured data to the background service worker (runs in extension context)
+3. **Widget** — Optional floating UI for quick conversation access (runs in extension context)
 
-- **Google Drive** (optional): Used exclusively for cloud sync when you enable it. Governed by Google's Privacy Policy (https://policies.google.com/privacy). The extension communicates with Google Drive's REST API only to read and write sync data in your application data folder.
+These scripts do not access any other websites.
 
-Chat Central contains:
+## Third-Party Data Sharing
 
-- No advertising
-- No analytics or tracking scripts
-- No telemetry
-- No third-party SDKs that collect user data
+- We do **not** sell or transfer user data to third parties
+- We do **not** use or transfer user data for purposes unrelated to the extension
+- We do **not** use or transfer user data to determine creditworthiness or for lending purposes
 
----
+The only external service is **Google Drive** (optional), governed by [Google's Privacy Policy](https://policies.google.com/privacy). The extension contains no advertising, analytics, tracking, or third-party SDKs.
 
-## 5. Browser Permissions Explained
+## Data Deletion
 
-Chat Central requests the following browser permissions, each for a specific and necessary purpose:
+- **Delete individual conversations** from the extension interface
+- **Clear all data** or **clear by platform** from settings
+- **Uninstall** the extension to remove all local data
+- **Revoke cloud sync** via [Google Account permissions](https://myaccount.google.com/permissions)
 
-| Permission                                                                                  | Purpose                                                                                                                                             |
-| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Host permissions** for `claude.ai`, `chatgpt.com`, `chat.openai.com`, `gemini.google.com` | Required to run content scripts on these sites that intercept AI conversation API responses. The extension only operates on these specific domains. |
-| **storage**                                                                                 | Used to store extension preferences and configuration.                                                                                              |
-| **unlimitedStorage**                                                                        | Allows IndexedDB to store conversation data beyond the default storage quota, necessary for users with large conversation histories.                |
-| **tabs**                                                                                    | Used to detect when you navigate to a supported AI platform, so the extension can activate conversation capture on the correct pages.               |
-| **contextMenus**                                                                            | Enables right-click menu options for quick actions on supported AI platform pages.                                                                  |
-| **alarms**                                                                                  | Used to schedule periodic auto-sync operations when cloud sync is enabled.                                                                          |
-| **identity** (conditional)                                                                  | Requested only when Google Drive sync is configured. Used to authenticate with your Google account via OAuth 2.0.                                   |
+## Data Security
 
----
+- Local data is protected by your browser's built-in sandboxing
+- Google Drive sync communicates over HTTPS
+- OAuth tokens are managed by `chrome.identity`, not stored by the extension
+- Source code is publicly auditable
 
-## 6. Data Deletion
+## Children's Privacy
 
-You have full control over your data at all times:
+Chat Central does not knowingly collect data from children under 13. The extension is intended for users with existing AI platform accounts.
 
-- **Delete individual conversations**: You can remove specific conversations from within the extension interface.
-- **Clear all data**: The extension settings include an option to delete all stored conversation data.
-- **Clear platform data**: You can selectively delete all conversations from a specific platform (Claude, ChatGPT, or Gemini).
-- **Uninstall the extension**: Removing the extension from your browser deletes all locally stored data, including the IndexedDB database and any stored preferences.
-- **Revoke cloud sync access**: If you have enabled Google Drive sync, you can revoke access through your Google Account permissions page. Data already synced to Google Drive can be managed through Google Drive's storage management tools.
+## Changes to This Policy
 
----
+Updates will be reflected by changing the effective date. Significant changes will be noted in GitHub release notes. The full change history is available in the Git repository.
 
-## 7. Data Security
+## Open Source & Contact
 
-- All data stored locally benefits from your browser's built-in security and sandboxing protections.
-- Google Drive sync communication occurs over HTTPS.
-- The extension does not store any authentication tokens persistently; OAuth tokens are managed by the browser's `chrome.identity` API.
-- The source code is publicly available for inspection at https://github.com/flowKKo/chat-central.
-
----
-
-## 8. Children's Privacy
-
-Chat Central does not knowingly collect data from children under the age of 13. The extension is a productivity tool intended for users who already have accounts with the supported AI platforms.
-
----
-
-## 9. Changes to This Policy
-
-This privacy policy may be updated to reflect changes in the extension's functionality or to comply with applicable regulations. When changes are made:
-
-- The "Effective Date" at the top of this document will be updated.
-- Significant changes will be noted in the extension's release notes on GitHub.
-- Continued use of the extension after changes are posted constitutes acceptance of the revised policy.
-
-The full history of changes to this policy is available in the project's Git repository.
-
----
-
-## 10. Contact
-
-If you have questions, concerns, or requests regarding this privacy policy or the extension's data practices, please open an issue on the project's GitHub repository:
-
-https://github.com/flowKKo/chat-central/issues
-
----
-
-## 11. Open Source
-
-Chat Central is free and open-source software, licensed under the GNU General Public License v3.0 (GPL-3.0). You can review the complete source code, including all data handling logic, at:
-
-https://github.com/flowKKo/chat-central
+Chat Central is open source under [GPL-3.0](LICENSE). Review the source code and report concerns at [github.com/nicepkg/chat-central](https://github.com/nicepkg/chat-central/issues).
