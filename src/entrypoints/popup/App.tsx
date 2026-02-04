@@ -79,7 +79,7 @@ export default function App() {
       <I18nProvider>
         <div className="flex max-h-[600px] min-h-[520px] w-[380px] flex-col bg-background text-foreground">
           {/* Header */}
-          <header className="relative bg-card px-2 pb-3 pt-4">
+          <header className="relative bg-card px-3 pb-3 pt-4">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-blue-400">
@@ -164,7 +164,7 @@ export default function App() {
 
           {/* Platform Filter Tabs */}
           <div
-            className="border-b border-border bg-card py-2 pl-2 pr-3"
+            className="border-b border-border bg-card px-3 py-2"
             role="tablist"
             aria-label={t('conversations:filterByPlatform')}
           >
@@ -198,7 +198,7 @@ export default function App() {
             ) : conversations.length === 0 ? (
               <EmptyState searchQuery={searchQuery} onClearSearch={clearSearch} />
             ) : (
-              <div className="space-y-1 p-2">
+              <div className="space-y-1 px-3 py-2">
                 {conversations.map((conv) => {
                   const matchInfo = searchResultsMap.get(conv.id)
                   return (
@@ -234,11 +234,11 @@ export default function App() {
           </div>
 
           {/* Footer */}
-          <footer className="border-t border-border bg-card px-2 py-2">
+          <footer className="border-t border-border bg-card px-3 py-2.5">
             <div className="relative flex items-center justify-between">
               <button
                 type="button"
-                className="kbd-focus flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                className="kbd-focus flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 onClick={() =>
                   browser.tabs.create({
                     url: browser.runtime.getURL('/manage.html#/conversations'),

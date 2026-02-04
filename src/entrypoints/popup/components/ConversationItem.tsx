@@ -42,13 +42,13 @@ export function ConversationItem({ conversation, searchQuery, matchInfo }: Conve
     <div
       role="listitem"
       tabIndex={0}
-      className="kbd-focus group relative cursor-pointer rounded-xl p-3 transition-all hover:bg-muted"
+      className="kbd-focus group relative cursor-pointer rounded-xl px-2.5 py-3 transition-all hover:bg-muted"
       onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
       {/* Platform indicator line */}
       <div
-        className="absolute bottom-3 left-0 top-3 w-0.5 rounded-full"
+        className="absolute bottom-3 left-0.5 top-3 w-0.5 rounded-full"
         style={{ backgroundColor: platformConfig.color }}
         aria-hidden="true"
       />
