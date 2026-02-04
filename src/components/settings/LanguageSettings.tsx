@@ -1,5 +1,5 @@
 import { useAtom, useSetAtom } from 'jotai'
-import { Languages } from 'lucide-react'
+import { Check, Languages } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { SupportedLanguage } from '@/types'
 import i18n from '@/locales'
@@ -7,9 +7,9 @@ import { configAtom, writeConfigAtom } from '@/utils/atoms/config'
 import { cn } from '@/utils/cn'
 import { SettingsSection } from '../ui/SettingsSection'
 
-const languageOptions: { value: SupportedLanguage; label: string }[] = [
-  { value: 'en', label: 'English' },
-  { value: 'zh-CN', label: '简体中文' },
+const languageOptions: { value: SupportedLanguage; label: string; nativeName: string }[] = [
+  { value: 'en', label: 'English', nativeName: 'English' },
+  { value: 'zh-CN', label: '简体中文', nativeName: 'Simplified Chinese' },
 ]
 
 export function LanguageSettings() {
@@ -27,8 +27,12 @@ export function LanguageSettings() {
       title={t('language')}
       description={t('languageDesc')}
     >
-      <div className="flex gap-3" role="radiogroup" aria-label={t('languageSelection')}>
-        {languageOptions.map((option) => {
+      <div
+        className="overflow-hidden rounded-xl border border-border"
+        role="radiogroup"
+        aria-label={t('languageSelection')}
+      >
+        {languageOptions.map((option, index) => {
           const isSelected = currentLanguage === option.value
           return (
             <button
@@ -37,24 +41,27 @@ export function LanguageSettings() {
               role="radio"
               aria-checked={isSelected}
               className={cn(
-                'flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 py-2.5 transition-all',
-                isSelected
-                  ? 'border-primary bg-primary/10'
-                  : 'border-transparent bg-muted/50 hover:bg-muted'
+                'flex w-full cursor-pointer items-center justify-between px-3.5 py-2.5 text-left transition-colors hover:bg-muted/50',
+                index > 0 && 'border-t border-border',
+                isSelected && 'bg-primary/5'
               )}
               onClick={() => {
                 writeConfig({ ui: { language: option.value } })
                 i18n.changeLanguage(option.value)
               }}
             >
-              <span
-                className={cn(
-                  'text-sm font-medium',
-                  isSelected ? 'text-primary' : 'text-muted-foreground'
-                )}
-              >
-                {option.label}
-              </span>
+              <div className="flex flex-col">
+                <span
+                  className={cn(
+                    'text-sm font-medium',
+                    isSelected ? 'text-foreground' : 'text-foreground'
+                  )}
+                >
+                  {option.label}
+                </span>
+                <span className="text-xs text-muted-foreground">{option.nativeName}</span>
+              </div>
+              {isSelected && <Check className="h-4 w-4 text-primary" />}
             </button>
           )
         })}
