@@ -4,15 +4,13 @@
 
 One place for all your AI conversations.
 
-Automatically capture, search, organize, and export your AI conversations — all stored locally in your browser.
+Automatically capture, search, organize, and export your AI conversations.
 
 **English** · [简体中文](README.zh-CN.md) · [Official Website](https://www.chatcentral.cc) · [Tutorial](https://www.chatcentral.cc/tutorial) · [Privacy](https://www.chatcentral.cc/privacy)
 
 [![][license-shield]][license-link]
 [![][website-shield]][website-link]
 [![][platforms-shield]][website-link]
-[![][stars-shield]][stars-link]
-[![][issues-shield]][issues-link]
 
 </div>
 
@@ -90,7 +88,3 @@ See `CLAUDE.md` for architecture details.
 [website-shield]: https://img.shields.io/badge/Website-chatcentral.cc-blue?style=flat-square&labelColor=black
 [website-link]: https://www.chatcentral.cc
 [platforms-shield]: https://img.shields.io/badge/platforms-Claude%20%7C%20ChatGPT%20%7C%20Gemini-purple?style=flat-square&labelColor=black
-[stars-shield]: https://img.shields.io/github/stars/nicepkg/chat-central?style=flat-square&label=stars&color=yellow&labelColor=black
-[stars-link]: https://github.com/nicepkg/chat-central/stargazers
-[issues-shield]: https://img.shields.io/github/issues/nicepkg/chat-central?style=flat-square&labelColor=black
-[issues-link]: https://github.com/nicepkg/chat-central/issues

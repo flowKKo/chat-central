@@ -11,8 +11,6 @@
 [![][license-shield]][license-link]
 [![][website-shield]][website-link]
 [![][platforms-shield]][website-link]
-[![][stars-shield]][stars-link]
-[![][issues-shield]][issues-link]
 
 </div>
 
@@ -90,7 +88,3 @@ pnpm validate        # 类型检查 + lint + 测试（提交前请运行）
 [website-shield]: https://img.shields.io/badge/官网-chatcentral.cc-blue?style=flat-square&labelColor=black
 [website-link]: https://www.chatcentral.cc/zh/
 [platforms-shield]: https://img.shields.io/badge/platforms-Claude%20%7C%20ChatGPT%20%7C%20Gemini-purple?style=flat-square&labelColor=black
-[stars-shield]: https://img.shields.io/github/stars/nicepkg/chat-central?style=flat-square&label=stars&color=yellow&labelColor=black
-[stars-link]: https://github.com/nicepkg/chat-central/stargazers
-[issues-shield]: https://img.shields.io/github/issues/nicepkg/chat-central?style=flat-square&labelColor=black
-[issues-link]: https://github.com/nicepkg/chat-central/issues
