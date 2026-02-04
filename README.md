@@ -16,31 +16,22 @@ Unified AI conversation manager: automatically capture, search, tag, and export 
 
 ## Features
 
-### Capture & Search
+- **Auto Capture** — Conversations saved automatically as you chat with Claude, ChatGPT, and Gemini
+- **Full-text Search** — Find any conversation instantly across all platforms
+- **Tags & Favorites** — Custom tags, star important conversations, filter by any combination
+- **Export** — Markdown, JSON, or ZIP — your data, your format
+- **Cloud Sync** — Google Drive sync with automatic background sync
+- **Dashboard** — Full management UI with detail view, batch actions, and Markdown rendering
+- **Privacy First** — All data stored locally, zero tracking, fully open source
 
-- **Auto Capture** — Your conversations are saved automatically as you chat, no manual effort needed
-- **Multi-Platform** — Works with Claude, ChatGPT, and Gemini in one place
-- **Full-text Search** — Find any conversation by title, content, or message text with result highlighting
-- **Advanced Search** — Filter with `platform:claude`, `tag:work`, `before:2025-01`, `is:favorite`, and more
+## Coming Soon
 
-### Organize
+> **Personal Knowledge Base** — Turn your AI conversations into a searchable knowledge graph.
 
-- **Tags** — Add custom tags to categorize your conversations
-- **Favorites** — Star important conversations for quick access
-- **Filters** — Filter by date range, platform, or tags
-
-### Export & Sync
-
-- **Export** — Export single or multiple conversations as Markdown, JSON, or ZIP
-- **Import** — Import conversations from ZIP with automatic conflict resolution
-- **Cloud Sync** — Sync to Google Drive with automatic background sync
-
-### Interface
-
-- **Quick Access Popup** — Browse and search conversations right from the extension icon
-- **Full Dashboard** — Manage all conversations with detail view, Markdown rendering, and batch actions
-- **AI Summary** — Collapsible AI-generated summary for each conversation
-- **Themes** — Light, dark, and system modes with platform-specific accent colors
+- **Knowledge Graph** — Link topics and ideas across conversations
+- **AI Memory** — Resurface past insights when relevant
+- **Semantic Search** — Search by meaning, not just keywords
+- **Smart Notes** — Auto-generated summaries organized by topic
 
 ## Installation
 
