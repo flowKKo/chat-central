@@ -4,7 +4,7 @@
 
 一站式管理所有 AI 对话。
 
-自动捕获、搜索、整理和导出你的 AI 对话 — 所有数据本地存储在浏览器中。
+自动捕获、搜索、整理和导出你的 AI 对话。
 
 [English](README.md) · **简体中文** · [官方网站](https://www.chatcentral.cc/zh/) · [教程](https://www.chatcentral.cc/zh/tutorial) · [隐私政策](https://www.chatcentral.cc/zh/privacy)
 

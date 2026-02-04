@@ -22,9 +22,9 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
 
   manifest: ({ mode, browser }) => ({
-    name: 'Chat Central',
-    description:
-      'Unified AI conversation manager - Track, search, and export your Claude, ChatGPT, and Gemini conversations',
+    name: '__MSG_appName__',
+    description: '__MSG_appDescription__',
+    default_locale: 'en',
     version: '0.1.0',
 
     // Chrome/Edge fixed dev ID (development environment)

@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.1.0",
   "packageManager": "pnpm@9.15.0",
-  "description": "Unified AI conversation manager - Track, search, and export your Claude, ChatGPT, and Gemini conversations",
+  "description": "One place for all your AI conversations. Automatically capture, search, organize, and export your AI conversations.",
   "license": "GPL-3.0-only",
   "scripts": {
     "dev": "wxt",
