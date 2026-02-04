@@ -2,7 +2,9 @@
 
 [![Chat Central](docs/images/banner.png)](https://www.chatcentral.cc)
 
-Unified AI conversation manager: automatically capture, search, tag, and export your AI conversations.
+One place for all your AI conversations.
+
+Automatically capture, search, organize, and export your AI conversations — all stored locally in your browser.
 
 **English** · [简体中文](README.zh-CN.md) · [Official Website](https://www.chatcentral.cc) · [Tutorial](https://www.chatcentral.cc/tutorial) · [Privacy](https://www.chatcentral.cc/privacy)
 
