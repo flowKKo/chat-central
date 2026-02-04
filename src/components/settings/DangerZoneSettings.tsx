@@ -1,15 +1,15 @@
 import { Loader2, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/utils/cn'
 import { clearAllData } from '@/utils/db'
 
 export function DangerZoneSettings() {
+  const { t } = useTranslation('settings')
   const [isClearing, setIsClearing] = useState(false)
 
   const handleClearAll = async () => {
-    if (
-      !confirm('Are you sure you want to delete all synced conversations? This cannot be undone.')
-    ) {
+    if (!confirm(t('confirmDeleteAll'))) {
       return
     }
     setIsClearing(true)
@@ -30,11 +30,9 @@ export function DangerZoneSettings() {
           </div>
           <div>
             <h2 className="font-heading text-sm font-semibold text-red-600 dark:text-red-400">
-              Delete All Data
+              {t('dangerZone')}
             </h2>
-            <p className="text-xs text-muted-foreground">
-              Permanently delete all conversations. This cannot be undone.
-            </p>
+            <p className="text-xs text-muted-foreground">{t('dangerZoneDesc')}</p>
           </div>
         </div>
         <button
@@ -49,10 +47,10 @@ export function DangerZoneSettings() {
           {isClearing ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Deleting...
+              {t('deleting')}
             </>
           ) : (
-            'Delete All'
+            t('deleteAll')
           )}
         </button>
       </div>

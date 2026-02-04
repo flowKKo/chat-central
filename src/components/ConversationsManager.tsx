@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useAtom } from 'jotai'
 import { MessageSquare } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -36,6 +37,7 @@ import { downloadBlob } from '@/utils/sync/utils'
 import { useConversationSource } from '@/hooks/useConversationSource'
 
 export default function ConversationsManager() {
+  const { t } = useTranslation('conversations')
   const [searchParams, setSearchParams] = useSearchParams()
   const showFavoritesOnly = searchParams.get('favorites') === 'true'
   const setShowFavoritesOnly = useCallback(
@@ -182,14 +184,14 @@ export default function ConversationsManager() {
     loadConversations()
   }, [loadConversations])
 
-  const emptyLabel = isFavorites ? 'No favorites yet' : 'No conversations found'
+  const emptyLabel = isFavorites ? t('noFavorites') : t('noConversationsFound')
 
   return (
     <div className="h-full">
       {/* Page Header */}
       <div className="mb-6">
-        <h1 className="mb-1 font-heading text-2xl font-bold tracking-tight">Conversations</h1>
-        <p className="text-sm text-muted-foreground">Browse and manage all your AI conversations</p>
+        <h1 className="mb-1 font-heading text-2xl font-bold tracking-tight">{t('title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
 
       <div className="flex h-[calc(100vh-180px)] gap-6">
@@ -257,10 +259,8 @@ export default function ConversationsManager() {
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50">
                 <MessageSquare className="h-7 w-7 text-muted-foreground/40" />
               </div>
-              <p className="mb-1 text-sm font-medium">Select a conversation</p>
-              <p className="text-xs text-muted-foreground/60">
-                Choose from the list to view details
-              </p>
+              <p className="mb-1 text-sm font-medium">{t('selectConversation')}</p>
+              <p className="text-xs text-muted-foreground/60">{t('selectConversationHint')}</p>
             </div>
           )}
         </div>

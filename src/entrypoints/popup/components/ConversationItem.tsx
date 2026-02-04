@@ -1,5 +1,6 @@
 import { useAtom } from 'jotai'
 import { Star } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { browser } from 'wxt/browser'
 import { HighlightText } from '@/components/HighlightText'
 import type { Conversation, Platform } from '@/types'
@@ -16,6 +17,7 @@ interface ConversationItemProps {
 }
 
 export function ConversationItem({ conversation, searchQuery, matchInfo }: ConversationItemProps) {
+  const { t } = useTranslation('conversations')
   const platformConfig = PLATFORM_CONFIG[conversation.platform as Platform]
   const [, toggleFavorite] = useAtom(toggleFavoriteAtom)
 
@@ -93,7 +95,7 @@ export function ConversationItem({ conversation, searchQuery, matchInfo }: Conve
                 <span className="opacity-50" aria-hidden="true">
                   ·
                 </span>
-                <span>{conversation.messageCount} messages</span>
+                <span>{t('common:messagesCount', { count: conversation.messageCount })}</span>
               </>
             )}
           </div>
@@ -109,7 +111,7 @@ export function ConversationItem({ conversation, searchQuery, matchInfo }: Conve
             event.stopPropagation()
             toggleFavorite(conversation.id)
           }}
-          aria-label={conversation.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          aria-label={conversation.isFavorite ? t('removeFromFavorites') : t('addToFavorites')}
           aria-pressed={conversation.isFavorite}
         >
           <Star

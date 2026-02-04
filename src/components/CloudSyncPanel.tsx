@@ -11,6 +11,7 @@ import {
   WifiOff,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { browser } from 'wxt/browser'
 import {
   autoSyncEnabledAtom,
@@ -40,6 +41,7 @@ function isOAuthConfigured(): boolean {
 }
 
 export function CloudSyncPanel() {
+  const { t } = useTranslation('cloudSync')
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   )
@@ -97,7 +99,7 @@ export function CloudSyncPanel() {
   }
 
   const handleDisconnect = async () => {
-    if (!confirm('Disconnect from cloud sync? Your local data will be preserved.')) {
+    if (!confirm(t('confirmDisconnect'))) {
       return
     }
     await disconnect()
@@ -112,16 +114,14 @@ export function CloudSyncPanel() {
       icon={Cloud}
       iconColor="text-sky-500"
       iconBgColor="bg-sky-500/10"
-      title="Cloud Sync"
-      description="Sync your conversations across devices"
+      title={t('title')}
+      description={t('description')}
     >
       {/* Offline Warning */}
       {!isOnline && (
         <div className="mb-4 flex items-center gap-2 rounded-lg bg-amber-500/10 p-3">
           <WifiOff className="h-4 w-4 flex-shrink-0 text-amber-500" />
-          <p className="text-sm text-amber-600 dark:text-amber-400">
-            You're offline. Sync will resume when connected.
-          </p>
+          <p className="text-sm text-amber-600 dark:text-amber-400">{t('offlineWarning')}</p>
         </div>
       )}
 
@@ -130,29 +130,30 @@ export function CloudSyncPanel() {
           <div className="flex items-start gap-3 rounded-xl bg-muted/30 p-4">
             <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
             <div className="flex-1 space-y-2 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">Setup required</p>
+              <p className="font-medium text-foreground">{t('setupRequired')}</p>
               <ol className="list-inside list-decimal space-y-1">
                 <li>
-                  Create a project at{' '}
+                  {t('setupStep1')}{' '}
                   <a
                     href="https://console.cloud.google.com/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary underline underline-offset-2"
                   >
-                    Google Cloud Console
+                    {t('googleCloudConsole')}
                   </a>
                 </li>
-                <li>Enable the Google Drive API</li>
-                <li>Create OAuth 2.0 credentials (Chrome extension type)</li>
+                <li>{t('setupStep2')}</li>
+                <li>{t('setupStep3')}</li>
                 <li>
-                  Add{' '}
+                  {t('setupStep4Prefix')}{' '}
                   <code className="rounded bg-muted px-1 py-0.5 text-xs">
                     GOOGLE_CLIENT_ID=your-id.apps.googleusercontent.com
                   </code>{' '}
-                  to <code className="rounded bg-muted px-1 py-0.5 text-xs">.env</code>
+                  {t('setupStep4Suffix')}{' '}
+                  <code className="rounded bg-muted px-1 py-0.5 text-xs">.env</code>
                 </li>
-                <li>Rebuild the extension</li>
+                <li>{t('setupStep5')}</li>
               </ol>
             </div>
           </div>
@@ -164,10 +165,8 @@ export function CloudSyncPanel() {
           <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-4">
             <CloudOff className="h-5 w-5 text-muted-foreground" />
             <div className="flex-1">
-              <p className="font-medium">Not connected</p>
-              <p className="text-sm text-muted-foreground">
-                Connect to sync your data with Google Drive
-              </p>
+              <p className="font-medium">{t('notConnected')}</p>
+              <p className="text-sm text-muted-foreground">{t('connectDesc')}</p>
             </div>
           </div>
 
@@ -190,12 +189,12 @@ export function CloudSyncPanel() {
             {isConnecting ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                Connecting...
+                {t('connecting')}
               </>
             ) : (
               <>
                 <GoogleIcon className="h-5 w-5" />
-                Connect with Google
+                {t('connectWithGoogle')}
               </>
             )}
           </button>
@@ -213,11 +212,11 @@ export function CloudSyncPanel() {
               </div>
               <div>
                 <p className="font-medium text-emerald-600 dark:text-emerald-400">
-                  Connected to Google Drive
+                  {t('connectedToGDrive')}
                 </p>
                 {lastSyncTimeAgo && (
                   <p className="text-sm text-muted-foreground">
-                    Last synced:
+                    {t('lastSynced')}
                     {lastSyncTimeAgo}
                   </p>
                 )}
@@ -237,7 +236,7 @@ export function CloudSyncPanel() {
                     onClick={handleDisconnect}
                     className="mt-2 text-xs underline hover:no-underline"
                   >
-                    Reconnect account
+                    {t('reconnectAccount')}
                   </button>
                 )}
               </div>
@@ -249,14 +248,14 @@ export function CloudSyncPanel() {
             <div className="flex items-start gap-2 rounded-lg bg-emerald-500/10 p-3">
               <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-500" />
               <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                <p className="font-medium">Sync completed</p>
+                <p className="font-medium">{t('syncCompleted')}</p>
                 {(lastResult.stats.conversationsUploaded > 0 ||
                   lastResult.stats.conversationsDownloaded > 0) && (
                   <p className="text-muted-foreground">
                     {lastResult.stats.conversationsUploaded > 0 &&
-                      `Uploaded ${lastResult.stats.conversationsUploaded} conversations. `}
+                      `${t('uploaded', { count: lastResult.stats.conversationsUploaded })} `}
                     {lastResult.stats.conversationsDownloaded > 0 &&
-                      `Downloaded ${lastResult.stats.conversationsDownloaded} conversations.`}
+                      t('downloaded', { count: lastResult.stats.conversationsDownloaded })}
                   </p>
                 )}
               </div>
@@ -277,12 +276,12 @@ export function CloudSyncPanel() {
               {isSyncing ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Syncing...
+                  {t('syncing')}
                 </>
               ) : (
                 <>
                   <RefreshCw className="h-4 w-4" />
-                  Sync Now
+                  {t('syncNow')}
                 </>
               )}
             </button>
@@ -291,17 +290,18 @@ export function CloudSyncPanel() {
               onClick={handleDisconnect}
               className="cursor-pointer rounded-xl border border-border px-4 py-2.5 font-medium transition-colors hover:bg-muted"
             >
-              Disconnect
+              {t('disconnect')}
             </button>
           </div>
 
           {/* Auto-sync Toggle */}
           <div className="flex items-center justify-between rounded-xl bg-muted/30 p-4">
             <div>
-              <p className="font-medium">Auto-sync</p>
+              <p className="font-medium">{t('autoSync')}</p>
               <p className="text-sm text-muted-foreground">
-                Automatically sync every {autoSyncInterval} minute
-                {autoSyncInterval === 1 ? '' : 's'}
+                {autoSyncInterval === 1
+                  ? t('autoSyncDesc', { interval: autoSyncInterval })
+                  : t('autoSyncDescPlural', { interval: autoSyncInterval })}
               </p>
             </div>
             <label className="relative inline-flex cursor-pointer items-center">
@@ -320,10 +320,7 @@ export function CloudSyncPanel() {
       {/* Privacy Note */}
       <div className="mt-4 flex items-start gap-2 text-xs text-muted-foreground">
         <Cloud className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-        <p>
-          Your data is stored in your own Google Drive app folder. Only this extension can access
-          it.
-        </p>
+        <p>{t('privacyNote')}</p>
       </div>
     </SettingsSection>
   )

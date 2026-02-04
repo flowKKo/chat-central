@@ -46,7 +46,9 @@ let writeVersion = 0
  * Write Config Atom
  * Implements optimistic updates and serialized writing
  */
-export const writeConfigAtom = atom(null, async (get, set, patch: Partial<Config>) => {
+type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] }
+
+export const writeConfigAtom = atom(null, async (get, set, patch: DeepPartial<Config>) => {
   const currentConfig = get(baseConfigAtom)
   const currentVersion = ++writeVersion
 

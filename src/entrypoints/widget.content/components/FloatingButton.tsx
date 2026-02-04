@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Platform } from '@/types'
 
 const PLATFORM_BG: Record<Platform, string> = {
@@ -22,6 +23,7 @@ export function FloatingButton({
   onDismiss,
   onDisableGlobally,
 }: FloatingButtonProps) {
+  const { t } = useTranslation('common')
   const [showCloseMenu, setShowCloseMenu] = useState(false)
   const [hidden, setHidden] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -110,7 +112,7 @@ export function FloatingButton({
               <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
               <path d="m2 2 20 20" />
             </svg>
-            Hide this time
+            {t('hideThisTime')}
           </button>
           <button
             type="button"
@@ -132,7 +134,7 @@ export function FloatingButton({
               <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64" />
               <line x1="12" y1="2" x2="12" y2="12" />
             </svg>
-            Disable globally
+            {t('disableGlobally')}
           </button>
         </div>
       )}
@@ -143,7 +145,7 @@ export function FloatingButton({
         onClick={onClick}
         className="widget-fab flex h-10 w-10 items-center justify-center rounded-l-xl transition-all duration-300 ease-out"
         style={{ backgroundColor: PLATFORM_BG[platform] }}
-        aria-label="Open Chat Central"
+        aria-label={t('openChatCentral')}
         data-open={isPanelOpen || showCloseMenu || undefined}
       >
         <svg

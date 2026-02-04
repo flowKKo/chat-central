@@ -9,60 +9,62 @@ import {
   Star,
   Zap,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { APP_VERSION } from '@/utils/constants'
 
-const features = [
-  {
-    icon: RefreshCw,
-    title: 'Auto Sync',
-    description: 'Automatically track conversations as you chat with AI assistants',
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
-  },
-  {
-    icon: Search,
-    title: 'Smart Search',
-    description: 'Find any conversation across all platforms instantly',
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-500/10',
-  },
-  {
-    icon: Database,
-    title: 'Local Storage',
-    description: 'Your data stays securely on your device, never on servers',
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/10',
-  },
-  {
-    icon: Star,
-    title: 'Favorites',
-    description: 'Star important conversations for quick access anytime',
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/10',
-  },
-  {
-    icon: Shield,
-    title: 'Privacy First',
-    description: 'No tracking, no analytics, completely private',
-    color: 'text-cyan-400',
-    bgColor: 'bg-cyan-500/10',
-  },
-  {
-    icon: Zap,
-    title: 'Fast & Light',
-    description: 'Minimal footprint, maximum performance',
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-500/10',
-  },
-]
-
 export function AboutPanel() {
+  const { t } = useTranslation('about')
+
+  const features = [
+    {
+      icon: RefreshCw,
+      title: t('featureAutoSync'),
+      description: t('featureAutoSyncDesc'),
+      color: 'text-blue-400',
+      bgColor: 'bg-blue-500/10',
+    },
+    {
+      icon: Search,
+      title: t('featureSearch'),
+      description: t('featureSearchDesc'),
+      color: 'text-purple-400',
+      bgColor: 'bg-purple-500/10',
+    },
+    {
+      icon: Database,
+      title: t('featureStorage'),
+      description: t('featureStorageDesc'),
+      color: 'text-emerald-400',
+      bgColor: 'bg-emerald-500/10',
+    },
+    {
+      icon: Star,
+      title: t('featureFavorites'),
+      description: t('featureFavoritesDesc'),
+      color: 'text-amber-400',
+      bgColor: 'bg-amber-500/10',
+    },
+    {
+      icon: Shield,
+      title: t('featurePrivacy'),
+      description: t('featurePrivacyDesc'),
+      color: 'text-cyan-400',
+      bgColor: 'bg-cyan-500/10',
+    },
+    {
+      icon: Zap,
+      title: t('featurePerformance'),
+      description: t('featurePerformanceDesc'),
+      color: 'text-orange-400',
+      bgColor: 'bg-orange-500/10',
+    },
+  ]
   return (
     <div className="h-full">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="mb-1 font-heading text-2xl font-bold tracking-tight">About</h1>
-        <p className="text-sm text-muted-foreground">Learn more about Chat Central</p>
+        <h1 className="mb-1 font-heading text-2xl font-bold tracking-tight">{t('title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
 
       <div className="flex gap-8">
@@ -76,12 +78,9 @@ export function AboutPanel() {
               </div>
               <div>
                 <h2 className="mb-2 font-heading text-3xl font-bold tracking-tight">
-                  Chat Central
+                  {t('common:appName')}
                 </h2>
-                <p className="max-w-lg text-muted-foreground">
-                  Unified AI conversation manager for Claude, ChatGPT, and Gemini. Keep all your AI
-                  conversations organized in one place.
-                </p>
+                <p className="max-w-lg text-muted-foreground">{t('heroDescription')}</p>
               </div>
             </div>
           </div>
@@ -109,7 +108,8 @@ export function AboutPanel() {
           {/* Footer */}
           <div className="flex items-center justify-between rounded-xl border border-border bg-card/30 p-4">
             <p className="text-sm text-muted-foreground">
-              Version <span className="font-medium text-foreground">{APP_VERSION}</span>
+              {t('common:version')}{' '}
+              <span className="font-medium text-foreground">{APP_VERSION}</span>
             </p>
 
             <div className="flex items-center gap-4">
@@ -120,11 +120,11 @@ export function AboutPanel() {
                 className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 <Github className="h-4 w-4" />
-                GitHub
+                {t('common:github')}
               </a>
               <span className="text-muted-foreground/30">·</span>
               <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                Made with <Heart className="h-3.5 w-3.5 fill-red-400 text-red-400" />
+                {t('common:madeWith')} <Heart className="h-3.5 w-3.5 fill-red-400 text-red-400" />
               </span>
             </div>
           </div>
@@ -135,7 +135,7 @@ export function AboutPanel() {
           <div className="sticky top-6 space-y-4">
             {/* Supported Platforms */}
             <div className="rounded-2xl border border-border bg-card/50 p-5">
-              <h3 className="mb-4 font-heading font-semibold">Supported Platforms</h3>
+              <h3 className="mb-4 font-heading font-semibold">{t('supportedPlatforms')}</h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-claude-light">
@@ -169,7 +169,7 @@ export function AboutPanel() {
 
             {/* Quick Links */}
             <div className="rounded-2xl border border-border bg-card/50 p-5">
-              <h3 className="mb-4 font-heading font-semibold">Quick Links</h3>
+              <h3 className="mb-4 font-heading font-semibold">{t('quickLinks')}</h3>
               <div className="space-y-2">
                 <a
                   href="https://github.com/flowKKo/chat-central"
@@ -178,7 +178,7 @@ export function AboutPanel() {
                   className="flex cursor-pointer items-center gap-2 rounded-lg p-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                 >
                   <Github className="h-4 w-4" />
-                  Source Code
+                  {t('sourceCode')}
                 </a>
                 <a
                   href="https://github.com/flowKKo/chat-central/issues"
@@ -187,7 +187,7 @@ export function AboutPanel() {
                   className="flex cursor-pointer items-center gap-2 rounded-lg p-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                 >
                   <Star className="h-4 w-4" />
-                  Report Issue
+                  {t('reportIssue')}
                 </a>
               </div>
             </div>

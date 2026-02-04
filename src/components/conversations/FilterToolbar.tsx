@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Calendar, CheckSquare, RefreshCw, Star } from 'lucide-react'
 import type { Platform, SearchFilters } from '@/types'
@@ -36,6 +37,7 @@ export function FilterToolbar({
   isLoading,
   onRefresh,
 }: FilterToolbarProps) {
+  const { t } = useTranslation('conversations')
   const [isDateFilterOpen, setIsDateFilterOpen] = useState(false)
   const dateFilterRef = useRef<HTMLDivElement>(null)
 
@@ -71,7 +73,7 @@ export function FilterToolbar({
 
       {/* Date filter */}
       <div className="relative" ref={dateFilterRef}>
-        <Tooltip label="Date filter">
+        <Tooltip label={t('dateFilter')}>
           <button
             type="button"
             className={cn(
@@ -79,7 +81,7 @@ export function FilterToolbar({
               hasDateFilter && 'border-primary bg-primary/10 text-primary'
             )}
             onClick={() => setIsDateFilterOpen(!isDateFilterOpen)}
-            aria-label="Date filter"
+            aria-label={t('dateFilter')}
             aria-haspopup="dialog"
             aria-expanded={isDateFilterOpen}
           >
@@ -90,7 +92,7 @@ export function FilterToolbar({
         {isDateFilterOpen && (
           <div
             role="dialog"
-            aria-label="Date range filter"
+            aria-label={t('dateRangeFilter')}
             className="absolute right-0 top-full z-10 mt-1 w-72 animate-scale-in rounded-xl border border-border bg-card p-4 shadow-lg"
           >
             <DateRangePicker
@@ -103,7 +105,7 @@ export function FilterToolbar({
       </div>
 
       {/* Favorites toggle */}
-      <Tooltip label={showFavoritesOnly ? 'Show all' : 'Favorites'}>
+      <Tooltip label={showFavoritesOnly ? t('showAll') : t('showFavorites')}>
         <button
           type="button"
           className={cn(
@@ -111,7 +113,7 @@ export function FilterToolbar({
             showFavoritesOnly && 'border-amber-400 bg-amber-500/10 text-amber-400'
           )}
           onClick={() => onToggleFavorites(!showFavoritesOnly)}
-          aria-label={showFavoritesOnly ? 'Show all conversations' : 'Show favorites only'}
+          aria-label={showFavoritesOnly ? t('showAllConversations') : t('showFavoritesOnly')}
           aria-pressed={showFavoritesOnly}
         >
           <Star className={cn('h-4 w-4', showFavoritesOnly && 'fill-amber-400')} />
@@ -119,7 +121,7 @@ export function FilterToolbar({
       </Tooltip>
 
       {/* Batch select toggle */}
-      <Tooltip label={isBatchMode ? 'Exit selection' : 'Batch select'}>
+      <Tooltip label={isBatchMode ? t('exitSelection') : t('batchSelect')}>
         <button
           type="button"
           className={cn(
@@ -127,14 +129,14 @@ export function FilterToolbar({
             isBatchMode && 'border-primary bg-primary/10 text-primary'
           )}
           onClick={onToggleBatchMode}
-          aria-label={isBatchMode ? 'Exit selection mode' : 'Enter selection mode'}
+          aria-label={isBatchMode ? t('exitSelectionMode') : t('enterSelectionMode')}
           aria-pressed={isBatchMode}
         >
           <CheckSquare className="h-4 w-4" />
         </button>
       </Tooltip>
 
-      <Tooltip label="Refresh">
+      <Tooltip label={t('common:refresh')}>
         <button
           type="button"
           className={cn(
@@ -142,7 +144,7 @@ export function FilterToolbar({
             isLoading && 'animate-pulse'
           )}
           onClick={onRefresh}
-          aria-label="Refresh conversations"
+          aria-label={t('refreshConversations')}
         >
           <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
         </button>

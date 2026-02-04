@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useAtom } from 'jotai'
 import {
   AlertCircle,
@@ -38,6 +39,7 @@ export function ConversationDetail({
   messages,
   searchQuery,
 }: ConversationDetailProps) {
+  const { t } = useTranslation('conversations')
   const platformConfig = PLATFORM_CONFIG[conversation.platform]
   const needsSync = conversation.detailStatus !== 'full' || messages.length === 0
   const [scrollToMessageId, setScrollToMessageId] = useAtom(scrollToMessageIdAtom)
@@ -168,7 +170,9 @@ export function ConversationDetail({
             </div>
             <h2 className="truncate font-heading text-lg font-semibold">{conversation.title}</h2>
             <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="tabular-nums">{messages.length} messages</span>
+              <span className="tabular-nums">
+                {t('common:messagesCount', { count: messages.length })}
+              </span>
               <span className="opacity-40" aria-hidden="true">
                 ·
               </span>
@@ -193,7 +197,7 @@ export function ConversationDetail({
               type="button"
               className="kbd-focus cursor-pointer rounded-xl p-2.5 transition-colors hover:bg-muted"
               onClick={() => conversation.url && browser.tabs.create({ url: conversation.url })}
-              aria-label="Open in platform"
+              aria-label={t('openInPlatform')}
             >
               <ExternalLink className="h-4 w-4" />
             </button>
@@ -207,7 +211,7 @@ export function ConversationDetail({
                   showExportMenu && 'bg-muted'
                 )}
                 onClick={() => setShowExportMenu(!showExportMenu)}
-                aria-label="Export options"
+                aria-label={t('exportOptions')}
                 aria-expanded={showExportMenu}
                 aria-haspopup="true"
               >
@@ -223,7 +227,7 @@ export function ConversationDetail({
                     onClick={handleExportMarkdown}
                   >
                     <FileText className="h-4 w-4 text-muted-foreground" />
-                    Export as Markdown
+                    {t('exportAsMarkdown')}
                   </button>
                   <button
                     type="button"
@@ -231,7 +235,7 @@ export function ConversationDetail({
                     onClick={handleExportJson}
                   >
                     <FileJson className="h-4 w-4 text-muted-foreground" />
-                    Export as JSON
+                    {t('exportAsJson')}
                   </button>
                 </div>
               )}
@@ -243,14 +247,14 @@ export function ConversationDetail({
           <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-50 px-4 py-3 dark:border-amber-500/20 dark:bg-amber-500/10">
             <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-200">
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              <span>Open the original conversation to sync full content</span>
+              <span>{t('syncWarning')}</span>
             </div>
             <button
               type="button"
               className="cursor-pointer rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/30 dark:text-amber-200"
               onClick={() => conversation.url && browser.tabs.create({ url: conversation.url })}
             >
-              Open
+              {t('common:open')}
             </button>
           </div>
         )}
@@ -269,7 +273,7 @@ export function ConversationDetail({
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/50">
               <MessageSquare className="h-5 w-5 text-muted-foreground/50" />
             </div>
-            <p className="text-sm text-muted-foreground">No synced messages yet</p>
+            <p className="text-sm text-muted-foreground">{t('noSyncedMessages')}</p>
           </div>
         ) : (
           <div className="space-y-4">

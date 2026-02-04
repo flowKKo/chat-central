@@ -8,6 +8,7 @@ import {
   RefreshCw,
   Settings,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import {
   conflictResolverOpenAtom,
   hasConflictsAtom,
@@ -20,6 +21,7 @@ import {
 import { cn } from '@/utils/cn'
 
 export function SyncStatusBar() {
+  const { t } = useTranslation('cloudSync')
   const [uiState] = useAtom(syncUIStateAtom)
   const [settings] = useAtom(syncSettingsAtom)
   const [statusText] = useAtom(syncStatusTextAtom)
@@ -34,10 +36,10 @@ export function SyncStatusBar() {
         type="button"
         className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground"
         onClick={() => setSyncSettingsOpen(true)}
-        title="Enable cloud sync"
+        title={t('enableCloudSync')}
       >
         <CloudOff className="h-4 w-4" />
-        <span>Sync off</span>
+        <span>{t('syncOff')}</span>
       </button>
     )
   }
@@ -87,7 +89,7 @@ export function SyncStatusBar() {
           type="button"
           className="flex cursor-pointer items-center gap-1 rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium text-amber-400 transition-colors hover:bg-amber-500/30"
           onClick={() => setConflictResolverOpen(true)}
-          title="Resolve conflicts"
+          title={t('resolveConflicts')}
         >
           <AlertCircle className="h-3 w-3" />
           <span>{uiState.pendingConflicts}</span>
@@ -100,7 +102,7 @@ export function SyncStatusBar() {
         className="cursor-pointer rounded-md p-1 transition-colors hover:bg-muted/50 disabled:opacity-40"
         onClick={() => triggerSync()}
         disabled={uiState.isSyncing || !uiState.isOnline}
-        title="Sync now"
+        title={t('syncNowTitle')}
       >
         <RefreshCw
           className={cn(
@@ -115,7 +117,7 @@ export function SyncStatusBar() {
         type="button"
         className="cursor-pointer rounded-md p-1 transition-colors hover:bg-muted/50"
         onClick={() => setSyncSettingsOpen(true)}
-        title="Sync settings"
+        title={t('syncSettings')}
       >
         <Settings className="h-4 w-4 text-muted-foreground" />
       </button>

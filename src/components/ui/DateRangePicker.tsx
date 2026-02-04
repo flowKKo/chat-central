@@ -1,22 +1,25 @@
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/utils/cn'
 import { daysAgo, formatDateString, MS_PER_DAY, parseDateString, startOfDay } from '@/utils/date'
 
 interface DateRangePickerProps {
   startDate: number | null
   endDate: number | null
-  onChange: (range: { start: number | null, end: number | null }) => void
+  onChange: (range: { start: number | null; end: number | null }) => void
   className?: string
 }
 
 const PRESETS = [
-  { label: 'Today', days: 0 },
-  { label: '7 days', days: 7 },
-  { label: '30 days', days: 30 },
-  { label: '90 days', days: 90 },
+  { labelKey: 'today', days: 0 },
+  { labelKey: '7days', days: 7 },
+  { labelKey: '30days', days: 30 },
+  { labelKey: '90days', days: 90 },
 ] as const
 
 export function DateRangePicker({ startDate, endDate, onChange, className }: DateRangePickerProps) {
+  const { t } = useTranslation('common')
+
   const handlePreset = (days: number) => {
     const end = Date.now()
     const start = days === 0 ? startOfDay(end) : daysAgo(days)
@@ -56,7 +59,7 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
     <div className={cn('space-y-3', className)}>
       {/* Header with title and clear button */}
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-foreground">Date Range</span>
+        <span className="text-xs font-medium text-foreground">{t('dateRange')}</span>
         {hasFilter && (
           <button
             type="button"
@@ -64,7 +67,7 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
             onClick={handleClear}
           >
             <X className="h-3 w-3" />
-            Clear
+            {t('clear')}
           </button>
         )}
       </div>
@@ -73,17 +76,17 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
       <div className="grid grid-cols-4 gap-1.5">
         {PRESETS.map((preset) => (
           <button
-            key={preset.label}
+            key={preset.labelKey}
             type="button"
             className={cn(
               'cursor-pointer whitespace-nowrap rounded-lg px-2 py-1.5 text-xs font-medium transition-all',
               activePreset === preset.days
                 ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground',
+                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
             onClick={() => handlePreset(preset.days)}
           >
-            {preset.label}
+            {t(preset.labelKey)}
           </button>
         ))}
       </div>
@@ -92,7 +95,7 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
       <div className="flex items-center gap-2">
         <div className="h-px flex-1 bg-border" />
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
-          Custom
+          {t('custom')}
         </span>
         <div className="h-px flex-1 bg-border" />
       </div>
@@ -101,7 +104,7 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
       <div className="space-y-2">
         <div className="flex flex-col gap-1">
           <label htmlFor="date-start" className="text-[10px] font-medium text-muted-foreground">
-            From
+            {t('from')}
           </label>
           <input
             id="date-start"
@@ -113,7 +116,7 @@ export function DateRangePicker({ startDate, endDate, onChange, className }: Dat
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="date-end" className="text-[10px] font-medium text-muted-foreground">
-            To
+            {t('to')}
           </label>
           <input
             id="date-end"

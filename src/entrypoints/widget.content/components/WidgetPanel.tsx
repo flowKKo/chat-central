@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { browser } from 'wxt/browser'
 
 interface WidgetPanelProps {
@@ -6,6 +7,7 @@ interface WidgetPanelProps {
 }
 
 export function WidgetPanel({ onClose }: WidgetPanelProps) {
+  const { t } = useTranslation('common')
   const panelRef = useRef<HTMLDivElement>(null)
 
   // Click-outside close (within Shadow DOM)
@@ -49,7 +51,7 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
         type="button"
         onClick={openDashboard}
         className="widget-panel-btn flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-primary hover:shadow-sm"
-        title="Dashboard"
+        title={t('dashboard')}
       >
         <svg
           width="18"
@@ -74,7 +76,7 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
         type="button"
         onClick={openSettings}
         className="widget-panel-btn flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-primary hover:shadow-sm"
-        title="Settings"
+        title={t('settings')}
       >
         <svg
           width="18"

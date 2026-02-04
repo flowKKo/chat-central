@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, Tag } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { TagPill } from './ui/TagPill'
@@ -36,6 +37,7 @@ function TagInput({
   onAddTag: (tag: string) => void
   onClose: () => void
 }) {
+  const { t } = useTranslation('conversations')
   const [inputValue, setInputValue] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -45,7 +47,7 @@ function TagInput({
   const existingTagSet = useMemo(() => new Set(existingTags), [existingTags])
   const existingTagLowerSet = useMemo(
     () => new Set(existingTags.map((t) => t.toLowerCase())),
-    [existingTags],
+    [existingTags]
   )
 
   // Filter suggestions based on input
@@ -64,8 +66,8 @@ function TagInput({
     if (!trimmed) return false
     const lowerInput = trimmed.toLowerCase()
     return (
-      !suggestions.some((s) => s.toLowerCase() === lowerInput)
-      && !existingTagLowerSet.has(lowerInput)
+      !suggestions.some((s) => s.toLowerCase() === lowerInput) &&
+      !existingTagLowerSet.has(lowerInput)
     )
   }, [inputValue, suggestions, existingTagLowerSet])
 
@@ -88,7 +90,7 @@ function TagInput({
       onAddTag(trimmed)
       setInputValue('')
     },
-    [existingTags, onAddTag],
+    [existingTags, onAddTag]
   )
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -107,13 +109,11 @@ function TagInput({
         e.preventDefault()
         if (isNewTag && selectedIndex === 0) {
           handleSubmit(inputValue)
-        }
-        else {
+        } else {
           const suggestionIndex = isNewTag ? selectedIndex - 1 : selectedIndex
           if (suggestions[suggestionIndex]) {
             handleSubmit(suggestions[suggestionIndex])
-          }
-          else if (inputValue.trim()) {
+          } else if (inputValue.trim()) {
             handleSubmit(inputValue)
           }
         }
@@ -145,9 +145,9 @@ function TagInput({
           // Delay to allow click on suggestion
           setTimeout(onClose, 150)
         }}
-        placeholder="Add tag..."
+        placeholder={t('addTagPlaceholder')}
         className="w-32 rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none ring-primary/50 transition-all focus:ring-2"
-        aria-label="Add new tag"
+        aria-label={t('addTag')}
         aria-autocomplete="list"
         aria-expanded={suggestions.length > 0 || isNewTag}
       />
@@ -163,16 +163,14 @@ function TagInput({
             <li
               className={cn(
                 'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
-                selectedIndex === 0 ? 'bg-primary/10 text-primary' : 'hover:bg-muted',
+                selectedIndex === 0 ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
               )}
               onClick={() => handleSubmit(inputValue)}
               role="option"
               aria-selected={selectedIndex === 0}
             >
               <Plus className="h-3 w-3" />
-              Create "
-              {inputValue.trim()}
-              "
+              {t('createTag', { tag: inputValue.trim() })}
             </li>
           )}
           {suggestions.map((tag, index) => {
@@ -182,7 +180,7 @@ function TagInput({
                 key={tag}
                 className={cn(
                   'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
-                  selectedIndex === optionIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted',
+                  selectedIndex === optionIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
                 )}
                 onClick={() => handleSubmit(tag)}
                 role="option"
@@ -211,6 +209,7 @@ export function TagManager({
   className,
   compact = false,
 }: TagManagerProps) {
+  const { t } = useTranslation('conversations')
   const [isAdding, setIsAdding] = useState(false)
 
   const displayTags = maxDisplay ? tags.slice(0, maxDisplay) : tags
@@ -220,7 +219,7 @@ export function TagManager({
     (tagToRemove: string) => {
       onTagsChange(tags.filter((t) => t !== tagToRemove))
     },
-    [tags, onTagsChange],
+    [tags, onTagsChange]
   )
 
   const handleAddTag = useCallback(
@@ -229,7 +228,7 @@ export function TagManager({
         onTagsChange([...tags, newTag])
       }
     },
-    [tags, onTagsChange],
+    [tags, onTagsChange]
   )
 
   // If no tags and read-only, don't render anything
@@ -253,11 +252,10 @@ export function TagManager({
         <span
           className={cn(
             'rounded-full bg-muted text-muted-foreground',
-            compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs',
+            compact ? 'px-1.5 py-0.5 text-[10px]' : 'px-2 py-1 text-xs'
           )}
         >
-          +
-          {overflowCount}
+          +{overflowCount}
         </span>
       )}
 
@@ -267,12 +265,12 @@ export function TagManager({
           onClick={() => setIsAdding(true)}
           className={cn(
             'inline-flex items-center gap-1 rounded-full border border-dashed border-muted-foreground/30 text-muted-foreground transition-colors hover:border-primary hover:text-primary',
-            compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs',
+            compact ? 'px-2 py-0.5 text-[10px]' : 'px-2.5 py-1 text-xs'
           )}
-          aria-label="Add tag"
+          aria-label={t('addTag')}
         >
           <Plus className={cn(compact ? 'h-2.5 w-2.5' : 'h-3 w-3')} />
-          <span>Add</span>
+          <span>{t('common:add')}</span>
         </button>
       )}
 

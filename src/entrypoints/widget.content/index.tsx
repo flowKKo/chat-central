@@ -5,6 +5,7 @@ import { createShadowRootUi } from 'wxt/client'
 import type { Config, Platform } from '@/types'
 import { getPlatformFromHost } from '@/utils/platform-adapters'
 import { createLogger } from '@/utils/logger'
+import { initLanguage } from '@/locales'
 import { App } from './App'
 import styles from './styles/widget.css?inline'
 
@@ -31,6 +32,7 @@ export default defineContentScript({
       return
     }
 
+    initLanguage()
     log.info(`Mounting widget for ${platform}`)
 
     const ui = await createShadowRootUi(ctx, {

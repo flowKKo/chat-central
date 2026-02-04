@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { MessageSquare } from 'lucide-react'
 import type { Conversation } from '@/types'
 import type { SearchResultWithMatches } from '@/utils/db'
@@ -37,6 +38,8 @@ export function ConversationList({
   hasMore,
   onLoadMore,
 }: ConversationListProps) {
+  const { t } = useTranslation('conversations')
+
   return (
     <>
       {/* Conversation List */}
@@ -44,7 +47,7 @@ export function ConversationList({
         <div
           className="scrollbar-thin h-full overflow-y-auto"
           role="list"
-          aria-label="Conversation list"
+          aria-label={t('conversationList')}
         >
           {isLoading && !hasLoadedConversations ? (
             <ConversationListSkeleton />
@@ -96,10 +99,10 @@ export function ConversationList({
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-                    Loading...
+                    {t('common:loading')}
                   </span>
                 ) : (
-                  'Load more conversations'
+                  t('loadMore')
                 )}
               </button>
             </div>

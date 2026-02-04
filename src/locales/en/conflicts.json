@@ -1,0 +1,13 @@
+{
+  "title": "Resolve Conflicts",
+  "titleWithCount": "Resolve Conflicts ({{count}})",
+  "instruction": "Choose which version to keep for each conflict",
+  "field": "Field: {{field}}",
+  "multipleFields": "multiple fields",
+  "localVersion": "Local (This Device)",
+  "remoteVersion": "Remote (Server)",
+  "keepLocal": "Keep Local",
+  "keepRemote": "Keep Remote",
+  "autoMerge": "Auto Merge",
+  "unknown": "Unknown"
+}

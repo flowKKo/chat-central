@@ -1,0 +1,21 @@
+{
+  "title": "关于",
+  "subtitle": "了解更多关于 Chat Central 的信息",
+  "heroDescription": "统一的 AI 对话管理器，支持 Claude、ChatGPT 和 Gemini。在一处管理你所有的 AI 对话。",
+  "featureAutoSync": "自动同步",
+  "featureAutoSyncDesc": "与 AI 助手聊天时自动跟踪对话",
+  "featureSearch": "智能搜索",
+  "featureSearchDesc": "即时搜索所有平台的任何对话",
+  "featureStorage": "本地存储",
+  "featureStorageDesc": "数据安全地保存在你的设备上，不会存储在服务器",
+  "featureFavorites": "收藏夹",
+  "featureFavoritesDesc": "收藏重要的对话以便随时快速访问",
+  "featurePrivacy": "隐私优先",
+  "featurePrivacyDesc": "无跟踪、无分析、完全私密",
+  "featurePerformance": "快速轻量",
+  "featurePerformanceDesc": "最小化占用，最大化性能",
+  "supportedPlatforms": "支持的平台",
+  "quickLinks": "快捷链接",
+  "sourceCode": "源代码",
+  "reportIssue": "报告问题"
+}

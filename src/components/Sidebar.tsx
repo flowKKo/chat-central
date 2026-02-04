@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react'
 import { useAtom } from 'jotai'
 import { ChevronDown, Github, MessageSquare, Settings, Sparkles, Tag, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { NavLink, useLocation } from 'react-router-dom'
 import { browser } from 'wxt/browser'
 import {
@@ -24,14 +25,15 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     path: '/conversations',
-    label: 'Conversations',
+    label: 'conversations',
     icon: MessageSquare,
     badgeAtom: 'conversations',
   },
-  { path: '/settings', label: 'Settings', icon: Settings },
+  { path: '/settings', label: 'settings', icon: Settings },
 ]
 
 export function Sidebar() {
+  const { t } = useTranslation('common')
   const [conversationCounts] = useAtom(conversationCountsAtom)
   const [allTags] = useAtom(allTagsAtom)
   const [selectedTags] = useAtom(selectedFilterTagsAtom)
@@ -65,8 +67,8 @@ export function Sidebar() {
             <Sparkles className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="font-heading text-lg font-bold tracking-tight">Chat Central</h1>
-            <p className="text-xs text-muted-foreground">AI Conversation Manager</p>
+            <h1 className="font-heading text-lg font-bold tracking-tight">{t('appName')}</h1>
+            <p className="text-xs text-muted-foreground">{t('appTagline')}</p>
           </div>
         </div>
       </div>
@@ -97,7 +99,7 @@ export function Sidebar() {
                           isActive ? 'scale-110' : 'group-hover:scale-105'
                         )}
                       />
-                      <span>{item.label}</span>
+                      <span>{t(item.label)}</span>
                       {badgeCount !== undefined && badgeCount > 0 && (
                         <span
                           className={cn(
@@ -129,7 +131,7 @@ export function Sidebar() {
             >
               <span className="flex items-center gap-2">
                 <Tag className="h-3 w-3" />
-                Tags
+                {t('tags')}
                 {selectedTags.length > 0 && (
                   <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                     {selectedTags.length}
@@ -153,7 +155,7 @@ export function Sidebar() {
                     onClick={() => clearTagFilters()}
                   >
                     <X className="h-3 w-3" />
-                    Clear filters
+                    {t('clearFilters')}
                   </button>
                 )}
                 <div className="ml-2 space-y-0.5">
@@ -205,10 +207,10 @@ export function Sidebar() {
             target="_blank"
             rel="noopener noreferrer"
             className="flex cursor-pointer items-center gap-1.5 rounded-lg p-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            aria-label="View on GitHub"
+            aria-label={t('viewOnGithub')}
           >
             <Github className="h-3.5 w-3.5" />
-            GitHub
+            {t('github')}
           </a>
         </div>
       </div>

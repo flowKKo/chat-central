@@ -1,15 +1,17 @@
 import { Clock } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { type Platform, PLATFORM_CONFIG } from '@/types'
 import { cn } from '@/utils/cn'
 import { clearPlatformData } from '@/utils/db'
 import { SettingsSection } from '../ui/SettingsSection'
 
 export function PlatformDataSettings() {
+  const { t } = useTranslation('settings')
   const [isClearing, setIsClearing] = useState(false)
 
   const handleClearPlatform = async (platform: Platform) => {
-    if (!confirm(`Delete all ${PLATFORM_CONFIG[platform].name} conversations?`)) {
+    if (!confirm(t('confirmClearPlatform', { platform: PLATFORM_CONFIG[platform].name }))) {
       return
     }
     setIsClearing(true)
@@ -26,8 +28,8 @@ export function PlatformDataSettings() {
       icon={Clock}
       iconColor="text-violet-500"
       iconBgColor="bg-violet-500/10"
-      title="Platform Data"
-      description="Manage synced data by platform"
+      title={t('platformData')}
+      description={t('platformDataDesc')}
     >
       <div className="grid grid-cols-3 gap-3">
         {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (
@@ -51,7 +53,7 @@ export function PlatformDataSettings() {
               onClick={() => handleClearPlatform(platform)}
               disabled={isClearing}
             >
-              Clear
+              {t('common:clear')}
             </button>
           </div>
         ))}

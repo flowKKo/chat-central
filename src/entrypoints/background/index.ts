@@ -22,6 +22,7 @@ import {
   syncToCloud,
 } from '@/utils/sync/cloud-sync'
 import type { CloudProviderType } from '@/utils/sync/providers/cloud-types'
+import { initLanguage } from '@/locales'
 import { createLogger, getErrorMessage } from '@/utils/logger'
 
 const log = createLogger('ChatCentral')
@@ -32,6 +33,7 @@ export default defineBackground({
   main() {
     log.info('Background service worker started')
 
+    initLanguage()
     registerContextMenus()
     const menus = browser.contextMenus
     safeAddListener(menus?.onClicked, handleContextMenuClick)
@@ -48,22 +50,21 @@ export default defineBackground({
             sendResponse({ error: getErrorMessage(e) })
           })
         return true // Keep message channel open to support asynchronous response
-      },
+      }
     )
 
     // Handle extension install/update
     safeAddListener(
       browser.runtime?.onInstalled,
-      (details: { reason: string, previousVersion?: string }) => {
+      (details: { reason: string; previousVersion?: string }) => {
         if (details.reason === 'install') {
           log.info('Extension installed')
-        }
-        else if (details.reason === 'update') {
+        } else if (details.reason === 'update') {
           log.info('Extension updated')
         }
 
         registerContextMenus()
-      },
+      }
     )
 
     // Dev reload: Connect to local WebSocket server for auto-reload
@@ -102,8 +103,7 @@ async function setupAutoSyncAlarm() {
       })
       log.info(`Auto-sync alarm set for every ${state.autoSyncIntervalMinutes} minutes`)
     }
-  }
-  catch (e) {
+  } catch (e) {
     log.error('Failed to setup auto-sync alarm:', e)
   }
 }
@@ -116,8 +116,7 @@ async function handleAlarm(alarm: { name: string }) {
         await syncToCloud()
         log.info('Auto-sync completed')
       }
-    }
-    catch (e) {
+    } catch (e) {
       log.error('Auto-sync failed:', e)
     }
   }
@@ -129,7 +128,7 @@ async function handleAlarm(alarm: { name: string }) {
 // eslint-disable-next-line ts/no-explicit-any
 function safeAddListener<T extends (...args: any[]) => any>(
   target: { addListener?: (handler: T) => void } | undefined,
-  handler: T,
+  handler: T
 ) {
   if (!target?.addListener) return
   target.addListener(handler)
@@ -216,8 +215,7 @@ async function handleCloudConnect(message: MessagePayload): Promise<unknown> {
     // Reset alarm with new state
     await setupAutoSyncAlarm()
     return { success: true }
-  }
-  catch (e) {
+  } catch (e) {
     return { error: getErrorMessage(e, 'Connection failed') }
   }
 }
@@ -228,8 +226,7 @@ async function handleCloudDisconnect(): Promise<unknown> {
     // Clear auto-sync alarm
     await browser.alarms?.clear(AUTO_SYNC_ALARM_NAME)
     return { success: true }
-  }
-  catch (e) {
+  } catch (e) {
     return { error: getErrorMessage(e, 'Disconnect failed') }
   }
 }
@@ -242,8 +239,7 @@ async function handleCloudSyncNow(): Promise<unknown> {
   try {
     const result = await syncToCloud()
     return { success: result.success, result }
-  }
-  catch (e) {
+  } catch (e) {
     return { error: getErrorMessage(e, 'Sync failed') }
   }
 }
@@ -271,8 +267,7 @@ async function handleCloudUpdateSettings(message: MessagePayload): Promise<unkno
       await setupAutoSyncAlarm()
     }
     return { success: true }
-  }
-  catch (e) {
+  } catch (e) {
     return { error: getErrorMessage(e, 'Failed to update settings') }
   }
 }

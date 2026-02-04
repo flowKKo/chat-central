@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2, Download, HardDrive, Loader2, Upload } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/utils/cn'
 import { downloadExport, exportData } from '@/utils/sync/export'
 import { importData, importFromJson, validateImportFile } from '@/utils/sync/import'
@@ -8,6 +9,7 @@ import { isFileSizeSafe } from '@/utils/sync/utils'
 import { SettingsSection } from '../ui/SettingsSection'
 
 export function DataTransferSettings() {
+  const { t } = useTranslation('settings')
   const [isExporting, setIsExporting] = useState(false)
   const [isImporting, setIsImporting] = useState(false)
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
@@ -84,8 +86,8 @@ export function DataTransferSettings() {
       icon={HardDrive}
       iconColor="text-blue-500"
       iconBgColor="bg-blue-500/10"
-      title="Data Transfer"
-      description="Export or import your conversations"
+      title={t('dataTransfer')}
+      description={t('dataTransferDesc')}
     >
       <div className="space-y-3">
         {/* Export Row */}
@@ -93,8 +95,8 @@ export function DataTransferSettings() {
           <div className="flex items-center gap-3">
             <Download className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-sm font-medium">Export Data</p>
-              <p className="text-xs text-muted-foreground">Download as ZIP archive</p>
+              <p className="text-sm font-medium">{t('exportData')}</p>
+              <p className="text-xs text-muted-foreground">{t('exportDataDesc')}</p>
             </div>
           </div>
           <button
@@ -109,10 +111,10 @@ export function DataTransferSettings() {
             {isExporting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Exporting...
+                {t('exporting')}
               </>
             ) : (
-              'Export'
+              t('common:export')
             )}
           </button>
         </div>
@@ -123,8 +125,8 @@ export function DataTransferSettings() {
             <div className="flex items-center gap-3">
               <Upload className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium">Import Data</p>
-                <p className="text-xs text-muted-foreground">Restore from .zip or .json</p>
+                <p className="text-sm font-medium">{t('importData')}</p>
+                <p className="text-xs text-muted-foreground">{t('importDataDesc')}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -146,7 +148,7 @@ export function DataTransferSettings() {
                 {selectedFile ? (
                   <span className="max-w-32 truncate">{selectedFile.name}</span>
                 ) : (
-                  'Choose file'
+                  t('chooseFile')
                 )}
               </label>
               <button
@@ -161,10 +163,10 @@ export function DataTransferSettings() {
                 {isImporting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Importing...
+                    {t('importing')}
                   </>
                 ) : (
-                  'Import'
+                  t('common:import')
                 )}
               </button>
             </div>
@@ -195,16 +197,20 @@ export function DataTransferSettings() {
                 {importResult.success ? (
                   <>
                     <p className="font-medium text-emerald-600 dark:text-emerald-400">
-                      Import successful
+                      {t('importSuccess')}
                     </p>
                     <p className="text-muted-foreground">
-                      {importResult.imported.conversations} conversations,{' '}
-                      {importResult.imported.messages} messages imported
+                      {t('importResult', {
+                        conversations: importResult.imported.conversations,
+                        messages: importResult.imported.messages,
+                      })}
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="font-medium text-red-600 dark:text-red-400">Import failed</p>
+                    <p className="font-medium text-red-600 dark:text-red-400">
+                      {t('importFailed')}
+                    </p>
                     {importResult.errors.map((error) => (
                       <p key={error.message} className="text-muted-foreground">
                         {error.message}

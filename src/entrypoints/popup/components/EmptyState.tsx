@@ -1,4 +1,5 @@
 import { Search } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { browser } from 'wxt/browser'
 import type { Platform } from '@/types'
 import { PLATFORM_CONFIG } from '@/types'
@@ -9,6 +10,8 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ searchQuery, onClearSearch }: EmptyStateProps) {
+  const { t } = useTranslation('popup')
+
   return (
     <div className="flex h-full animate-fade-in flex-col items-center justify-center p-8 text-center">
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
@@ -16,21 +19,23 @@ export function EmptyState({ searchQuery, onClearSearch }: EmptyStateProps) {
       </div>
       {searchQuery ? (
         <>
-          <h3 className="mb-1 font-heading font-medium text-foreground">No results found</h3>
-          <p className="mb-4 text-sm text-muted-foreground">Try a different search term</p>
+          <h3 className="mb-1 font-heading font-medium text-foreground">{t('noResultsTitle')}</h3>
+          <p className="mb-4 text-sm text-muted-foreground">{t('noResultsHint')}</p>
           <button
             type="button"
             className="kbd-focus cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
             onClick={onClearSearch}
           >
-            Clear search
+            {t('clearSearch')}
           </button>
         </>
       ) : (
         <>
-          <h3 className="mb-1 font-heading font-medium text-foreground">No conversations yet</h3>
+          <h3 className="mb-1 font-heading font-medium text-foreground">
+            {t('noConversationsTitle')}
+          </h3>
           <p className="mb-4 max-w-[240px] text-sm text-muted-foreground">
-            Visit Claude, ChatGPT, or Gemini to start syncing your conversations
+            {t('noConversationsHint')}
           </p>
           <div className="flex items-center gap-2">
             {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((platform) => (

@@ -1,6 +1,7 @@
 import { useAtom } from 'jotai'
 import { AlertCircle, CheckCircle, Cloud, Loader2, Save, TestTube, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   type SyncSettings,
   syncSettingsAtom,
@@ -10,6 +11,7 @@ import {
 import { cn } from '@/utils/cn'
 
 export function SyncSettingsModal() {
+  const { t } = useTranslation('cloudSync')
   const [isOpen, setIsOpen] = useAtom(syncSettingsOpenAtom)
   const [settings] = useAtom(syncSettingsAtom)
   const [, updateSettings] = useAtom(updateSyncSettingsAtom)
@@ -51,13 +53,11 @@ export function SyncSettingsModal() {
 
       if (response.ok) {
         setTestStatus('success')
-      }
-      else {
+      } else {
         setTestError(`Server returned ${response.status}`)
         setTestStatus('error')
       }
-    }
-    catch (error) {
+    } catch (error) {
       setTestError(error instanceof Error ? error.message : 'Connection failed')
       setTestStatus('error')
     }
@@ -68,8 +68,7 @@ export function SyncSettingsModal() {
     try {
       await updateSettings(formData)
       setIsOpen(false)
-    }
-    finally {
+    } finally {
       setIsSaving(false)
     }
   }
@@ -89,7 +88,7 @@ export function SyncSettingsModal() {
         <div className="flex items-center justify-between border-b border-border p-4">
           <div className="flex items-center gap-2">
             <Cloud className="h-5 w-5" />
-            <h2 className="text-lg font-semibold">Cloud Sync Settings</h2>
+            <h2 className="text-lg font-semibold">{t('syncSettingsTitle')}</h2>
           </div>
           <button
             type="button"
@@ -105,21 +104,21 @@ export function SyncSettingsModal() {
           {/* Enable Toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <label className="font-medium">Enable Cloud Sync</label>
-              <p className="text-sm text-muted-foreground">Sync conversations across devices</p>
+              <label className="font-medium">{t('enableSync')}</label>
+              <p className="text-sm text-muted-foreground">{t('enableSyncDesc')}</p>
             </div>
             <button
               type="button"
               className={cn(
                 'relative h-6 w-11 rounded-full transition-colors',
-                formData.enabled ? 'bg-primary' : 'bg-muted',
+                formData.enabled ? 'bg-primary' : 'bg-muted'
               )}
               onClick={() => handleChange('enabled', !formData.enabled)}
             >
               <span
                 className={cn(
                   'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform',
-                  formData.enabled && 'translate-x-5',
+                  formData.enabled && 'translate-x-5'
                 )}
               />
             </button>
@@ -129,7 +128,7 @@ export function SyncSettingsModal() {
             <>
               {/* Endpoint */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Server Endpoint</label>
+                <label className="text-sm font-medium">{t('serverEndpoint')}</label>
                 <input
                   type="url"
                   className="w-full rounded-md border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -141,7 +140,7 @@ export function SyncSettingsModal() {
 
               {/* API Key */}
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">API Key (Optional)</label>
+                <label className="text-sm font-medium">{t('apiKey')}</label>
                 <input
                   type="password"
                   className="w-full rounded-md border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -159,19 +158,17 @@ export function SyncSettingsModal() {
                   onClick={handleTest}
                   disabled={testStatus === 'testing' || !formData.endpoint}
                 >
-                  {testStatus === 'testing'
-                    ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      )
-                    : (
-                        <TestTube className="h-4 w-4" />
-                      )}
-                  Test Connection
+                  {testStatus === 'testing' ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <TestTube className="h-4 w-4" />
+                  )}
+                  {t('testConnection')}
                 </button>
                 {testStatus === 'success' && (
                   <span className="flex items-center gap-1 text-sm text-green-600">
                     <CheckCircle className="h-4 w-4" />
-                    Connected
+                    {t('connected')}
                   </span>
                 )}
                 {testStatus === 'error' && (
@@ -187,21 +184,21 @@ export function SyncSettingsModal() {
               {/* Auto Sync */}
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="font-medium">Auto Sync</label>
-                  <p className="text-sm text-muted-foreground">Automatically sync in background</p>
+                  <label className="font-medium">{t('autoSyncLabel')}</label>
+                  <p className="text-sm text-muted-foreground">{t('autoSyncLabelDesc')}</p>
                 </div>
                 <button
                   type="button"
                   className={cn(
                     'relative h-6 w-11 rounded-full transition-colors',
-                    formData.autoSync ? 'bg-primary' : 'bg-muted',
+                    formData.autoSync ? 'bg-primary' : 'bg-muted'
                   )}
                   onClick={() => handleChange('autoSync', !formData.autoSync)}
                 >
                   <span
                     className={cn(
                       'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform',
-                      formData.autoSync && 'translate-x-5',
+                      formData.autoSync && 'translate-x-5'
                     )}
                   />
                 </button>
@@ -209,17 +206,17 @@ export function SyncSettingsModal() {
 
               {formData.autoSync && (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Sync Interval</label>
+                  <label className="text-sm font-medium">{t('syncInterval')}</label>
                   <select
                     className="w-full rounded-md border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                     value={formData.autoSyncInterval}
                     onChange={(e) => handleChange('autoSyncInterval', Number(e.target.value))}
                   >
-                    <option value={1}>Every 1 minute</option>
-                    <option value={5}>Every 5 minutes</option>
-                    <option value={15}>Every 15 minutes</option>
-                    <option value={30}>Every 30 minutes</option>
-                    <option value={60}>Every hour</option>
+                    <option value={1}>{t('every1min')}</option>
+                    <option value={5}>{t('every5min')}</option>
+                    <option value={15}>{t('every15min')}</option>
+                    <option value={30}>{t('every30min')}</option>
+                    <option value={60}>{t('everyHour')}</option>
                   </select>
                 </div>
               )}
@@ -227,24 +224,23 @@ export function SyncSettingsModal() {
               {/* Auto Resolve Conflicts */}
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="font-medium">Auto-resolve Conflicts</label>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically merge conflicting changes
-                  </p>
+                  <label className="font-medium">{t('autoResolve')}</label>
+                  <p className="text-sm text-muted-foreground">{t('autoResolveDesc')}</p>
                 </div>
                 <button
                   type="button"
                   className={cn(
                     'relative h-6 w-11 rounded-full transition-colors',
-                    formData.autoResolveConflicts ? 'bg-primary' : 'bg-muted',
+                    formData.autoResolveConflicts ? 'bg-primary' : 'bg-muted'
                   )}
                   onClick={() =>
-                    handleChange('autoResolveConflicts', !formData.autoResolveConflicts)}
+                    handleChange('autoResolveConflicts', !formData.autoResolveConflicts)
+                  }
                 >
                   <span
                     className={cn(
                       'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform',
-                      formData.autoResolveConflicts && 'translate-x-5',
+                      formData.autoResolveConflicts && 'translate-x-5'
                     )}
                   />
                 </button>
@@ -260,7 +256,7 @@ export function SyncSettingsModal() {
             className="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted"
             onClick={handleClose}
           >
-            Cancel
+            {t('common:cancel')}
           </button>
           <button
             type="button"
@@ -269,7 +265,7 @@ export function SyncSettingsModal() {
             disabled={isSaving}
           >
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save
+            {t('common:save')}
           </button>
         </div>
       </div>

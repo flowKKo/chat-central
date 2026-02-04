@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
+import i18n from '@/locales'
 import { createLogger } from '@/utils/logger'
 
 const log = createLogger('ErrorBoundary')
@@ -45,10 +46,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return (
         <div className="flex min-h-[200px] flex-col items-center justify-center gap-4 p-8 text-center">
           <div className="text-4xl">⚠️</div>
-          <h2 className="text-lg font-semibold text-foreground">Something went wrong</h2>
-          <p className="max-w-md text-sm text-muted-foreground">
-            An unexpected error occurred. Try reloading or click the button below.
-          </p>
+          <h2 className="text-lg font-semibold text-foreground">{i18n.t('errorTitle')}</h2>
+          <p className="max-w-md text-sm text-muted-foreground">{i18n.t('errorDescription')}</p>
           {this.state.error && (
             <pre className="max-w-md overflow-auto rounded-md bg-muted p-3 text-left text-xs text-muted-foreground">
               {this.state.error.message}
@@ -59,7 +58,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             onClick={this.handleReset}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
-            Try again
+            {i18n.t('tryAgain')}
           </button>
         </div>
       )

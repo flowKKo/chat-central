@@ -1,0 +1,14 @@
+{
+  "searchPlaceholder": "搜索对话... (⌘K)",
+  "clearSearch": "清除搜索",
+  "searchConversations": "搜索对话",
+  "noResultsTitle": "未找到结果",
+  "noResultsHint": "请尝试不同的搜索词",
+  "noConversationsTitle": "暂无对话",
+  "noConversationsHint": "访问 Claude、ChatGPT 或 Gemini 开始同步对话",
+  "loadMore": "加载更多对话",
+  "openDashboard": "打开仪表盘",
+  "openSettings": "打开设置",
+  "viewFavorites": "查看收藏",
+  "viewOnGithub": "在 GitHub 上查看"
+}

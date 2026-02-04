@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useCallback, useRef, useState } from 'react'
 import { ChevronDown, Download } from 'lucide-react'
 import { cn } from '@/utils/cn'
@@ -20,6 +21,7 @@ export function BatchActionBar({
   onExportZip,
   onExportMarkdown,
 }: BatchActionBarProps) {
+  const { t } = useTranslation('conversations')
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const exportMenuRef = useRef<HTMLDivElement>(null)
@@ -27,15 +29,14 @@ export function BatchActionBar({
   useClickOutside(
     exportMenuRef,
     isExportMenuOpen,
-    useCallback(() => setIsExportMenuOpen(false), []),
+    useCallback(() => setIsExportMenuOpen(false), [])
   )
 
   const handleExport = async (exportFn: () => Promise<void>) => {
     setIsExporting(true)
     try {
       await exportFn()
-    }
-    finally {
+    } finally {
       setIsExporting(false)
       setIsExportMenuOpen(false)
     }
@@ -43,25 +44,21 @@ export function BatchActionBar({
 
   return (
     <div className="mb-3 flex items-center justify-between rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5">
-      <span className="text-sm font-medium">
-        {selectedCount}
-        {' '}
-        selected
-      </span>
+      <span className="text-sm font-medium">{t('selected', { count: selectedCount })}</span>
       <div className="flex items-center gap-2">
         <button
           type="button"
           className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted"
           onClick={onToggleSelectAll}
         >
-          {isAllSelected ? 'Deselect all' : 'Select all'}
+          {isAllSelected ? t('deselectAll') : t('selectAll')}
         </button>
         <button
           type="button"
           className="cursor-pointer rounded-lg px-2.5 py-1 text-xs font-medium transition-colors hover:bg-muted"
           onClick={onClearSelection}
         >
-          Clear selection
+          {t('clearSelection')}
         </button>
 
         {/* Export dropdown */}
@@ -70,7 +67,7 @@ export function BatchActionBar({
             type="button"
             className={cn(
               'flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50',
-              isExporting && 'opacity-50',
+              isExporting && 'opacity-50'
             )}
             onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
             disabled={selectedCount === 0 || isExporting}
@@ -78,7 +75,7 @@ export function BatchActionBar({
             aria-expanded={isExportMenuOpen}
           >
             <Download className="h-3.5 w-3.5" />
-            Export
+            {t('common:export')}
             <ChevronDown
               className={cn('h-3 w-3 transition-transform', isExportMenuOpen && 'rotate-180')}
             />
@@ -95,7 +92,7 @@ export function BatchActionBar({
                 className="w-full cursor-pointer px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80"
                 onClick={() => handleExport(onExportZip)}
               >
-                Export as ZIP (JSON)
+                {t('exportAsZip')}
               </button>
               <button
                 type="button"
@@ -103,7 +100,7 @@ export function BatchActionBar({
                 className="w-full cursor-pointer px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/80"
                 onClick={() => handleExport(onExportMarkdown)}
               >
-                Export as Markdown
+                {t('exportAsMarkdown')}
               </button>
             </div>
           )}

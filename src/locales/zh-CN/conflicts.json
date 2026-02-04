@@ -1,0 +1,13 @@
+{
+  "title": "解决冲突",
+  "titleWithCount": "解决冲突 ({{count}})",
+  "instruction": "为每个冲突选择要保留的版本",
+  "field": "字段：{{field}}",
+  "multipleFields": "多个字段",
+  "localVersion": "本地（此设备）",
+  "remoteVersion": "远程（服务器）",
+  "keepLocal": "保留本地",
+  "keepRemote": "保留远程",
+  "autoMerge": "自动合并",
+  "unknown": "未知"
+}

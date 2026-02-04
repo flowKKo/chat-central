@@ -1,6 +1,7 @@
 import { useAtom } from 'jotai'
 import { X, AlertTriangle, ChevronDown, ChevronUp, Check, Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { SyncConflict, ConflictResolutionAction } from '@/utils/sync/types'
 import {
   conflictResolverOpenAtom,
@@ -14,6 +15,7 @@ import { createLogger } from '@/utils/logger'
 const log = createLogger('ConflictResolver')
 
 export function ConflictResolverModal() {
+  const { t } = useTranslation('conflicts')
   const [isOpen, setIsOpen] = useAtom(conflictResolverOpenAtom)
   const [conflicts, setConflicts] = useAtom(syncConflictsAtom)
   const [, refreshSyncState] = useAtom(refreshSyncStateAtom)
@@ -37,11 +39,9 @@ export function ConflictResolverModal() {
       if (conflicts.length === 1) {
         setIsOpen(false)
       }
-    }
-    catch (error) {
+    } catch (error) {
       log.error('Failed to resolve conflict:', error)
-    }
-    finally {
+    } finally {
       setResolvingId(null)
     }
   }
@@ -62,9 +62,7 @@ export function ConflictResolverModal() {
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
             <h2 className="text-lg font-semibold">
-              Resolve Conflicts (
-              {conflicts.length}
-              )
+              {t('titleWithCount', { count: conflicts.length })}
             </h2>
           </div>
           <button
@@ -92,15 +90,13 @@ export function ConflictResolverModal() {
 
         {/* Footer */}
         <div className="flex flex-shrink-0 items-center justify-between border-t border-border p-4">
-          <p className="text-sm text-muted-foreground">
-            Choose which version to keep for each conflict
-          </p>
+          <p className="text-sm text-muted-foreground">{t('instruction')}</p>
           <button
             type="button"
             className="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-muted"
             onClick={handleClose}
           >
-            Close
+            {t('common:close')}
           </button>
         </div>
       </div>
@@ -123,19 +119,20 @@ function ConflictItem({
   onToggle,
   onResolve,
 }: ConflictItemProps) {
+  const { t } = useTranslation('conflicts')
   const localVersion = conflict.localVersion as Record<string, unknown> | undefined
   const remoteVersion = conflict.remoteVersion as Record<string, unknown> | undefined
   const localData = (localVersion?.data ?? localVersion) as Record<string, unknown> | undefined
   const remoteData = (remoteVersion?.data ?? remoteVersion) as Record<string, unknown> | undefined
 
-  const localTitle = (localData?.title as string) ?? 'Unknown'
+  const localTitle = (localData?.title as string) ?? t('unknown')
 
   const localModifiedAt = localVersion?.modifiedAt
-  const localModified
-    = typeof localModifiedAt === 'number' ? new Date(localModifiedAt).toLocaleString() : 'Unknown'
+  const localModified =
+    typeof localModifiedAt === 'number' ? new Date(localModifiedAt).toLocaleString() : 'Unknown'
   const remoteModifiedAt = remoteVersion?.modifiedAt
-  const remoteModified
-    = typeof remoteModifiedAt === 'number' ? new Date(remoteModifiedAt).toLocaleString() : 'Unknown'
+  const remoteModified =
+    typeof remoteModifiedAt === 'number' ? new Date(remoteModifiedAt).toLocaleString() : 'Unknown'
 
   return (
     <div className="overflow-hidden rounded-lg border border-border">
@@ -149,14 +146,10 @@ function ConflictItem({
           <AlertTriangle className="h-4 w-4 text-yellow-500" />
           <div className="text-left">
             <p className="text-sm font-medium">
-              {conflict.entityType}
-              :
-              {localTitle}
+              {conflict.entityType}:{localTitle}
             </p>
             <p className="text-xs text-muted-foreground">
-              Field:
-              {' '}
-              {conflict.field ?? 'multiple fields'}
+              {t('field', { field: conflict.field ?? t('multipleFields') })}
             </p>
           </div>
         </div>
@@ -171,7 +164,7 @@ function ConflictItem({
             {/* Local Version */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-blue-600">Local (This Device)</span>
+                <span className="text-sm font-medium text-blue-600">{t('localVersion')}</span>
                 <span className="text-xs text-muted-foreground">{localModified}</span>
               </div>
               <div className="rounded-md bg-blue-50 p-2 text-sm">
@@ -184,7 +177,7 @@ function ConflictItem({
             {/* Remote Version */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-green-600">Remote (Server)</span>
+                <span className="text-sm font-medium text-green-600">{t('remoteVersion')}</span>
                 <span className="text-xs text-muted-foreground">{remoteModified}</span>
               </div>
               <div className="rounded-md bg-green-50 p-2 text-sm">
@@ -202,57 +195,51 @@ function ConflictItem({
               className={cn(
                 'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm transition-colors',
                 'border border-blue-300 text-blue-700 hover:bg-blue-50',
-                'disabled:opacity-50',
+                'disabled:opacity-50'
               )}
               onClick={() => onResolve('local')}
               disabled={isResolving}
             >
-              {isResolving
-                ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  )
-                : (
-                    <Check className="h-3 w-3" />
-                  )}
-              Keep Local
+              {isResolving ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
+              {t('keepLocal')}
             </button>
             <button
               type="button"
               className={cn(
                 'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm transition-colors',
                 'border border-green-300 text-green-700 hover:bg-green-50',
-                'disabled:opacity-50',
+                'disabled:opacity-50'
               )}
               onClick={() => onResolve('remote')}
               disabled={isResolving}
             >
-              {isResolving
-                ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  )
-                : (
-                    <Check className="h-3 w-3" />
-                  )}
-              Keep Remote
+              {isResolving ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
+              {t('keepRemote')}
             </button>
             <button
               type="button"
               className={cn(
                 'flex items-center gap-1 rounded-md px-3 py-1.5 text-sm transition-colors',
                 'border border-purple-300 text-purple-700 hover:bg-purple-50',
-                'disabled:opacity-50',
+                'disabled:opacity-50'
               )}
               onClick={() => onResolve('merged')}
               disabled={isResolving}
             >
-              {isResolving
-                ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  )
-                : (
-                    <Check className="h-3 w-3" />
-                  )}
-              Auto Merge
+              {isResolving ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Check className="h-3 w-3" />
+              )}
+              {t('autoMerge')}
             </button>
           </div>
         </div>

@@ -1,9 +1,11 @@
 import { useAtom, useSetAtom } from 'jotai'
 import { MessageSquare } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { configAtom, writeConfigAtom } from '@/utils/atoms/config'
 import { SettingsSection } from '../ui/SettingsSection'
 
 export function WidgetSettings() {
+  const { t } = useTranslation('settings')
   const [config] = useAtom(configAtom)
   const writeConfig = useSetAtom(writeConfigAtom)
 
@@ -18,16 +20,13 @@ export function WidgetSettings() {
       icon={MessageSquare}
       iconColor="text-primary"
       iconBgColor="bg-primary/10"
-      title="Floating Widget"
-      description="Quick access bubble on AI platform pages"
+      title={t('widget')}
+      description={t('widgetDesc')}
     >
       <label className="flex cursor-pointer items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-foreground">Show floating widget</p>
-          <p className="text-xs text-muted-foreground">
-            Display a chat bubble on Claude, ChatGPT, and Gemini pages for quick access to recent
-            conversations
-          </p>
+          <p className="text-sm font-medium text-foreground">{t('widgetToggle')}</p>
+          <p className="text-xs text-muted-foreground">{t('widgetToggleDesc')}</p>
         </div>
         <button
           type="button"

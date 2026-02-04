@@ -155,6 +155,9 @@ export interface ExportOptions {
 // Config Types
 // ============================================================================
 
+export const supportedLanguageSchema = z.enum(['en', 'zh-CN'])
+export type SupportedLanguage = z.infer<typeof supportedLanguageSchema>
+
 export const configSchema = z.object({
   // Sync settings
   sync: z.object({
@@ -164,6 +167,7 @@ export const configSchema = z.object({
   // UI settings
   ui: z.object({
     theme: z.enum(['light', 'dark', 'system']),
+    language: supportedLanguageSchema.default('en'),
     showPreview: z.boolean(),
     pageSize: z.number().min(10).max(100),
   }),
@@ -189,6 +193,7 @@ export const DEFAULT_CONFIG: Config = {
   },
   ui: {
     theme: 'system',
+    language: 'en',
     showPreview: true,
     pageSize: 20,
   },

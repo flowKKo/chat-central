@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { ExternalLink, Star } from 'lucide-react'
 import type { Conversation } from '@/types'
 import type { SearchResultWithMatches } from '@/utils/db'
@@ -34,6 +35,7 @@ export function ConversationListItem({
   isChecked = false,
   onToggleCheck,
 }: ConversationListItemProps) {
+  const { t } = useTranslation('conversations')
   const platformConfig = PLATFORM_CONFIG[conversation.platform]
 
   // Get match snippet to display
@@ -72,7 +74,7 @@ export function ConversationListItem({
           <Checkbox
             checked={isChecked}
             onChange={onToggleCheck}
-            aria-label={`Select ${conversation.title}`}
+            aria-label={t('select', { title: conversation.title })}
           />
         )}
 
@@ -120,7 +122,7 @@ export function ConversationListItem({
                     browser.tabs.create({ url: conversation.url })
                   }
                 }}
-                aria-label="Open in platform"
+                aria-label={t('openInPlatform')}
               >
                 <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
@@ -134,7 +136,9 @@ export function ConversationListItem({
                   event.stopPropagation()
                   onToggleFavorite()
                 }}
-                aria-label={conversation.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                aria-label={
+                  conversation.isFavorite ? t('removeFromFavorites') : t('addToFavorites')
+                }
                 aria-pressed={conversation.isFavorite}
               >
                 <Star

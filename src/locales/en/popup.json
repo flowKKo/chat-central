@@ -1,0 +1,14 @@
+{
+  "searchPlaceholder": "Search conversations... (\u2318K)",
+  "clearSearch": "Clear search",
+  "searchConversations": "Search conversations",
+  "noResultsTitle": "No results found",
+  "noResultsHint": "Try a different search term",
+  "noConversationsTitle": "No conversations yet",
+  "noConversationsHint": "Visit Claude, ChatGPT, or Gemini to start syncing your conversations",
+  "loadMore": "Load more conversations",
+  "openDashboard": "Open dashboard",
+  "openSettings": "Open settings",
+  "viewFavorites": "View favorites",
+  "viewOnGithub": "View on GitHub"
+}

@@ -1,0 +1,21 @@
+{
+  "title": "About",
+  "subtitle": "Learn more about Chat Central",
+  "heroDescription": "Unified AI conversation manager for Claude, ChatGPT, and Gemini. Keep all your AI conversations organized in one place.",
+  "featureAutoSync": "Auto Sync",
+  "featureAutoSyncDesc": "Automatically track conversations as you chat with AI assistants",
+  "featureSearch": "Smart Search",
+  "featureSearchDesc": "Find any conversation across all platforms instantly",
+  "featureStorage": "Local Storage",
+  "featureStorageDesc": "Your data stays securely on your device, never on servers",
+  "featureFavorites": "Favorites",
+  "featureFavoritesDesc": "Star important conversations for quick access anytime",
+  "featurePrivacy": "Privacy First",
+  "featurePrivacyDesc": "No tracking, no analytics, completely private",
+  "featurePerformance": "Fast & Light",
+  "featurePerformanceDesc": "Minimal footprint, maximum performance",
+  "supportedPlatforms": "Supported Platforms",
+  "quickLinks": "Quick Links",
+  "sourceCode": "Source Code",
+  "reportIssue": "Report Issue"
+}

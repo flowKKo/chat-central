@@ -1,4 +1,5 @@
 import { browser } from 'wxt/browser'
+import i18n from '@/locales'
 import { getConversationById, upsertConversation, updateConversationFavorite } from '@/utils/db'
 import { createLogger } from '@/utils/logger'
 import { parseConversationFromUrl, buildPlaceholderConversation } from './services'
@@ -18,7 +19,7 @@ export function registerContextMenus() {
   const createMenu = () => {
     menus.create({
       id: FAVORITE_MENU_ID,
-      title: 'Favorite this conversation',
+      title: i18n.t('conversations:addToFavorites'),
       contexts: ['page'],
       documentUrlPatterns: [
         'https://claude.ai/*',
@@ -58,7 +59,7 @@ export async function handleContextMenuShown(_info: unknown, tab?: unknown) {
   const parsed = parseConversationFromUrl(tabObj.url)
   if (!parsed) {
     browser.contextMenus.update(FAVORITE_MENU_ID, {
-      title: 'Favorite this conversation',
+      title: i18n.t('conversations:addToFavorites'),
       enabled: false,
     })
     browser.contextMenus.refresh()
@@ -66,7 +67,9 @@ export async function handleContextMenuShown(_info: unknown, tab?: unknown) {
   }
 
   const existing = await getConversationById(parsed.conversationId)
-  const title = existing?.isFavorite ? 'Unfavorite this conversation' : 'Favorite this conversation'
+  const title = existing?.isFavorite
+    ? i18n.t('conversations:removeFromFavorites')
+    : i18n.t('conversations:addToFavorites')
   browser.contextMenus.update(FAVORITE_MENU_ID, { title, enabled: true })
   browser.contextMenus.refresh()
 }

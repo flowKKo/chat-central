@@ -20,11 +20,11 @@ export function PlatformTab({ label, platform, count, isActive, onClick }: Platf
       role="tab"
       aria-selected={isActive}
       className={cn(
-        'kbd-focus flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
+        'kbd-focus flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
         isActive
           ? platform
             ? 'text-foreground'
-            : 'bg-primary text-primary-foreground'
+            : 'bg-primary/15 text-primary'
           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       )}
       style={
