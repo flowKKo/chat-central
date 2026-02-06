@@ -68,7 +68,7 @@ const defaultSyncUIState: SyncUIState = {
  */
 export const syncSettingsAtom = atomWithStorage<SyncSettings>(
   SYNC_SETTINGS_KEY,
-  defaultSyncSettings,
+  defaultSyncSettings
 )
 
 /**
@@ -185,8 +185,7 @@ export const triggerSyncAtom = atom(null, async (get, set) => {
         lastError: null,
         pendingChanges: 0,
       }))
-    }
-    else {
+    } else {
       set(syncUIStateAtom, (prev) => ({
         ...prev,
         isSyncing: false,
@@ -200,8 +199,7 @@ export const triggerSyncAtom = atom(null, async (get, set) => {
     }
 
     return result
-  }
-  catch (error) {
+  } catch (error) {
     set(syncUIStateAtom, (prev) => ({
       ...prev,
       isSyncing: false,
@@ -210,6 +208,9 @@ export const triggerSyncAtom = atom(null, async (get, set) => {
     throw error
   }
 })
+
+// Track subscription to prevent duplicates across popup open/close cycles
+let syncSubscribed = false
 
 /**
  * Initialize sync with current settings
@@ -238,30 +239,31 @@ export const initializeSyncAtom = atom(null, async (get, set) => {
       syncManager.startAutoSync()
     }
 
-    // Subscribe to sync events with handler map
-    syncManager.subscribe((event, data) => {
-      const uiUpdates: Record<string, Partial<SyncUIState>> = {
-        status_changed: { status: data as CloudSyncStatus },
-        sync_started: { isSyncing: true },
-        sync_completed: { isSyncing: false, lastSyncAt: Date.now(), lastError: null },
-        sync_failed: {
-          isSyncing: false,
-          lastError: (data as { message?: string })?.message ?? 'Sync failed',
-        },
-        online_changed: { isOnline: data as boolean },
-      }
+    // Subscribe to sync events only once
+    if (!syncSubscribed) {
+      syncSubscribed = true
+      syncManager.subscribe((event, data) => {
+        const uiUpdates: Record<string, Partial<SyncUIState>> = {
+          status_changed: { status: data as CloudSyncStatus },
+          sync_started: { isSyncing: true },
+          sync_completed: { isSyncing: false, lastSyncAt: Date.now(), lastError: null },
+          sync_failed: {
+            isSyncing: false,
+            lastError: (data as { message?: string })?.message ?? 'Sync failed',
+          },
+          online_changed: { isOnline: data as boolean },
+        }
 
-      if (event === 'conflict_detected') {
-        set(syncConflictsAtom, (data as ConflictRecord[]).map(toSyncConflict))
-      }
-      else if (event in uiUpdates) {
-        set(syncUIStateAtom, (prev) => ({ ...prev, ...uiUpdates[event] }))
-      }
-    })
+        if (event === 'conflict_detected') {
+          set(syncConflictsAtom, (data as ConflictRecord[]).map(toSyncConflict))
+        } else if (event in uiUpdates) {
+          set(syncUIStateAtom, (prev) => ({ ...prev, ...uiUpdates[event] }))
+        }
+      })
+    }
 
     set(syncUIStateAtom, (prev) => ({ ...prev, status: 'idle' }))
-  }
-  catch (error) {
+  } catch (error) {
     set(syncUIStateAtom, (prev) => ({
       ...prev,
       status: 'error',
@@ -283,14 +285,13 @@ export const updateSyncSettingsAtom = atom(
 
     // If sync was enabled/disabled or endpoint changed, reinitialize
     if (
-      newSettings.enabled !== undefined
-      || newSettings.endpoint !== undefined
-      || newSettings.apiKey !== undefined
+      newSettings.enabled !== undefined ||
+      newSettings.endpoint !== undefined ||
+      newSettings.apiKey !== undefined
     ) {
       if (updatedSettings.enabled && updatedSettings.endpoint) {
         await set(initializeSyncAtom)
-      }
-      else {
+      } else {
         await syncManager.disconnect()
         set(syncUIStateAtom, defaultSyncUIState)
       }
@@ -300,12 +301,11 @@ export const updateSyncSettingsAtom = atom(
     if (newSettings.autoSync !== undefined || newSettings.autoSyncInterval !== undefined) {
       if (updatedSettings.autoSync && syncManager.isEnabled()) {
         syncManager.startAutoSync(updatedSettings.autoSyncInterval * 60 * 1000)
-      }
-      else {
+      } else {
         syncManager.stopAutoSync()
       }
     }
-  },
+  }
 )
 
 /**
@@ -324,8 +324,7 @@ export const refreshSyncStateAtom = atom(null, async (_get, set) => {
       isOnline: state.isOnline,
       isSyncing: false,
     })
-  }
-  catch {
+  } catch {
     // Manager not initialized yet
   }
 })
