@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Chat Central
 
-> **Last Updated**: 2026-01-27
+> **Last Updated**: 2026-02-05
 > **Version**: 0.1.0
 > **Purpose**: Comprehensive guide for AI assistants working with the Chat Central codebase
 
@@ -100,6 +100,8 @@ Strictly adhere to these protocols to prevent errors and ensure data integrity.
 | `entrypoints/background`          | Central coordinator.                                  | MEDIUM     | Message routing, auto-sync alarms, context menus, dev reload.         |
 | `utils/atoms/`                    | Global State (Jotai).                                 | MEDIUM     | Conversations, theme, config, cloud-sync. Complex derived atoms.      |
 | `components/ConversationsManager` | Main conversation list with search and batch actions. | MEDIUM     | Many atoms, batch selection, search integration.                      |
+| `entrypoints/widget.content`      | Floating widget on AI platforms.                      | MEDIUM     | Edge-hugging FAB with quick actions. Shadow DOM isolation.            |
+| `locales/`                        | i18n translations (en, zh-CN).                        | LOW        | JSON files by namespace. i18next + react-i18next integration.         |
 | `entrypoints/popup`               | Extension Popup UI.                                   | LOW        | Compact conversation browser.                                         |
 | `entrypoints/manage`              | Full-page Conversation Manager.                       | LOW        | Routes: /conversations, /settings, /about.                            |
 | `components/providers/`           | React Context Providers.                              | LOW        | Theme provider for light/dark/system modes.                           |
@@ -116,6 +118,7 @@ Strictly adhere to these protocols to prevent errors and ensure data integrity.
 - **Functional React**: Hooks at top level, strictly functional components.
 - **Jotai Atoms**: Use atoms for shared state, keep components pure.
 - **Structured Logging**: Use `createLogger('ModuleName')` from `utils/logger.ts`. Never use raw `console.log`.
+- **i18n Strings**: Use `useTranslation()` hook for all user-facing text. Add keys to both `en/` and `zh-CN/` JSON files.
 
 ### DON'Ts (Anti-Patterns)
 
@@ -124,13 +127,14 @@ Strictly adhere to these protocols to prevent errors and ensure data integrity.
 - **Any Type**: Explicitly banned. Use `unknown` if you must, then narrow it.
 - **Magic Strings**: Use constants (`src/utils/constants`) or enums.
 - **Console Logs**: Use `createLogger()` instead. All modules use structured logging.
+- **Hardcoded UI Strings**: Use i18n translation keys (`t('key')`) instead. Keep `en/` and `zh-CN/` in sync.
 
 ---
 
 ## 6. Testing Strategy
 
 **Framework**: Vitest (jsdom environment)
-**Current**: 990 tests across 51 test files (all passing)
+**Current**: 1047 tests across 53 test files (all passing)
 
 ### TDD Workflow Guidelines
 
@@ -253,9 +257,12 @@ chat-central/
 │   │   │   ├── ExportPanel.tsx        #     Export button with error display
 │   │   │   ├── ImportPanel.tsx        #     Import with validation and results
 │   │   │   ├── SyncStatusBar.tsx      #     Sync status display
+│   │   │   ├── SyncSettings.tsx       #     Sync configuration UI
 │   │   │   └── ConflictResolver.tsx   #     Conflict resolution UI
 │   │   ├── settings/                  #   Settings sub-components
 │   │   │   ├── AppearanceSettings     #     Theme selection
+│   │   │   ├── LanguageSettings.tsx   #     Language selector (en, zh-CN)
+│   │   │   ├── WidgetSettings.tsx     #     Widget toggle control
 │   │   │   ├── DataTransferSettings   #     Import/export settings
 │   │   │   ├── PlatformDataSettings   #     Platform data management
 │   │   │   ├── DangerZoneSettings     #     Destructive operations
@@ -274,13 +281,23 @@ chat-central/
 │   ├── entrypoints/                   # WXT ENTRY POINTS
 │   │   ├── background/                #   Service Worker (message routing, sync alarms, context menus)
 │   │   │   ├── handlers/              #     Request handlers (capture, data queries)
+│   │   │   │   ├── capture.ts         #       Network capture handler
+│   │   │   │   ├── data.ts            #       Data query handler
+│   │   │   │   ├── types.ts           #       Handler type definitions
+│   │   │   │   └── utils.ts           #       Handler utilities
 │   │   │   ├── services/              #     Background services (conversationMerge, urlParser)
 │   │   │   ├── index.ts              #     Main entry + auto-sync setup
 │   │   │   └── schemas.ts            #     Zod message validation schemas
 │   │   ├── interceptor.content/       #   Network Interceptor (MAIN world, API capture)
 │   │   ├── observer.content/          #   DOM Observer (page state changes)
+│   │   ├── widget.content/            #   Floating Widget (AI platform quick actions)
+│   │   │   ├── App.tsx               #     Widget application
+│   │   │   ├── components/            #     FloatingButton, WidgetPanel
+│   │   │   ├── styles/               #     Widget CSS (Shadow DOM isolated)
+│   │   │   └── index.tsx             #     Widget entry point
 │   │   ├── popup/                     #   Extension Popup UI
 │   │   │   ├── components/            #     Popup subcomponents (PlatformTab, ConversationItem, etc.)
+│   │   │   ├── utils/                #     Popup utilities (formatDate)
 │   │   │   └── App.tsx               #     Main popup app
 │   │   ├── manage/                    #   Full-page Manager (/conversations, /settings, /about)
 │   │   └── options/                   #   Settings Page
@@ -316,6 +333,7 @@ chat-central/
 │   │   │   ├── export.ts             #     Export to ZIP (JSONL + manifest)
 │   │   │   ├── import.ts             #     Import from ZIP with conflict resolution
 │   │   │   ├── manager.ts            #     Sync state management
+│   │   │   ├── utils.ts              #     Sync utility functions
 │   │   │   ├── types.ts              #     Sync types (SyncRecord, SyncState, ConflictRecord, etc.)
 │   │   │   └── providers/            #     Cloud storage providers
 │   │   │       ├── cloud-types.ts    #       CloudStorageProvider interface & error types
@@ -343,7 +361,7 @@ chat-central/
 │   │   │   │   └── batch.ts           #       Batch selection atoms
 │   │   │   ├── cloud-sync.ts         #     Cloud sync state & operation atoms
 │   │   │   ├── theme.ts              #     Theme state (light/dark/system)
-│   │   │   ├── config.ts             #     App configuration
+│   │   │   ├── config.ts             #     App config (hydration, watching, validation)
 │   │   │   └── sync.ts               #     Sync initialization
 │   │   │
 │   │   ├── filters/                   #   Conversation filtering logic
@@ -362,8 +380,20 @@ chat-central/
 │   │   ├── useConversationFilter.ts   #   Conversation filtering hook
 │   │   └── useConversationSource.ts   #   Favorites/all atom source selector
 │   │
+│   ├── locales/                       # i18n Translations
+│   │   ├── index.ts                   #   i18next initialization & config
+│   │   ├── en/                        #   English translations
+│   │   │   ├── common.json            #     Shared strings
+│   │   │   ├── conversations.json     #     Conversation UI strings
+│   │   │   ├── settings.json          #     Settings strings
+│   │   │   ├── popup.json             #     Popup strings
+│   │   │   ├── cloudSync.json         #     Cloud sync strings
+│   │   │   ├── about.json             #     About page strings
+│   │   │   └── conflicts.json         #     Conflict resolution strings
+│   │   └── zh-CN/                     #   Simplified Chinese (same structure as en/)
+│   │
 │   └── types/                         # Global Type Definitions
-│       └── index.ts                   #   Conversation, Message, Platform, Search, Export types
+│       └── index.ts                   #   Conversation, Message, Platform, Search, Export, Config types
 │
 ├── scripts/                           # Development Scripts
 │   ├── dev-reload.ts                  #   Manual build + WebSocket auto-reload server
@@ -399,6 +429,10 @@ chat-central/
 | **Change manage page UI**          | `src/entrypoints/manage/App.tsx`, `src/components/DashboardLayout.tsx`     |
 | **Modify dev workflow**            | `scripts/dev-reload.ts`, `src/entrypoints/background/index.ts`             |
 | **Add cloud sync UI**              | `src/components/CloudSyncPanel.tsx`, `src/components/sync/`                |
+| **Add/update translations**        | `src/locales/en/`, `src/locales/zh-CN/`, `src/locales/index.ts`            |
+| **Modify widget behavior**         | `src/entrypoints/widget.content/`                                          |
+| **Update app config**              | `src/types/index.ts` (configSchema), `src/utils/atoms/config.ts`           |
+| **Add capture/data handlers**      | `src/entrypoints/background/handlers/`                                     |
 
 ---
 
@@ -410,17 +444,25 @@ chat-central/
 - `src/utils/db/schema.ts`: `ChatCentralDB` class with 4 schema versions and migrations.
 - `src/utils/db/index.ts`: Database module re-exports (all repositories, search, stats, bulk).
 - `src/entrypoints/background/index.ts`: Main background service worker (message routing, alarms, sync).
-- `src/utils/atoms/conversations/`: Conversation state, actions, and batch atoms.
+- `src/entrypoints/background/handlers/`: Modular request handlers (capture, data queries, types, utils).
+- `src/entrypoints/widget.content/`: Floating widget entrypoint (FAB, quick actions panel).
+- `src/utils/atoms/conversations/`: Conversation state, actions (7 action modules), and batch atoms.
 - `src/utils/atoms/cloud-sync.ts`: Cloud sync state and operation atoms.
+- `src/utils/atoms/config.ts`: App config atom with hydration, cross-context watching, and Zod validation.
 - `src/utils/atoms/theme.ts`: Theme state management (light/dark/system).
 - `src/utils/sync/engine/`: Modular sync engine (cycle, pull, merge, push, resolve, types).
 - `src/utils/sync/merge.ts`: Field-level merge strategies for conflict resolution.
 - `src/utils/sync/cloud-sync.ts`: Cloud sync orchestration (download, merge, upload, auto-sync).
 - `src/utils/sync/manager.ts`: Sync state management (singleton, auto-sync, retry, events).
+- `src/utils/sync/utils.ts`: Sync utility functions.
 - `src/utils/sync/providers/cloud-types.ts`: `CloudStorageProvider` interface and error categorization.
 - `src/utils/sync/providers/google-drive/`: Google Drive provider (auth, file-operations, retry, provider).
+- `src/utils/sync/providers/rest.ts`: REST API provider template for new cloud providers.
 - `src/utils/sync/types.ts`: Sync domain types (SyncRecord, SyncState, ConflictRecord, OperationLog).
+- `src/locales/index.ts`: i18next initialization and config (en, zh-CN).
 - `src/components/ErrorBoundary.tsx`: React Error Boundary for crash prevention.
+- `src/components/settings/LanguageSettings.tsx`: Language selector with i18next integration.
+- `src/components/settings/WidgetSettings.tsx`: Widget toggle control.
 - `src/components/conversations/SummaryBlock.tsx`: Collapsible AI summary display with accessibility.
 - `src/components/ui/Tooltip.tsx`: Accessible tooltip with `aria-describedby` and position variants.
 - `src/components/ui/SettingsSection.tsx`: Reusable settings section with icon header pattern.
@@ -444,31 +486,37 @@ chat-central/
 - **Search Not Working**: Check `searchConversationsWithMatches` in `db/search.ts`, verify atoms in `conversations/`.
 - **Dev Reload Not Connecting**: Ensure `pnpm dev:reload` is running, check WebSocket connection on port 3717.
 - **Cloud Sync Auth Failure**: Verify OAuth2 client ID in `wxt.config.ts`, check `chrome.identity` permissions.
+- **i18n Keys Missing**: Check that translation JSON files in `src/locales/en/` and `src/locales/zh-CN/` have matching keys. Run `pnpm test` to validate locale completeness.
+- **Widget Not Showing**: Check `widget.enabled` in config, verify `widget.content` entry is registered in `wxt.config.ts`.
 - **Test Boolean Index Issues**: fake-indexeddb does not support Dexie's boolean-to-number index conversion. Use direct DB reads in tests instead of `.where('dirty').equals(1)`.
 
 ---
 
 ## 11. Completed Features
 
-| Feature                  | Description                                                                                                 | Related Files                                                                                        |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **Conversation Capture** | Auto-intercepts API responses from Claude, ChatGPT, and Gemini                                              | `src/entrypoints/interceptor.content/`, `src/utils/platform-adapters/`                               |
-| **Full-text Search**     | Search conversations and messages with MiniSearch, result highlighting                                      | `src/utils/db/search.ts`, `src/components/HighlightText.tsx`                                         |
-| **Advanced Search**      | Date range filter with presets, search syntax (`platform:`, `tag:`, `before:`, `after:`, `is:favorite`)     | `src/utils/search-parser.ts`, `src/components/ui/DateRangePicker.tsx`, `src/utils/date.ts`           |
-| **Tags**                 | Add/remove tags to conversations, filter by tags                                                            | `src/components/TagManager.tsx`, `src/utils/atoms/conversations/`                                    |
-| **Favorites**            | Mark conversations as favorites, dedicated favorites view                                                   | `src/utils/db/repositories/conversations.ts`, `src/utils/atoms/conversations/`                       |
-| **Batch Export**         | Select multiple conversations and export as ZIP (JSON) or Markdown                                          | `src/utils/sync/export.ts`, `src/components/ConversationsManager.tsx`                                |
-| **Import/Export**        | Full import/export with ZIP format, checksums, incremental export, and conflict resolution                  | `src/utils/sync/import.ts`, `src/utils/sync/export.ts`                                               |
-| **Cloud Sync**           | Google Drive sync (OAuth2, app data folder, auto-sync, retry, error categorization)                         | `src/utils/sync/cloud-sync.ts`, `src/utils/sync/providers/google-drive.ts`                           |
-| **Sync Engine**          | Pull/merge/push cycle with field-level merge strategies and conflict tracking                               | `src/utils/sync/engine.ts`, `src/utils/sync/merge.ts`                                                |
-| **Error Boundary**       | React Error Boundary prevents full UI crashes, with fallback UI and recovery                                | `src/components/ErrorBoundary.tsx`                                                                   |
-| **Theme Support**        | Light/dark/system theme with CSS variables and platform-specific colors                                     | `src/utils/atoms/theme.ts`, `src/components/providers/ThemeProvider.tsx`                             |
-| **Structured Logging**   | Centralized logger factory replacing all console.log calls                                                  | `src/utils/logger.ts`                                                                                |
-| **Markdown Rendering**   | Rich markdown display in message bubbles (code blocks, links, lists)                                        | `src/components/conversations/MarkdownContent.tsx`, `src/components/conversations/MessageBubble.tsx` |
-| **Summary Block**        | Collapsible AI-generated summary in conversation detail with 2-line clamp                                   | `src/components/conversations/SummaryBlock.tsx`                                                      |
-| **Tooltips**             | Accessible tooltips on icon buttons with `aria-describedby` and position variants                           | `src/components/ui/Tooltip.tsx`                                                                      |
-| **Reusable UI**          | Extracted `SettingsSection` for consistent section headers, `useConversationSource` hook for atom selection | `src/components/ui/SettingsSection.tsx`, `src/hooks/useConversationSource.ts`                        |
-| **Unicode Export**       | Safe filenames for CJK and special characters in exported files                                             | `src/utils/sync/export.ts`                                                                           |
+| Feature                    | Description                                                                                                 | Related Files                                                                                        |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Conversation Capture**   | Auto-intercepts API responses from Claude, ChatGPT, and Gemini                                              | `src/entrypoints/interceptor.content/`, `src/utils/platform-adapters/`                               |
+| **Full-text Search**       | Search conversations and messages with MiniSearch, result highlighting                                      | `src/utils/db/search.ts`, `src/components/HighlightText.tsx`                                         |
+| **Advanced Search**        | Date range filter with presets, search syntax (`platform:`, `tag:`, `before:`, `after:`, `is:favorite`)     | `src/utils/search-parser.ts`, `src/components/ui/DateRangePicker.tsx`, `src/utils/date.ts`           |
+| **Tags**                   | Add/remove tags to conversations, filter by tags                                                            | `src/components/TagManager.tsx`, `src/utils/atoms/conversations/`                                    |
+| **Favorites**              | Mark conversations as favorites, dedicated favorites view                                                   | `src/utils/db/repositories/conversations.ts`, `src/utils/atoms/conversations/`                       |
+| **Batch Export**           | Select multiple conversations and export as ZIP (JSON) or Markdown                                          | `src/utils/sync/export.ts`, `src/components/ConversationsManager.tsx`                                |
+| **Import/Export**          | Full import/export with ZIP format, checksums, incremental export, and conflict resolution                  | `src/utils/sync/import.ts`, `src/utils/sync/export.ts`                                               |
+| **Cloud Sync**             | Google Drive sync (OAuth2, app data folder, auto-sync, retry, error categorization)                         | `src/utils/sync/cloud-sync.ts`, `src/utils/sync/providers/google-drive.ts`                           |
+| **Sync Engine**            | Pull/merge/push cycle with field-level merge strategies and conflict tracking                               | `src/utils/sync/engine.ts`, `src/utils/sync/merge.ts`                                                |
+| **Error Boundary**         | React Error Boundary prevents full UI crashes, with fallback UI and recovery                                | `src/components/ErrorBoundary.tsx`                                                                   |
+| **Theme Support**          | Light/dark/system theme with CSS variables and platform-specific colors                                     | `src/utils/atoms/theme.ts`, `src/components/providers/ThemeProvider.tsx`                             |
+| **Structured Logging**     | Centralized logger factory replacing all console.log calls                                                  | `src/utils/logger.ts`                                                                                |
+| **Markdown Rendering**     | Rich markdown display in message bubbles (code blocks, links, lists)                                        | `src/components/conversations/MarkdownContent.tsx`, `src/components/conversations/MessageBubble.tsx` |
+| **Summary Block**          | Collapsible AI-generated summary in conversation detail with 2-line clamp                                   | `src/components/conversations/SummaryBlock.tsx`                                                      |
+| **Tooltips**               | Accessible tooltips on icon buttons with `aria-describedby` and position variants                           | `src/components/ui/Tooltip.tsx`                                                                      |
+| **Reusable UI**            | Extracted `SettingsSection` for consistent section headers, `useConversationSource` hook for atom selection | `src/components/ui/SettingsSection.tsx`, `src/hooks/useConversationSource.ts`                        |
+| **Unicode Export**         | Safe filenames for CJK and special characters in exported files                                             | `src/utils/sync/export.ts`                                                                           |
+| **Floating Widget**        | Edge-hugging FAB on AI platforms with quick actions panel, toggleable in settings                           | `src/entrypoints/widget.content/`, `src/components/settings/WidgetSettings.tsx`                      |
+| **i18n (en, zh-CN)**       | Full internationalization with i18next, JSON namespaces, Chrome Web Store `_locales`                        | `src/locales/`, `src/components/settings/LanguageSettings.tsx`, `_locales/`                          |
+| **REST Provider Template** | Reusable REST API cloud provider base for implementing new sync providers                                   | `src/utils/sync/providers/rest.ts`                                                                   |
+| **Config Atom**            | App config with hydration from storage, cross-context watching, and Zod validation                          | `src/utils/atoms/config.ts`, `src/types/index.ts` (configSchema)                                     |
 
 ---
 
@@ -476,11 +524,11 @@ chat-central/
 
 ### High Priority
 
-| Feature                   | Description                                                   | Related Files                                                    |
-| ------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **Chrome Web Store**      | Prepare and publish to Chrome Web Store                       | `wxt.config.ts`, assets                                          |
-| **Batch Delete/Favorite** | Extend batch operations beyond export (delete, favorite, tag) | `src/components/conversations/BatchActionBar.tsx`, atoms/actions |
-| **Keyboard Shortcuts**    | J/K navigation, F favorite, E export, ? help modal            | `src/hooks/`, `src/components/`                                  |
+| Feature                   | Description                                                    | Related Files                                                    |
+| ------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **Chrome Web Store**      | Publish to Chrome Web Store (i18n `_locales` already prepared) | `wxt.config.ts`, assets, `_locales/`                             |
+| **Batch Delete/Favorite** | Extend batch operations beyond export (delete, favorite, tag)  | `src/components/conversations/BatchActionBar.tsx`, atoms/actions |
+| **Keyboard Shortcuts**    | J/K navigation, F favorite, E export, ? help modal             | `src/hooks/`, `src/components/`                                  |
 
 ### Medium Priority
 
@@ -502,7 +550,7 @@ chat-central/
 
 ### Implementation Notes
 
-- **WebDAV Provider**: `CloudStorageProvider` interface is defined in `src/utils/sync/providers/cloud-types.ts`. Implement a new provider following the Google Drive pattern.
+- **WebDAV Provider**: `CloudStorageProvider` interface is defined in `src/utils/sync/providers/cloud-types.ts`. Use the REST provider template (`rest.ts`) as a base and follow the Google Drive pattern.
 - **Markdown Import**: Parse .md files and convert to conversation format. Consider supporting common export formats from Claude, ChatGPT, and Gemini.
 - **Batch Operations**: Batch selection infrastructure already exists in `BatchActionBar.tsx`. Extend with delete and favorite actions using existing atom patterns.
 - **Keyboard Shortcuts**: Only `Cmd/Ctrl+K` (search focus) is currently implemented. Add a global shortcut system with a help modal.
@@ -512,21 +560,22 @@ chat-central/
 
 ## 13. Technology Stack
 
-| Category          | Technology               | Version | Purpose                         |
-| ----------------- | ------------------------ | ------- | ------------------------------- |
-| **Framework**     | WXT                      | 0.19.29 | Browser extension framework     |
-| **UI**            | React                    | 19.0.0  | Component library               |
-| **Routing**       | React Router DOM         | 7.13.0  | Manage page routing             |
-| **State**         | Jotai                    | 2.10.0  | Atomic state management         |
-| **Database**      | Dexie                    | 4.0.9   | IndexedDB wrapper               |
-| **Search**        | MiniSearch               | 7.1.0   | Full-text search                |
-| **Validation**    | Zod                      | 3.24.0  | Runtime schema validation       |
-| **Styling**       | Tailwind CSS             | 3.4.0   | Utility-first CSS               |
-| **Icons**         | Lucide React             | 0.563.0 | Icon library                    |
-| **Data Fetching** | TanStack React Query     | 5.90.20 | Cloud sync data fetching        |
-| **Notifications** | Sonner                   | 2.0.7   | Toast notifications             |
-| **ZIP**           | JSZip                    | 3.10.1  | Import/export ZIP handling      |
-| **TypeScript**    | TypeScript               | 5.7.0   | Type system (strict mode)       |
-| **Testing**       | Vitest + Testing Library | 2.1.0   | Test runner + component testing |
-| **Linting**       | ESLint (Antfu config)    | 9.15.0  | Code quality                    |
-| **Formatting**    | Prettier                 | 3.8.1   | Code formatting                 |
+| Category          | Technology               | Version | Purpose                          |
+| ----------------- | ------------------------ | ------- | -------------------------------- |
+| **Framework**     | WXT                      | 0.19.29 | Browser extension framework      |
+| **UI**            | React                    | 19.0.0  | Component library                |
+| **Routing**       | React Router DOM         | 7.13.0  | Manage page routing              |
+| **State**         | Jotai                    | 2.10.0  | Atomic state management          |
+| **Database**      | Dexie                    | 4.0.9   | IndexedDB wrapper                |
+| **Search**        | MiniSearch               | 7.1.0   | Full-text search                 |
+| **Validation**    | Zod                      | 3.24.0  | Runtime schema validation        |
+| **Styling**       | Tailwind CSS             | 3.4.0   | Utility-first CSS                |
+| **Icons**         | Lucide React             | 0.563.0 | Icon library                     |
+| **Data Fetching** | TanStack React Query     | 5.90.20 | Cloud sync data fetching         |
+| **i18n**          | i18next + react-i18next  | 25.8.1  | Internationalization (en, zh-CN) |
+| **Notifications** | Sonner                   | 2.0.7   | Toast notifications              |
+| **ZIP**           | JSZip                    | 3.10.1  | Import/export ZIP handling       |
+| **TypeScript**    | TypeScript               | 5.7.0   | Type system (strict mode)        |
+| **Testing**       | Vitest + Testing Library | 2.1.0   | Test runner + component testing  |
+| **Linting**       | ESLint (Antfu config)    | 9.15.0  | Code quality                     |
+| **Formatting**    | Prettier                 | 3.8.1   | Code formatting                  |
