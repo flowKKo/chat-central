@@ -10,3 +10,5 @@ export {
   parseConversationFromUrl,
   type ParsedConversation,
 } from './urlParser'
+
+export { batchFetchDetails, cancelBatchFetch } from './detailFetch'

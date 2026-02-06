@@ -29,6 +29,9 @@ export default defineContentScript({
     // Inject network request interceptors
     injectFetchInterceptor()
     injectXHRInterceptor()
+
+    // Listen for active fetch-detail requests from observer
+    setupFetchListener()
   },
 })
 
@@ -194,4 +197,25 @@ function injectXHRInterceptor() {
 
     return originalSend.call(this, body)
   }
+}
+
+/**
+ * Listen for fetch-detail requests from observer (ISOLATED world)
+ * and call window.fetch — the hooked fetch automatically captures the response
+ */
+function setupFetchListener() {
+  window.addEventListener('message', (event: MessageEvent) => {
+    if (event.source !== window) return
+    if (event.data?.type !== 'CHAT_CENTRAL_FETCH_DETAIL') return
+
+    const url = event.data.url as string
+    if (!url) return
+
+    log.debug('Active fetch-detail request:', url)
+
+    // Fire-and-forget: the hooked fetch will capture the response
+    window.fetch(url).catch((e) => {
+      log.error('Failed to fetch conversation detail:', e)
+    })
+  })
 }

@@ -54,6 +54,9 @@ export default defineContentScript({
 
     // Listen for messages from interceptor.content
     setupMessageListener()
+
+    // Listen for fetch-detail requests from background
+    setupFetchRelay()
   },
 })
 
@@ -89,4 +92,31 @@ function setupMessageListener() {
       })
   }
   window.addEventListener('message', messageHandler)
+}
+
+/**
+ * Relay fetch-detail requests from background to MAIN world interceptor
+ */
+function setupFetchRelay() {
+  browser.runtime.onMessage.addListener((message: unknown) => {
+    if (contextInvalidated) return
+    if (
+      typeof message !== 'object' ||
+      message === null ||
+      (message as Record<string, unknown>).action !== 'FETCH_CONVERSATION_DETAIL'
+    ) {
+      return
+    }
+
+    const url = (message as Record<string, unknown>).url as string
+    log.debug('Relaying fetch-detail request:', url)
+
+    window.postMessage(
+      {
+        type: 'CHAT_CENTRAL_FETCH_DETAIL',
+        url,
+      },
+      window.location.origin
+    )
+  })
 }

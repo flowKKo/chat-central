@@ -1,3 +1,4 @@
+import { browser } from 'wxt/browser'
 import { getAdapterForUrl, type PlatformAdapter } from '@/utils/platform-adapters'
 import { createLogger } from '@/utils/logger'
 import { CaptureApiResponseSchema, type CaptureApiResponseMessage } from '../schemas'
@@ -5,6 +6,19 @@ import { applyConversationUpdate, upsertConversationsMerged } from '../services'
 import { notifyExtensionPages } from './utils'
 
 const log = createLogger('ChatCentral')
+
+const CLAUDE_ORG_ID_KEY = 'claude_org_id'
+const CLAUDE_ORG_ID_REGEX = /\/api\/organizations\/([a-f0-9-]+)\//
+
+/**
+ * Extract and store Claude org_id from API URLs
+ */
+export async function extractAndStoreOrgId(url: string): Promise<void> {
+  const match = url.match(CLAUDE_ORG_ID_REGEX)
+  if (match?.[1]) {
+    await browser.storage.local.set({ [CLAUDE_ORG_ID_KEY]: match[1] })
+  }
+}
 
 /**
  * Notify extension pages that a conversation's detail was synced
@@ -32,6 +46,11 @@ export async function handleCapturedResponse(
   if (!adapter) {
     log.warn('No adapter found for URL:', url)
     return { success: false }
+  }
+
+  // Store Claude org_id for active detail fetching
+  if (adapter.platform === 'claude') {
+    extractAndStoreOrgId(url).catch(() => {})
   }
 
   const endpointType = adapter.getEndpointType(url)

@@ -50,7 +50,7 @@ export function App({ platform, onRemove }: AppProps) {
         onDisableGlobally={handleDisableGlobally}
       />
 
-      {isPanelOpen && <WidgetPanel onClose={handlePanelClose} />}
+      {isPanelOpen && <WidgetPanel platform={platform} onClose={handlePanelClose} />}
     </>
   )
 }

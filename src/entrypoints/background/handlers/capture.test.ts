@@ -7,6 +7,12 @@ vi.mock('wxt/browser', () => ({
     runtime: {
       sendMessage: vi.fn().mockResolvedValue(undefined),
     },
+    storage: {
+      local: {
+        set: vi.fn().mockResolvedValue(undefined),
+        get: vi.fn().mockResolvedValue({}),
+      },
+    },
   },
 }))
 
@@ -243,6 +249,40 @@ describe('capture handler', () => {
 
       const result = await handleCapturedResponse(validCaptureMessage())
       expect(result).toEqual({ success: false })
+    })
+
+    it('should extract and store org_id from Claude URLs', async () => {
+      const { browser } = await vi.importMock<typeof import('wxt/browser')>('wxt/browser')
+      const adapter = makeAdapter({
+        platform: 'claude',
+        getEndpointType: vi.fn().mockReturnValue('list'),
+        parseConversationList: vi.fn().mockReturnValue([]),
+      })
+      getAdapterForUrl.mockReturnValue(adapter)
+
+      await handleCapturedResponse(
+        validCaptureMessage('https://claude.ai/api/organizations/abc-123-def/chat_conversations')
+      )
+
+      expect(browser.storage.local.set).toHaveBeenCalledWith({
+        claude_org_id: 'abc-123-def',
+      })
+    })
+
+    it('should not extract org_id for non-claude adapters', async () => {
+      const { browser } = await vi.importMock<typeof import('wxt/browser')>('wxt/browser')
+      const adapter = makeAdapter({
+        platform: 'chatgpt',
+        getEndpointType: vi.fn().mockReturnValue('list'),
+        parseConversationList: vi.fn().mockReturnValue([]),
+      })
+      getAdapterForUrl.mockReturnValue(adapter)
+
+      await handleCapturedResponse(
+        validCaptureMessage('https://chatgpt.com/backend-api/conversations')
+      )
+
+      expect(browser.storage.local.set).not.toHaveBeenCalled()
     })
   })
 })
