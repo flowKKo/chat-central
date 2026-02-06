@@ -127,6 +127,12 @@
   animation: widget-panel-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
   /* Position to the left of the FAB strip */
   right: 44px;
+  width: 52px;
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.widget-panel-expanded {
+  width: 180px;
 }
 
 /* Panel button hover lift */

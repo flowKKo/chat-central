@@ -76,7 +76,7 @@ export const UpdateTagsSchema = z.object({
     z
       .string()
       .transform((s) => s.trim())
-      .refine((s) => s.length > 0, { message: 'Tag cannot be empty' }),
+      .refine((s) => s.length > 0, { message: 'Tag cannot be empty' })
   ),
 })
 
@@ -85,6 +85,22 @@ export const UpdateTagsSchema = z.object({
  */
 export const GetAllTagsSchema = z.object({
   action: z.literal('GET_ALL_TAGS'),
+})
+
+/**
+ * Batch fetch conversation details and export
+ */
+export const BatchFetchAndExportSchema = z.object({
+  action: z.literal('BATCH_FETCH_AND_EXPORT'),
+  platform: PlatformSchema,
+  limit: z.number().positive().optional(),
+})
+
+/**
+ * Cancel an in-progress batch fetch
+ */
+export const BatchFetchCancelSchema = z.object({
+  action: z.literal('BATCH_FETCH_CANCEL'),
 })
 
 /**
@@ -99,6 +115,8 @@ export const MessageSchema = z.discriminatedUnion('action', [
   ToggleFavoriteSchema,
   UpdateTagsSchema,
   GetAllTagsSchema,
+  BatchFetchAndExportSchema,
+  BatchFetchCancelSchema,
 ])
 
 export type CaptureApiResponseMessage = z.infer<typeof CaptureApiResponseSchema>
@@ -109,4 +127,6 @@ export type SearchMessage = z.infer<typeof SearchSchema>
 export type ToggleFavoriteMessage = z.infer<typeof ToggleFavoriteSchema>
 export type UpdateTagsMessage = z.infer<typeof UpdateTagsSchema>
 export type GetAllTagsMessage = z.infer<typeof GetAllTagsSchema>
+export type BatchFetchAndExportMessage = z.infer<typeof BatchFetchAndExportSchema>
+export type BatchFetchCancelMessage = z.infer<typeof BatchFetchCancelSchema>
 export type Message = z.infer<typeof MessageSchema>

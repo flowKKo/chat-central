@@ -12,6 +12,7 @@ import {
   handleToggleFavorite,
   handleUpdateTags,
 } from './handlers'
+import { batchFetchDetails, cancelBatchFetch } from './services'
 import {
   connectCloudProvider,
   disconnectCloudProvider,
@@ -21,6 +22,7 @@ import {
   saveCloudSyncState,
   syncToCloud,
 } from '@/utils/sync/cloud-sync'
+import type { Platform } from '@/types'
 import type { CloudProviderType } from '@/utils/sync/providers/cloud-types'
 import { initLanguage } from '@/locales'
 import { createLogger, getErrorMessage } from '@/utils/logger'
@@ -177,6 +179,19 @@ async function handleMessage(message: unknown): Promise<unknown> {
 
     case 'GET_ALL_TAGS':
       return handleGetAllTags()
+
+    // Batch Fetch and Export
+    case 'BATCH_FETCH_AND_EXPORT': {
+      const msg = message as unknown as { platform: Platform; limit?: number }
+      batchFetchDetails(msg.platform, msg.limit).catch((e) => {
+        log.error('Batch fetch failed:', e)
+      })
+      return { success: true }
+    }
+
+    case 'BATCH_FETCH_CANCEL':
+      cancelBatchFetch()
+      return { success: true }
 
     // Cloud Sync Actions
     case 'CLOUD_SYNC_CONNECT':

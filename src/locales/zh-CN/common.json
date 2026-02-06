@@ -43,5 +43,13 @@
   "summary": "摘要",
   "hideThisTime": "本次隐藏",
   "disableGlobally": "全局禁用",
-  "openChatCentral": "打开 Chat Central"
+  "openChatCentral": "打开 Chat Central",
+  "exportAll": "导出全部对话",
+  "exportConversations": "导出",
+  "conversationCount": "{{count}} 个对话",
+  "recentN": "最近 {{count}} 个",
+  "customNumber": "自定义...",
+  "startExport": "开始导出",
+  "exporting": "导出中...",
+  "cancelExport": "取消导出"
 }

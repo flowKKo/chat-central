@@ -43,5 +43,13 @@
   "summary": "Summary",
   "hideThisTime": "Hide this time",
   "disableGlobally": "Disable globally",
-  "openChatCentral": "Open Chat Central"
+  "openChatCentral": "Open Chat Central",
+  "exportAll": "Export all conversations",
+  "exportConversations": "Export",
+  "conversationCount": "{{count}} conversations",
+  "recentN": "Recent {{count}}",
+  "customNumber": "Custom...",
+  "startExport": "Start export",
+  "exporting": "Exporting...",
+  "cancelExport": "Cancel export"
 }
