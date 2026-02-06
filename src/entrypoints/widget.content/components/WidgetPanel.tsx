@@ -171,7 +171,9 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
   return (
     <div
       ref={panelRef}
-      className={`widget-panel fixed z-[2147483646] flex flex-col gap-1.5 rounded-l-2xl border border-r-0 border-border/50 bg-card/80 p-2 shadow-xl backdrop-blur-xl ${isExpanded ? 'widget-panel-expanded' : ''}`}
+      className={`widget-panel fixed z-[2147483646] flex flex-col rounded-l-2xl border border-r-0 border-border/50 bg-card/80 shadow-xl backdrop-blur-xl ${
+        isExpanded ? 'widget-panel-expanded gap-2 p-3' : 'gap-1.5 p-2'
+      }`}
       style={{ right: 0, top: '50%', transform: 'translateY(-50%)' }}
     >
       {isExpanded ? (
@@ -244,20 +246,20 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
             </button>
           </div>
 
-          <div className="mx-1.5 h-px bg-border/60" />
+          <div className="mx-1 h-px bg-border/60" />
 
           {/* Title + conversation count */}
-          <div className="px-1.5">
-            <div className="text-xs font-medium text-foreground">{t('exportConversations')}</div>
+          <div className="px-1">
+            <div className="text-sm font-medium text-foreground">{t('exportConversations')}</div>
             {platformCount !== null && (
-              <div className="mt-0.5 text-[10px] text-muted-foreground">
+              <div className="mt-0.5 text-xs text-muted-foreground">
                 {t('conversationCount', { count: platformCount })}
               </div>
             )}
           </div>
 
           {/* Preset buttons 2x2 grid */}
-          <div className="grid grid-cols-2 gap-1 px-1">
+          <div className="grid grid-cols-2 gap-1.5 px-0.5">
             {PRESET_QUANTITIES.map((qty) => (
               <button
                 key={qty}
@@ -266,7 +268,7 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
                   setSelectedQuantity(qty)
                   setCustomValue('')
                 }}
-                className={`rounded-lg px-1 py-1 text-[11px] font-medium transition-colors ${
+                className={`rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
                   selectedQuantity === qty
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-secondary/80 text-secondary-foreground hover:bg-secondary'
@@ -281,7 +283,7 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
                 setSelectedQuantity(null)
                 setCustomValue('')
               }}
-              className={`rounded-lg px-1 py-1 text-[11px] font-medium transition-colors ${
+              className={`rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
                 selectedQuantity === null && customValue === ''
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-secondary/80 text-secondary-foreground hover:bg-secondary'
@@ -292,23 +294,24 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
           </div>
 
           {/* Custom input */}
-          <div className="px-1">
+          <div className="px-0.5">
             <input
               type="text"
               inputMode="numeric"
               placeholder={t('customNumber')}
               value={customValue}
               onChange={handleCustomInput}
-              className="w-full rounded-lg border border-border/60 bg-background/50 px-2 py-1 text-[11px] text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none"
+              onKeyDown={(e) => e.stopPropagation()}
+              className="w-full rounded-lg border border-border/60 bg-background/50 px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none"
             />
           </div>
 
           {/* Start Export button */}
-          <div className="px-1">
+          <div className="px-0.5">
             <button
               type="button"
               onClick={handleStartExport}
-              className="w-full rounded-lg bg-primary px-2 py-1.5 text-[11px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className="w-full rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               {t('startExport')}
             </button>
