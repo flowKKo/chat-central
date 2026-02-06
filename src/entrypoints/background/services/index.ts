@@ -2,6 +2,7 @@ export {
   applyConversationUpdate,
   mergeConversation,
   upsertConversationMerged,
+  upsertConversationsMerged,
 } from './conversationMerge'
 
 export {

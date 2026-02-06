@@ -15,6 +15,9 @@ import { loadConversationsAtom } from './loadingActions'
 
 const log = createLogger('ChatCentral')
 
+// Track search request version to ignore stale results
+let searchVersion = 0
+
 // ============================================================================
 // Search Actions
 // ============================================================================
@@ -30,6 +33,9 @@ const log = createLogger('ChatCentral')
  * - is:favorite
  */
 export const performSearchAtom = atom(null, async (get, set, query: string) => {
+  // Increment version to invalidate any in-flight searches
+  const currentVersion = ++searchVersion
+
   // Parse query for operators
   const parsed = parseSearchQuery(query)
 
@@ -84,6 +90,11 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
     // Search using the free text part only
     let results = await searchConversationsWithMatches(parsed.freeText)
 
+    // Ignore stale results from previous searches
+    if (currentVersion !== searchVersion) {
+      return
+    }
+
     // Filter by favorite if is:favorite operator is used
     if (parsed.operators.isFavorite) {
       results = results.filter((r) => r.conversation.isFavorite)
@@ -106,7 +117,10 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
   } catch (e) {
     log.error('Failed to search:', e)
   } finally {
-    set(isLoadingConversationsAtom, false)
+    // Only clear loading if this is still the latest search
+    if (currentVersion === searchVersion) {
+      set(isLoadingConversationsAtom, false)
+    }
   }
 })
 

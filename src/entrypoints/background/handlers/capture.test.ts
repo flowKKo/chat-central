@@ -17,7 +17,7 @@ vi.mock('@/utils/platform-adapters', () => ({
 
 // Mock services
 vi.mock('../services', () => ({
-  upsertConversationMerged: vi.fn(),
+  upsertConversationsMerged: vi.fn(),
   applyConversationUpdate: vi.fn(),
 }))
 
@@ -33,7 +33,7 @@ vi.mock('@/utils/logger', () => ({
 const { getAdapterForUrl } = await vi.importMock<typeof import('@/utils/platform-adapters')>(
   '@/utils/platform-adapters'
 )
-const { upsertConversationMerged, applyConversationUpdate } =
+const { upsertConversationsMerged, applyConversationUpdate } =
   await vi.importMock<typeof import('../services')>('../services')
 
 function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
@@ -119,7 +119,8 @@ describe('capture handler', () => {
       const result = await handleCapturedResponse(validCaptureMessage())
 
       expect(result).toEqual({ success: true, count: 2 })
-      expect(upsertConversationMerged).toHaveBeenCalledTimes(2)
+      expect(upsertConversationsMerged).toHaveBeenCalledTimes(1)
+      expect(upsertConversationsMerged).toHaveBeenCalledWith(expect.any(Array))
     })
 
     it('should return count 0 for empty conversation list', async () => {

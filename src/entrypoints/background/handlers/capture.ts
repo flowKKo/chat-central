@@ -1,7 +1,7 @@
 import { getAdapterForUrl, type PlatformAdapter } from '@/utils/platform-adapters'
 import { createLogger } from '@/utils/logger'
 import { CaptureApiResponseSchema, type CaptureApiResponseMessage } from '../schemas'
-import { applyConversationUpdate, upsertConversationMerged } from '../services'
+import { applyConversationUpdate, upsertConversationsMerged } from '../services'
 import { notifyExtensionPages } from './utils'
 
 const log = createLogger('ChatCentral')
@@ -74,9 +74,8 @@ async function processConversationList(
 
   log.info(`Parsed ${conversations.length} conversations from ${adapter.platform}`)
 
-  for (const conversation of conversations) {
-    await upsertConversationMerged(conversation)
-  }
+  // Batch upsert for better performance
+  await upsertConversationsMerged(conversations)
 
   return { success: true, count: conversations.length }
 }
@@ -152,9 +151,7 @@ async function processUnknownResponse(
 
   const list = adapter.parseConversationList(data)
   if (list.length > 0) {
-    for (const conversation of list) {
-      await upsertConversationMerged(conversation)
-    }
+    await upsertConversationsMerged(list)
     handled = true
     if (!detail) count = list.length
   }

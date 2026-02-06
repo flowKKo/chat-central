@@ -7,7 +7,6 @@ const log = createLogger('Observer')
 
 // Track extension lifecycle to avoid repeated errors after reload/update
 let contextInvalidated = false
-let domObserver: MutationObserver | null = null
 let messageHandler: ((event: MessageEvent) => void) | null = null
 
 function isContextInvalidatedError(error: unknown): boolean {
@@ -19,10 +18,6 @@ function teardown() {
   contextInvalidated = true
   log.warn('Extension context invalidated. Reload the page to reconnect.')
 
-  if (domObserver) {
-    domObserver.disconnect()
-    domObserver = null
-  }
   if (messageHandler) {
     window.removeEventListener('message', messageHandler)
     messageHandler = null
@@ -36,7 +31,11 @@ function teardown() {
  * Responsibilities:
  * 1. Receive postMessage from interceptor.content
  * 2. Forward data to background service worker
- * 3. Monitor DOM changes as a backup data source
+ *
+ * Note: DOM observation is disabled because:
+ * - The handler was a stub with no actual functionality
+ * - MutationObserver with subtree:true caused significant page lag
+ * - API interception already captures all conversation data reliably
  */
 export default defineContentScript({
   matches: [
@@ -55,15 +54,6 @@ export default defineContentScript({
 
     // Listen for messages from interceptor.content
     setupMessageListener()
-
-    // Initialize DOM observer after page load
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        setupDOMObserver(platform)
-      })
-    } else {
-      setupDOMObserver(platform)
-    }
   },
 })
 
@@ -99,119 +89,4 @@ function setupMessageListener() {
       })
   }
   window.addEventListener('message', messageHandler)
-}
-
-/**
- * Setup DOM observer (as a backup data source)
- */
-function setupDOMObserver(platform: string) {
-  if (contextInvalidated) return
-
-  // Set different selectors based on platform
-  const selectors = getSelectors(platform)
-  if (!selectors) return
-
-  // Use MutationObserver to monitor conversation changes
-  domObserver = new MutationObserver((mutations) => {
-    if (contextInvalidated) return
-    for (const mutation of mutations) {
-      if (mutation.addedNodes.length > 0) {
-        handleDOMMutation(mutation, platform, selectors)
-      }
-    }
-  })
-
-  // Wait for container to appear
-  waitForElement(selectors.container).then((container) => {
-    if (contextInvalidated || !domObserver) return
-    if (container) {
-      log.info('DOM observer started')
-      domObserver.observe(container, {
-        childList: true,
-        subtree: true,
-      })
-    }
-  })
-}
-
-interface PlatformSelectors {
-  container: string
-  messageItem: string
-  userMessage: string
-  assistantMessage: string
-}
-
-function getSelectors(platform: string): PlatformSelectors | null {
-  switch (platform) {
-    case 'claude':
-      return {
-        container: '[data-testid="conversation-turn-list"], .conversation-content',
-        messageItem: '[data-testid="conversation-turn"]',
-        userMessage: '.font-user-message, [data-testid="user-message"]',
-        assistantMessage: '.font-claude-message, [data-testid="assistant-message"]',
-      }
-    case 'chatgpt':
-      return {
-        container: '[class*="react-scroll-to-bottom"], main',
-        messageItem: '[data-message-author-role]',
-        userMessage: '[data-message-author-role="user"]',
-        assistantMessage: '[data-message-author-role="assistant"]',
-      }
-    case 'gemini':
-      return {
-        container: '.conversation-container, [class*="conversation"]',
-        messageItem: '.message-content, [class*="message"]',
-        userMessage: '.query-content, [class*="user"]',
-        assistantMessage: '.response-content, [class*="model"]',
-      }
-    default:
-      return null
-  }
-}
-
-function handleDOMMutation(
-  mutation: MutationRecord,
-  _platform: string,
-  _selectors: PlatformSelectors
-) {
-  // Simple debounce
-  // Full implementation requires parsing DOM content and merging with API data
-  // Here we just mark that there is new content
-  for (const node of mutation.addedNodes) {
-    if (node instanceof HTMLElement) {
-      // New message detected, trigger incremental sync
-      // console.log('[ChatCentral] New DOM content detected')
-    }
-  }
-}
-
-/**
- * Wait for element to appear
- */
-function waitForElement(selector: string, timeout = 10000): Promise<Element | null> {
-  return new Promise((resolve) => {
-    const element = document.querySelector(selector)
-    if (element) {
-      resolve(element)
-      return
-    }
-
-    const observer = new MutationObserver(() => {
-      const element = document.querySelector(selector)
-      if (element) {
-        observer.disconnect()
-        resolve(element)
-      }
-    })
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    })
-
-    setTimeout(() => {
-      observer.disconnect()
-      resolve(null)
-    }, timeout)
-  })
 }
