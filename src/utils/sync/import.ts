@@ -1,12 +1,14 @@
 import {
   type ConflictRecord,
   type ExportManifest,
+  type ExportManifestV2,
   type ImportError,
   type ImportOptions,
   type ImportResult,
   type ImportStatus,
   createEmptyImportResult,
   exportManifestSchema,
+  exportManifestV2Schema,
   updateImportStats,
 } from './types'
 import type { Conversation, Message } from '@/types'
@@ -21,13 +23,14 @@ import {
   FILENAME_MESSAGES,
   SUPPORTED_VERSIONS,
 } from './constants'
+import { parseMarkdownExport } from './markdown'
 
 // ============================================================================
 // Import Functions
 // ============================================================================
 
 /**
- * Import data from a ZIP file
+ * Import data from a ZIP file (auto-detects v1 JSONL or v2 Markdown format)
  */
 export async function importData(
   file: File,
@@ -51,21 +54,9 @@ export async function importData(
     }
 
     const manifestRaw = await manifestFile.async('string')
-
-    // Validate manifest with Zod schema
-    let manifest: ExportManifest
+    let manifestParsed: unknown
     try {
-      const parsed = JSON.parse(manifestRaw)
-      const validated = exportManifestSchema.safeParse(parsed)
-      if (!validated.success) {
-        result.errors.push({
-          type: 'validation_error',
-          message: `Invalid manifest format: ${validated.error.message}`,
-        })
-        result.success = false
-        return result
-      }
-      manifest = validated.data
+      manifestParsed = JSON.parse(manifestRaw)
     } catch {
       result.errors.push({
         type: 'parse_error',
@@ -75,82 +66,24 @@ export async function importData(
       return result
     }
 
-    // Validate version
-    if (!(SUPPORTED_VERSIONS as readonly string[]).includes(manifest.version)) {
-      result.errors.push({
-        type: 'version_incompatible',
-        message: `Unsupported export version: ${manifest.version}. Supported: ${SUPPORTED_VERSIONS.join(', ')}`,
-      })
-      result.success = false
-      return result
+    // Auto-detect format: v2 Markdown vs v1 JSONL
+    const v2Result = exportManifestV2Schema.safeParse(manifestParsed)
+    if (v2Result.success) {
+      return importFromMarkdownZip(zip, v2Result.data, options, result)
     }
 
-    // Read data files
-    const conversationsFile = zip.file(FILENAME_CONVERSATIONS)
-    const messagesFile = zip.file(FILENAME_MESSAGES)
-
-    if (!conversationsFile || !messagesFile) {
-      result.errors.push({
-        type: 'parse_error',
-        message: 'Missing data files in archive',
-      })
-      result.success = false
-      return result
+    // Try v1 format
+    const v1Result = exportManifestSchema.safeParse(manifestParsed)
+    if (v1Result.success) {
+      return importFromJsonlZip(zip, v1Result.data, options, result)
     }
 
-    const conversationsRaw = await conversationsFile.async('string')
-    const messagesRaw = await messagesFile.async('string')
-
-    // Validate checksums
-    const conversationsChecksum = await sha256(conversationsRaw)
-    const messagesChecksum = await sha256(messagesRaw)
-
-    if (conversationsChecksum !== manifest.checksums[FILENAME_CONVERSATIONS]) {
-      result.errors.push({
-        type: 'checksum_mismatch',
-        message: 'Conversations file checksum mismatch - file may be corrupted',
-      })
-      result.success = false
-      return result
-    }
-
-    if (messagesChecksum !== manifest.checksums[FILENAME_MESSAGES]) {
-      result.errors.push({
-        type: 'checksum_mismatch',
-        message: 'Messages file checksum mismatch - file may be corrupted',
-      })
-      result.success = false
-      return result
-    }
-
-    // Parse JSONL files
-    const conversations = parseJsonl<Conversation>(
-      conversationsRaw,
-      conversationSchema,
-      (line, msg) =>
-        result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
-    )
-    const messages = parseJsonl<Message>(messagesRaw, messageSchema, (line, msg) =>
-      result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
-    )
-
-    // Import within a transaction
-    await db.transaction('rw', [db.conversations, db.messages, db.conflicts], async () => {
-      // Import conversations
-      for (const conv of conversations) {
-        const status = await importConversation(conv, options, result)
-        updateImportStats(result, status, 'conversations')
-      }
-
-      // Import messages
-      for (const msg of messages) {
-        const status = await importMessage(msg, options, result)
-        updateImportStats(result, status, 'messages')
-      }
+    // Neither format matched
+    result.errors.push({
+      type: 'validation_error',
+      message: 'Invalid manifest format: does not match v1 or v2 schema',
     })
-
-    invalidateSearchIndex()
-
+    result.success = false
     return result
   } catch (error) {
     result.success = false
@@ -160,6 +93,152 @@ export async function importData(
     })
     return result
   }
+}
+
+// ============================================================================
+// V2 Markdown ZIP Import
+// ============================================================================
+
+async function importFromMarkdownZip(
+  zip: JSZip,
+  _manifest: ExportManifestV2,
+  options: ImportOptions,
+  result: ImportResult
+): Promise<ImportResult> {
+  // Find all .md files in the ZIP (any depth)
+  const mdFiles: JSZip.JSZipObject[] = []
+  zip.forEach((relativePath, file) => {
+    if (relativePath.endsWith('.md') && !file.dir) {
+      mdFiles.push(file)
+    }
+  })
+
+  if (mdFiles.length === 0) {
+    result.errors.push({
+      type: 'parse_error',
+      message: 'No .md files found in archive',
+    })
+    result.success = false
+    return result
+  }
+
+  // Parse all markdown files first, then import in a transaction
+  const parsed: { conversation: Conversation; messages: Message[] }[] = []
+  for (const file of mdFiles) {
+    try {
+      const content = await file.async('string')
+      parsed.push(parseMarkdownExport(content))
+    } catch (error) {
+      result.errors.push({
+        type: 'parse_error',
+        message: `Failed to parse ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      })
+    }
+  }
+
+  await db.transaction('rw', [db.conversations, db.messages, db.conflicts], async () => {
+    for (const { conversation, messages } of parsed) {
+      const convStatus = await importConversation(conversation, options, result)
+      updateImportStats(result, convStatus, 'conversations')
+
+      for (const msg of messages) {
+        const msgStatus = await importMessage(msg, options, result)
+        updateImportStats(result, msgStatus, 'messages')
+      }
+    }
+  })
+
+  invalidateSearchIndex()
+  return result
+}
+
+// ============================================================================
+// V1 JSONL ZIP Import (legacy)
+// ============================================================================
+
+async function importFromJsonlZip(
+  zip: JSZip,
+  manifest: ExportManifest,
+  options: ImportOptions,
+  result: ImportResult
+): Promise<ImportResult> {
+  // Validate version
+  if (!(SUPPORTED_VERSIONS as readonly string[]).includes(manifest.version)) {
+    result.errors.push({
+      type: 'version_incompatible',
+      message: `Unsupported export version: ${manifest.version}. Supported: ${SUPPORTED_VERSIONS.join(', ')}`,
+    })
+    result.success = false
+    return result
+  }
+
+  // Read data files
+  const conversationsFile = zip.file(FILENAME_CONVERSATIONS)
+  const messagesFile = zip.file(FILENAME_MESSAGES)
+
+  if (!conversationsFile || !messagesFile) {
+    result.errors.push({
+      type: 'parse_error',
+      message: 'Missing data files in archive',
+    })
+    result.success = false
+    return result
+  }
+
+  const conversationsRaw = await conversationsFile.async('string')
+  const messagesRaw = await messagesFile.async('string')
+
+  // Validate checksums
+  const conversationsChecksum = await sha256(conversationsRaw)
+  const messagesChecksum = await sha256(messagesRaw)
+
+  if (conversationsChecksum !== manifest.checksums[FILENAME_CONVERSATIONS]) {
+    result.errors.push({
+      type: 'checksum_mismatch',
+      message: 'Conversations file checksum mismatch - file may be corrupted',
+    })
+    result.success = false
+    return result
+  }
+
+  if (messagesChecksum !== manifest.checksums[FILENAME_MESSAGES]) {
+    result.errors.push({
+      type: 'checksum_mismatch',
+      message: 'Messages file checksum mismatch - file may be corrupted',
+    })
+    result.success = false
+    return result
+  }
+
+  // Parse JSONL files
+  const conversations = parseJsonl<Conversation>(
+    conversationsRaw,
+    conversationSchema,
+    (line, msg) =>
+      result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
+  )
+  const messages = parseJsonl<Message>(messagesRaw, messageSchema, (line, msg) =>
+    result.errors.push({ type: 'parse_error', message: `Line ${line}: ${msg}`, line })
+  )
+
+  // Import within a transaction
+  await db.transaction('rw', [db.conversations, db.messages, db.conflicts], async () => {
+    // Import conversations
+    for (const conv of conversations) {
+      const status = await importConversation(conv, options, result)
+      updateImportStats(result, status, 'conversations')
+    }
+
+    // Import messages
+    for (const msg of messages) {
+      const status = await importMessage(msg, options, result)
+      updateImportStats(result, status, 'messages')
+    }
+  })
+
+  invalidateSearchIndex()
+
+  return result
 }
 
 // ============================================================================
@@ -335,7 +414,7 @@ export async function importFromJson(
  */
 export async function validateImportFile(file: File): Promise<{
   valid: boolean
-  manifest?: ExportManifest
+  manifest?: ExportManifest | ExportManifestV2
   errors: ImportError[]
 }> {
   const errors: ImportError[] = []
@@ -393,7 +472,16 @@ export async function validateImportFile(file: File): Promise<{
     }
 
     const manifestRaw = await manifestFile.async('string')
-    const manifest = JSON.parse(manifestRaw) as ExportManifest
+    const manifestParsed = JSON.parse(manifestRaw)
+
+    // Try v2 first
+    const v2Result = exportManifestV2Schema.safeParse(manifestParsed)
+    if (v2Result.success) {
+      return { valid: true, manifest: v2Result.data, errors }
+    }
+
+    // Try v1
+    const manifest = manifestParsed as ExportManifest
 
     if (!(SUPPORTED_VERSIONS as readonly string[]).includes(manifest.version)) {
       errors.push({
@@ -403,6 +491,7 @@ export async function validateImportFile(file: File): Promise<{
       return { valid: false, errors }
     }
 
+    // v1 requires data files
     if (!zip.file(FILENAME_CONVERSATIONS) || !zip.file(FILENAME_MESSAGES)) {
       errors.push({
         type: 'parse_error',

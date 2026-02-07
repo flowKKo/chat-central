@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import { validateImportFile } from './import'
+import { importData, validateImportFile } from './import'
+import { conversationToMarkdown } from './markdown'
+import type { Conversation, Message } from '@/types'
 import JSZip from 'jszip'
 
 // Helper to create a mock File with text() method
@@ -16,13 +18,13 @@ function createMockFile(content: string | Blob, filename: string, type: string):
 vi.mock('@/utils/db', () => ({
   db: {
     conversations: {
-      get: vi.fn(),
-      add: vi.fn(),
+      get: vi.fn().mockResolvedValue(undefined),
+      add: vi.fn().mockResolvedValue(undefined),
       put: vi.fn(),
     },
     messages: {
-      get: vi.fn(),
-      add: vi.fn(),
+      get: vi.fn().mockResolvedValue(undefined),
+      add: vi.fn().mockResolvedValue(undefined),
       put: vi.fn(),
     },
     conflicts: {},
@@ -31,6 +33,83 @@ vi.mock('@/utils/db', () => ({
   addConflict: vi.fn(),
   invalidateSearchIndex: vi.fn(),
 }))
+
+vi.mock('@/utils/logger', () => ({
+  createLogger: () => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  }),
+}))
+
+// ============================================================================
+// Test Helpers
+// ============================================================================
+
+function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
+  return {
+    id: 'claude_abc123',
+    originalId: 'abc123',
+    platform: 'claude',
+    title: 'Test Conversation',
+    preview: 'Preview text',
+    messageCount: 2,
+    createdAt: 1706000000000,
+    updatedAt: 1706001000000,
+    syncedAt: 1706001000000,
+    isFavorite: false,
+    favoriteAt: null,
+    tags: [],
+    detailStatus: 'full',
+    detailSyncedAt: 1706001000000,
+    url: 'https://claude.ai/chat/abc123',
+    ...overrides,
+  }
+}
+
+function makeMessage(overrides: Partial<Message> = {}): Message {
+  return {
+    id: 'msg-1',
+    conversationId: 'claude_abc123',
+    role: 'user',
+    content: 'Hello',
+    createdAt: 1706000000000,
+    ...overrides,
+  }
+}
+
+async function createV2Zip(
+  conversations: { conv: Conversation; messages: Message[] }[]
+): Promise<Blob> {
+  const zip = new JSZip()
+  let totalMessages = 0
+
+  for (const { conv, messages } of conversations) {
+    const md = conversationToMarkdown(conv, messages, 1706002000000)
+    zip.file(`${conv.platform}/${conv.title}.md`, md)
+    totalMessages += messages.length
+  }
+
+  zip.file(
+    'manifest.json',
+    JSON.stringify({
+      version: '2.0',
+      format: 'markdown',
+      exportedAt: 1706002000000,
+      counts: {
+        conversations: conversations.length,
+        messages: totalMessages,
+      },
+    })
+  )
+
+  return zip.generateAsync({ type: 'blob' })
+}
+
+// ============================================================================
+// Tests
+// ============================================================================
 
 describe('sync/import', () => {
   describe('validateImportFile', () => {
@@ -83,7 +162,7 @@ describe('sync/import', () => {
       expect(result.errors[0]!.type).toBe('parse_error')
     })
 
-    it('should validate ZIP file with manifest', async () => {
+    it('should validate v1 ZIP file with manifest', async () => {
       const zip = new JSZip()
       const manifest = {
         version: '1.0',
@@ -107,7 +186,22 @@ describe('sync/import', () => {
 
       const result = await validateImportFile(file)
       expect(result.valid).toBe(true)
-      expect(result.manifest?.version).toBe('1.0')
+      expect(result.manifest).toBeDefined()
+    })
+
+    it('should validate v2 Markdown ZIP file', async () => {
+      const blob = await createV2Zip([
+        {
+          conv: makeConversation(),
+          messages: [makeMessage()],
+        },
+      ])
+      const file = new File([blob], 'export.zip', { type: 'application/zip' })
+
+      const result = await validateImportFile(file)
+      expect(result.valid).toBe(true)
+      expect(result.manifest).toBeDefined()
+      expect((result.manifest as Record<string, unknown>).format).toBe('markdown')
     })
 
     it('should reject ZIP without manifest', async () => {
@@ -149,7 +243,7 @@ describe('sync/import', () => {
       expect(result.errors[0]!.type).toBe('version_incompatible')
     })
 
-    it('should reject ZIP without data files', async () => {
+    it('should reject v1 ZIP without data files', async () => {
       const zip = new JSZip()
       const manifest = {
         version: '1.0',
@@ -173,6 +267,55 @@ describe('sync/import', () => {
       const result = await validateImportFile(file)
       expect(result.valid).toBe(false)
       expect(result.errors[0]!.message).toContain('Missing data files')
+    })
+  })
+
+  describe('importData - v2 Markdown format', () => {
+    it('should import conversations from Markdown ZIP', async () => {
+      const conv = makeConversation()
+      const messages = [
+        makeMessage({ role: 'user', content: 'Hello' }),
+        makeMessage({ id: 'msg-2', role: 'assistant', content: 'Hi!' }),
+      ]
+      const blob = await createV2Zip([{ conv, messages }])
+      const file = new File([blob], 'export.zip', { type: 'application/zip' })
+
+      const result = await importData(file)
+
+      expect(result.success).toBe(true)
+      expect(result.imported.conversations).toBe(1)
+      expect(result.imported.messages).toBe(2)
+    })
+
+    it('should handle ZIP with no .md files', async () => {
+      const zip = new JSZip()
+      zip.file(
+        'manifest.json',
+        JSON.stringify({
+          version: '2.0',
+          format: 'markdown',
+          exportedAt: Date.now(),
+          counts: { conversations: 0, messages: 0 },
+        })
+      )
+
+      const blob = await zip.generateAsync({ type: 'blob' })
+      const file = new File([blob], 'export.zip', { type: 'application/zip' })
+
+      const result = await importData(file)
+      expect(result.success).toBe(false)
+      expect(result.errors.some((e) => e.message.includes('No .md files'))).toBe(true)
+    })
+
+    it('should auto-detect format and import', async () => {
+      const conv = makeConversation({ title: 'Auto Detect' })
+      const blob = await createV2Zip([{ conv, messages: [] }])
+      const file = new File([blob], 'export.zip', { type: 'application/zip' })
+
+      const result = await importData(file)
+
+      expect(result.success).toBe(true)
+      expect(result.imported.conversations).toBe(1)
     })
   })
 })

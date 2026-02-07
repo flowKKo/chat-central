@@ -3,7 +3,8 @@ import { Provider, createStore } from 'jotai'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { ThemePreference } from '@/utils/atoms/theme'
 import { clearAllData, clearPlatformData } from '@/utils/db'
-import { downloadExport, exportData } from '@/utils/sync/export'
+import { exportData } from '@/utils/sync/export'
+import { downloadBlob } from '@/utils/sync/utils'
 import { importData, importFromJson, validateImportFile } from '@/utils/sync/import'
 import { AppearanceSettings } from './AppearanceSettings'
 import { DangerZoneSettings } from './DangerZoneSettings'
@@ -36,7 +37,6 @@ vi.mock('@/utils/sync/export', () => ({
     filename: 'export.zip',
     stats: { conversations: 0, messages: 0, sizeBytes: 0 },
   }),
-  downloadExport: vi.fn(),
 }))
 
 vi.mock('@/utils/sync/import', () => ({
@@ -47,13 +47,14 @@ vi.mock('@/utils/sync/import', () => ({
 
 vi.mock('@/utils/sync/utils', () => ({
   isFileSizeSafe: vi.fn().mockReturnValue({ safe: true, sizeFormatted: '1 MB' }),
+  downloadBlob: vi.fn(),
 }))
 
 // Typed mock references
 const mockClearAllData = vi.mocked(clearAllData)
 const mockClearPlatformData = vi.mocked(clearPlatformData)
 const mockExportData = vi.mocked(exportData)
-const mockDownloadExport = vi.mocked(downloadExport)
+const mockDownloadBlob = vi.mocked(downloadBlob)
 const mockImportData = vi.mocked(importData)
 const mockImportFromJson = vi.mocked(importFromJson)
 const mockValidateImportFile = vi.mocked(validateImportFile)
@@ -187,7 +188,7 @@ describe('dataTransferSettings', () => {
       filename: 'export.zip',
       stats: { conversations: 0, messages: 0, sizeBytes: 0 },
     })
-    mockDownloadExport.mockReset()
+    mockDownloadBlob.mockReset()
     mockImportData.mockReset()
     mockImportFromJson.mockReset()
     mockValidateImportFile.mockReset().mockResolvedValue({ valid: true, errors: [] })
@@ -202,7 +203,7 @@ describe('dataTransferSettings', () => {
   it('should render export controls', () => {
     render(<DataTransferSettings />)
     expect(screen.getByText('Export Data')).toBeInTheDocument()
-    expect(screen.getByText('Download as ZIP archive')).toBeInTheDocument()
+    expect(screen.getByText('Download as Markdown ZIP')).toBeInTheDocument()
     expect(screen.getByText('Export')).toBeInTheDocument()
   })
 
@@ -219,7 +220,7 @@ describe('dataTransferSettings', () => {
     expect(importButton.closest('button')).toBeDisabled()
   })
 
-  it('should call exportData and downloadExport when clicking export', async () => {
+  it('should call exportData and downloadBlob when clicking export', async () => {
     render(<DataTransferSettings />)
 
     fireEvent.click(screen.getByText('Export'))
@@ -228,7 +229,7 @@ describe('dataTransferSettings', () => {
       expect(mockExportData).toHaveBeenCalledWith({ type: 'full' })
     })
     await waitFor(() => {
-      expect(mockDownloadExport).toHaveBeenCalledOnce()
+      expect(mockDownloadBlob).toHaveBeenCalledOnce()
     })
   })
 

@@ -2,10 +2,10 @@ import { AlertTriangle, CheckCircle2, Download, HardDrive, Loader2, Upload } fro
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/utils/cn'
-import { downloadExport, exportData } from '@/utils/sync/export'
+import { exportData } from '@/utils/sync/export'
+import { downloadBlob, isFileSizeSafe } from '@/utils/sync/utils'
 import { importData, importFromJson, validateImportFile } from '@/utils/sync/import'
 import type { ImportResult } from '@/utils/sync/types'
-import { isFileSizeSafe } from '@/utils/sync/utils'
 import { SettingsSection } from '../ui/SettingsSection'
 
 export function DataTransferSettings() {
@@ -21,7 +21,7 @@ export function DataTransferSettings() {
     setIsExporting(true)
     try {
       const result = await exportData({ type: 'full' })
-      downloadExport(result)
+      downloadBlob(result.blob, result.filename)
     } finally {
       setIsExporting(false)
     }

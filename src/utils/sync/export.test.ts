@@ -14,7 +14,6 @@ import {
   exportToJson,
   exportToMarkdown,
   exportConversationToJson,
-  exportBatchMarkdown,
 } from './export'
 import type { Conversation, Message } from '@/types'
 import * as db from '@/utils/db'
@@ -333,6 +332,36 @@ describe('sync/types', () => {
       expect(result.success).toBe(false)
     })
   })
+
+  describe('exportManifestV2Schema', () => {
+    it('should validate correct v2 manifest', async () => {
+      const { exportManifestV2Schema } = await import('./types')
+
+      const validManifest = {
+        version: '2.0',
+        format: 'markdown',
+        exportedAt: Date.now(),
+        counts: { conversations: 5, messages: 42 },
+      }
+
+      const result = exportManifestV2Schema.safeParse(validManifest)
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject v2 manifest with wrong version', async () => {
+      const { exportManifestV2Schema } = await import('./types')
+
+      const invalidManifest = {
+        version: '1.0',
+        format: 'markdown',
+        exportedAt: Date.now(),
+        counts: { conversations: 0, messages: 0 },
+      }
+
+      const result = exportManifestV2Schema.safeParse(invalidManifest)
+      expect(result.success).toBe(false)
+    })
+  })
 })
 
 // ============================================================================
@@ -345,7 +374,7 @@ describe('export functions', () => {
   })
 
   describe('exportData', () => {
-    it('should export empty data as valid ZIP', async () => {
+    it('should export empty data as valid Markdown ZIP', async () => {
       const result = await exportData()
 
       expect(result.blob).toBeInstanceOf(Blob)
@@ -356,46 +385,58 @@ describe('export functions', () => {
       expect(result.filename).toMatch(/\.zip$/)
     })
 
-    it('should include conversations and messages in ZIP', async () => {
-      vi.mocked(db.getAllConversationsForExport).mockResolvedValue([makeConversation()])
-      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([makeMessage()])
+    it('should include manifest with v2 format', async () => {
+      const result = await exportData()
+      const zip = await JSZip.loadAsync(result.blob)
+      const manifest = JSON.parse(await zip.file('manifest.json')!.async('string'))
+
+      expect(manifest.version).toBe('2.0')
+      expect(manifest.format).toBe('markdown')
+      expect(manifest.counts).toEqual({ conversations: 0, messages: 0 })
+    })
+
+    it('should create platform subdirectories with .md files', async () => {
+      vi.mocked(db.getAllConversationsForExport).mockResolvedValue([
+        makeConversation({ id: 'c1', platform: 'claude', title: 'Claude Chat' }),
+        makeConversation({ id: 'c2', platform: 'chatgpt', title: 'GPT Chat' }),
+      ])
+      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([
+        makeMessage({ conversationId: 'c1' }),
+        makeMessage({ id: 'msg-2', conversationId: 'c2' }),
+      ])
 
       const result = await exportData()
-
-      expect(result.stats.conversations).toBe(1)
-      expect(result.stats.messages).toBe(1)
-
       const zip = await JSZip.loadAsync(result.blob)
+
       expect(zip.file('manifest.json')).toBeTruthy()
-      expect(zip.file('conversations.jsonl')).toBeTruthy()
-      expect(zip.file('messages.jsonl')).toBeTruthy()
+      // Check for platform subdirectories
+      const files = Object.keys(zip.files).filter((f) => f.endsWith('.md'))
+      expect(files).toHaveLength(2)
+      expect(files.some((f) => f.startsWith('claude/'))).toBe(true)
+      expect(files.some((f) => f.startsWith('chatgpt/'))).toBe(true)
     })
 
-    it('should create valid manifest with checksums', async () => {
+    it('should produce valid Markdown content with YAML frontmatter', async () => {
       vi.mocked(db.getAllConversationsForExport).mockResolvedValue([makeConversation()])
-      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([makeMessage()])
+      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([
+        makeMessage({ role: 'user', content: 'Hello' }),
+        makeMessage({ id: 'msg-2', role: 'assistant', content: 'Hi!' }),
+      ])
 
       const result = await exportData()
       const zip = await JSZip.loadAsync(result.blob)
-      const manifest = JSON.parse(await zip.file('manifest.json')!.async('string'))
 
-      expect(manifest.version).toBe('1.0')
-      expect(manifest.deviceId).toBe('test-device-123')
-      expect(manifest.counts).toEqual({ conversations: 1, messages: 1 })
-      expect(manifest.checksums).toHaveProperty('conversations.jsonl')
-      expect(manifest.checksums).toHaveProperty('messages.jsonl')
-      expect(manifest.exportType).toBe('full')
-      expect(manifest.encrypted).toBe(false)
-    })
+      const mdFiles = Object.keys(zip.files).filter((f) => f.endsWith('.md'))
+      expect(mdFiles).toHaveLength(1)
 
-    it('should use incremental type when specified', async () => {
-      const result = await exportData({ type: 'incremental', since: 5000 })
-      const zip = await JSZip.loadAsync(result.blob)
-      const manifest = JSON.parse(await zip.file('manifest.json')!.async('string'))
-
-      expect(manifest.exportType).toBe('incremental')
-      expect(manifest.sinceTimestamp).toBe(5000)
-      expect(result.filename).toContain('_incremental')
+      const mdContent = await zip.file(mdFiles[0]!)!.async('string')
+      expect(mdContent).toContain('---')
+      expect(mdContent).toContain('id: conv-1')
+      expect(mdContent).toContain('platform: claude')
+      expect(mdContent).toContain('## User')
+      expect(mdContent).toContain('Hello')
+      expect(mdContent).toContain('## Assistant')
+      expect(mdContent).toContain('Hi!')
     })
 
     it('should filter selected conversations', async () => {
@@ -407,27 +448,22 @@ describe('export functions', () => {
       const result = await exportData({ type: 'selected', conversationIds: ['c1'] })
 
       expect(result.stats.conversations).toBe(1)
-      expect(result.filename).toContain('_selected')
     })
 
-    it('should use existing sync state when available', async () => {
-      vi.mocked(db.getSyncState).mockResolvedValue({
-        id: 'global',
-        deviceId: 'existing-device',
-        status: 'idle',
-        lastPullAt: null,
-        lastPushAt: null,
-        remoteCursor: null,
-        pendingConflicts: 0,
-        lastError: null,
-        lastErrorAt: null,
-      })
+    it('should handle duplicate filenames within same platform', async () => {
+      vi.mocked(db.getAllConversationsForExport).mockResolvedValue([
+        makeConversation({ id: 'c1', title: 'Same Title' }),
+        makeConversation({ id: 'c2', title: 'Same Title' }),
+      ])
+      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([])
 
       const result = await exportData()
       const zip = await JSZip.loadAsync(result.blob)
-      const manifest = JSON.parse(await zip.file('manifest.json')!.async('string'))
 
-      expect(manifest.deviceId).toBe('existing-device')
+      const mdFiles = Object.keys(zip.files).filter((f) => f.endsWith('.md'))
+      expect(mdFiles).toHaveLength(2)
+      // One should have _1 suffix
+      expect(mdFiles.some((f) => f.includes('_1'))).toBe(true)
     })
   })
 
@@ -464,7 +500,7 @@ describe('export functions', () => {
         reader.readAsText(result.blob)
       })
       const data = JSON.parse(text)
-      expect(data.version).toBe('1.0')
+      expect(data.version).toBe('2.0')
       expect(data.conversations).toHaveLength(2)
 
       const conv1 = data.conversations.find((c: Record<string, unknown>) => c.id === 'c1')
@@ -473,7 +509,7 @@ describe('export functions', () => {
   })
 
   describe('exportToMarkdown', () => {
-    it('should export conversation as Markdown', async () => {
+    it('should export conversation with YAML frontmatter', async () => {
       vi.mocked(db.getConversationById).mockResolvedValue(makeConversation({ title: 'AI Chat' }))
       vi.mocked(db.getMessagesByConversationId).mockResolvedValue([
         makeMessage({ role: 'user', content: 'Hello!' }),
@@ -482,7 +518,8 @@ describe('export functions', () => {
 
       const result = await exportToMarkdown('conv-1')
 
-      expect(result.content).toContain('# AI Chat')
+      expect(result.content).toContain('---')
+      expect(result.content).toContain('title: AI Chat')
       expect(result.content).toContain('## User')
       expect(result.content).toContain('Hello!')
       expect(result.content).toContain('## Assistant')
@@ -506,7 +543,7 @@ describe('export functions', () => {
       const result = await exportConversationToJson('conv-1')
 
       const data = JSON.parse(result.content)
-      expect(data.version).toBe('1.0')
+      expect(data.version).toBe('2.0')
       expect(data.conversation.title).toBe('Test')
       expect(data.conversation.messages).toHaveLength(1)
       expect(result.filename).toMatch(/\.json$/)
@@ -518,50 +555,6 @@ describe('export functions', () => {
       await expect(exportConversationToJson('missing')).rejects.toThrow(
         'Conversation not found: missing'
       )
-    })
-  })
-
-  describe('exportBatchMarkdown', () => {
-    it('should export multiple conversations as ZIP', async () => {
-      vi.mocked(db.getConversationById)
-        .mockResolvedValueOnce(makeConversation({ id: 'c1', title: 'Chat 1' }))
-        .mockResolvedValueOnce(makeConversation({ id: 'c2', title: 'Chat 2' }))
-      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([makeMessage()])
-
-      const result = await exportBatchMarkdown(['c1', 'c2'])
-
-      expect(result.stats.conversations).toBe(2)
-      expect(result.stats.totalMessages).toBe(2)
-      expect(result.filename).toContain('2conv_markdown')
-
-      const zip = await JSZip.loadAsync(result.blob)
-      expect(Object.keys(zip.files)).toHaveLength(2)
-    })
-
-    it('should handle duplicate filenames with suffix', async () => {
-      vi.mocked(db.getConversationById)
-        .mockResolvedValueOnce(makeConversation({ id: 'c1', title: 'Same Title' }))
-        .mockResolvedValueOnce(makeConversation({ id: 'c2', title: 'Same Title' }))
-      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([makeMessage()])
-
-      const result = await exportBatchMarkdown(['c1', 'c2'])
-
-      const zip = await JSZip.loadAsync(result.blob)
-      const files = Object.keys(zip.files)
-      expect(files).toHaveLength(2)
-      expect(files.some((f) => f.includes('_1'))).toBe(true)
-    })
-
-    it('should skip failed conversations', async () => {
-      vi.mocked(db.getConversationById)
-        .mockResolvedValueOnce(makeConversation({ id: 'c1', title: 'Good' }))
-        .mockResolvedValueOnce(undefined) // not found
-      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([makeMessage()])
-
-      const result = await exportBatchMarkdown(['c1', 'c2'])
-
-      const zip = await JSZip.loadAsync(result.blob)
-      expect(Object.keys(zip.files)).toHaveLength(1)
     })
   })
 })

@@ -17,7 +17,7 @@
   "dataTransfer": "数据传输",
   "dataTransferDesc": "导出或导入你的对话",
   "exportData": "导出数据",
-  "exportDataDesc": "下载为 ZIP 压缩包",
+  "exportDataDesc": "下载为 Markdown ZIP",
   "exporting": "导出中...",
   "importData": "导入数据",
   "importDataDesc": "从 .zip 或 .json 恢复",

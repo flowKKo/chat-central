@@ -1,29 +1,15 @@
-import type { ExportManifest } from './types'
+import type { ExportManifestV2 } from './types'
 import type { Message, Platform } from '@/types'
 import JSZip from 'jszip'
-import { PLATFORM_CONFIG } from '@/types'
 import {
   getAllConversationsForExport,
   getAllMessagesForExport,
   getConversationById,
   getMessagesByConversationId,
-  getSyncState,
-  initializeSyncState,
 } from '@/utils/db'
-import {
-  downloadBlob,
-  formatDateForFilename,
-  generateSafeFilename,
-  sha256,
-  syncLogger,
-  toJsonl,
-} from './utils'
-import {
-  EXPORT_VERSION,
-  FILENAME_CONVERSATIONS,
-  FILENAME_MANIFEST,
-  FILENAME_MESSAGES,
-} from './constants'
+import { formatDateForFilename, generateSafeFilename, syncLogger } from './utils'
+import { EXPORT_VERSION, FILENAME_MANIFEST } from './constants'
+import { conversationToMarkdown } from './markdown'
 
 // ============================================================================
 // Types
@@ -57,16 +43,12 @@ export interface ExportResult {
 // ============================================================================
 
 /**
- * Export data to a ZIP file containing JSONL files
+ * Export data to a Markdown ZIP file.
+ * Each conversation becomes a separate .md file with YAML frontmatter,
+ * organized in platform/ subdirectories.
  */
 export async function exportData(options: ExportOptions = {}): Promise<ExportResult> {
   const { type = 'full', conversationIds, since, platforms, includeDeleted } = options
-
-  // Get sync state for device ID
-  let syncState = await getSyncState()
-  if (!syncState) {
-    syncState = await initializeSyncState()
-  }
 
   // Fetch conversations based on export type
   let conversations = await getAllConversationsForExport({
@@ -83,41 +65,60 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
 
   // Fetch messages for these conversations
   const convIds = conversations.map((c) => c.id)
-  const messages = await getAllMessagesForExport(convIds, { includeDeleted })
+  const allMessages = await getAllMessagesForExport(convIds, { includeDeleted })
 
-  // Generate JSONL content and checksums
-  const conversationsJsonl = toJsonl(conversations)
-  const messagesJsonl = toJsonl(messages)
-  const [conversationsChecksum, messagesChecksum] = await Promise.all([
-    sha256(conversationsJsonl),
-    sha256(messagesJsonl),
-  ])
-
-  // Create manifest
-  const manifest: ExportManifest = {
-    version: EXPORT_VERSION,
-    exportedAt: Date.now(),
-    deviceId: syncState.deviceId,
-    counts: {
-      conversations: conversations.length,
-      messages: messages.length,
-    },
-    checksums: {
-      [FILENAME_CONVERSATIONS]: conversationsChecksum,
-      [FILENAME_MESSAGES]: messagesChecksum,
-    },
-    exportType: type === 'selected' ? 'full' : type,
-    sinceTimestamp: type === 'incremental' ? (since ?? null) : null,
-    encrypted: false,
+  // Group messages by conversation
+  const messagesByConv = new Map<string, Message[]>()
+  for (const msg of allMessages) {
+    const existing = messagesByConv.get(msg.conversationId) || []
+    existing.push(msg)
+    messagesByConv.set(msg.conversationId, existing)
   }
 
-  // Create ZIP with error handling
+  const exportedAt = Date.now()
+
+  // Create manifest
+  const manifest: ExportManifestV2 = {
+    version: EXPORT_VERSION,
+    format: 'markdown',
+    exportedAt,
+    counts: {
+      conversations: conversations.length,
+      messages: allMessages.length,
+    },
+  }
+
+  // Create ZIP with platform/ subdirectories
   let blob: Blob
   try {
     const zip = new JSZip()
     zip.file(FILENAME_MANIFEST, JSON.stringify(manifest, null, 2))
-    zip.file(FILENAME_CONVERSATIONS, conversationsJsonl)
-    zip.file(FILENAME_MESSAGES, messagesJsonl)
+
+    // Track used filenames per platform to handle duplicates
+    const usedFilenames = new Map<string, Set<string>>()
+
+    for (const conv of conversations) {
+      const messages = messagesByConv.get(conv.id) || []
+      const md = conversationToMarkdown(conv, messages, exportedAt)
+
+      // Build path: platform/Title.md
+      const platformDir = conv.platform
+      if (!usedFilenames.has(platformDir)) {
+        usedFilenames.set(platformDir, new Set())
+      }
+      const used = usedFilenames.get(platformDir)!
+
+      const baseName = generateSafeFilename(conv.title, '', 80)
+      let filename = `${baseName}.md`
+      let counter = 1
+      while (used.has(filename)) {
+        filename = `${baseName}_${counter}.md`
+        counter++
+      }
+      used.add(filename)
+
+      zip.file(`${platformDir}/${filename}`, md)
+    }
 
     blob = await zip.generateAsync({
       type: 'blob',
@@ -131,15 +132,14 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
 
   // Generate filename with metadata
   const dateStr = formatDateForFilename(new Date())
-  const suffix = type === 'incremental' ? '_incremental' : type === 'selected' ? '_selected' : ''
-  const filename = `chatcentral_${conversations.length}conv_${messages.length}msg_${dateStr}${suffix}.zip`
+  const filename = `chatcentral_${conversations.length}conv_${allMessages.length}msg_${dateStr}.zip`
 
   return {
     blob,
     filename,
     stats: {
       conversations: conversations.length,
-      messages: messages.length,
+      messages: allMessages.length,
       sizeBytes: blob.size,
     },
   }
@@ -153,13 +153,6 @@ export function exportConversations(
   options: Pick<ExportOptions, 'includeDeleted'> = {}
 ): Promise<ExportResult> {
   return exportData({ type: 'selected', conversationIds, ...options })
-}
-
-/**
- * Download export result as a file
- */
-export function downloadExport(result: ExportResult): void {
-  downloadBlob(result.blob, result.filename)
 }
 
 // ============================================================================
@@ -216,7 +209,7 @@ export async function exportToJson(
 }
 
 // ============================================================================
-// Markdown Export
+// Single Conversation Markdown Export
 // ============================================================================
 
 export interface MarkdownExportResult {
@@ -226,7 +219,7 @@ export interface MarkdownExportResult {
 }
 
 /**
- * Export a single conversation to Markdown format
+ * Export a single conversation to Markdown format (with YAML frontmatter)
  */
 export async function exportToMarkdown(conversationId: string): Promise<MarkdownExportResult> {
   const conversation = await getConversationById(conversationId)
@@ -235,30 +228,7 @@ export async function exportToMarkdown(conversationId: string): Promise<Markdown
   }
 
   const messages = await getMessagesByConversationId(conversationId)
-  const platformConfig = PLATFORM_CONFIG[conversation.platform]
-
-  const lines: string[] = []
-
-  // Header
-  lines.push(`# ${conversation.title}`)
-  lines.push('')
-  lines.push(`**Platform**: ${platformConfig.name}`)
-  lines.push(`**Created**: ${new Date(conversation.createdAt).toLocaleDateString()}`)
-  lines.push(`**Messages**: ${messages.length}`)
-  lines.push('')
-  lines.push('---')
-  lines.push('')
-
-  // Messages
-  for (const message of messages) {
-    const role = message.role === 'user' ? 'User' : 'Assistant'
-    lines.push(`## ${role}`)
-    lines.push('')
-    lines.push(message.content)
-    lines.push('')
-  }
-
-  const content = lines.join('\n')
+  const content = conversationToMarkdown(conversation, messages)
   const filename = generateSafeFilename(conversation.title, '.md')
 
   return { content, filename, messageCount: messages.length }
@@ -290,70 +260,4 @@ export async function exportConversationToJson(
   const filename = generateSafeFilename(conversation.title, '.json')
 
   return { content, filename }
-}
-
-// ============================================================================
-// Batch Markdown Export
-// ============================================================================
-
-export interface BatchMarkdownExportResult {
-  blob: Blob
-  filename: string
-  stats: {
-    conversations: number
-    totalMessages: number
-    sizeBytes: number
-  }
-}
-
-/**
- * Export multiple conversations to Markdown files in a ZIP archive
- * Each conversation becomes a separate .md file
- */
-export async function exportBatchMarkdown(
-  conversationIds: string[]
-): Promise<BatchMarkdownExportResult> {
-  const zip = new JSZip()
-  let totalMessages = 0
-  const usedFilenames = new Set<string>()
-
-  for (const id of conversationIds) {
-    try {
-      const result = await exportToMarkdown(id)
-
-      // Ensure unique filename in case of duplicates
-      let filename = result.filename
-      let counter = 1
-      while (usedFilenames.has(filename)) {
-        const baseName = result.filename.replace('.md', '')
-        filename = `${baseName}_${counter}.md`
-        counter++
-      }
-      usedFilenames.add(filename)
-
-      zip.file(filename, result.content)
-      totalMessages += result.messageCount
-    } catch (error) {
-      syncLogger.warn(`Failed to export conversation ${id}: ${String(error)}`)
-    }
-  }
-
-  const blob = await zip.generateAsync({
-    type: 'blob',
-    compression: 'DEFLATE',
-    compressionOptions: { level: 6 },
-  })
-
-  const dateStr = formatDateForFilename(new Date())
-  const filename = `chatcentral_${conversationIds.length}conv_markdown_${dateStr}.zip`
-
-  return {
-    blob,
-    filename,
-    stats: {
-      conversations: conversationIds.length,
-      totalMessages,
-      sizeBytes: blob.size,
-    },
-  }
 }

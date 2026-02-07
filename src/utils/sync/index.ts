@@ -10,7 +10,6 @@ export {
 
 // Export utilities
 export {
-  downloadExport,
   exportConversations,
   exportData,
   type ExportOptions,
@@ -18,6 +17,9 @@ export {
   exportToJson,
   type SimpleExportResult,
 } from './export'
+
+// Markdown serialization
+export { conversationToMarkdown, type ParsedMarkdownExport, parseMarkdownExport } from './markdown'
 
 // Import utilities
 export { importData, importFromJson, validateImportFile } from './import'
@@ -83,6 +85,7 @@ export type {
   ConflictResolution,
   EntityType,
   ExportManifest,
+  ExportManifestV2,
   ExportOptionsSync,
   ExportType,
   FailedRecord,

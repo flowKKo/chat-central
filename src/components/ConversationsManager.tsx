@@ -32,7 +32,7 @@ import {
   setPlatformFilterAtom,
 } from '@/utils/atoms'
 import { filterAndSortConversations } from '@/utils/filters'
-import { exportConversations, downloadExport, exportBatchMarkdown } from '@/utils/sync/export'
+import { exportConversations } from '@/utils/sync/export'
 import { downloadBlob } from '@/utils/sync/utils'
 import { useConversationSource } from '@/hooks/useConversationSource'
 
@@ -105,17 +105,10 @@ export default function ConversationsManager() {
   // Memoize array conversion to avoid repeated Set->Array conversions
   const selectedIdsArray = useMemo(() => Array.from(batchSelectedIds), [batchSelectedIds])
 
-  // Batch export handlers
-  const handleExportZip = useCallback(async () => {
+  // Batch export handler
+  const handleExport = useCallback(async () => {
     if (selectedIdsArray.length === 0) return
     const result = await exportConversations(selectedIdsArray)
-    downloadExport(result)
-    clearBatchSelection()
-  }, [selectedIdsArray, clearBatchSelection])
-
-  const handleExportMarkdown = useCallback(async () => {
-    if (selectedIdsArray.length === 0) return
-    const result = await exportBatchMarkdown(selectedIdsArray)
     downloadBlob(result.blob, result.filename)
     clearBatchSelection()
   }, [selectedIdsArray, clearBatchSelection])
@@ -223,8 +216,7 @@ export default function ConversationsManager() {
               isAllSelected={isAllSelected}
               onToggleSelectAll={handleToggleSelectAll}
               onClearSelection={clearBatchSelection}
-              onExportZip={handleExportZip}
-              onExportMarkdown={handleExportMarkdown}
+              onExport={handleExport}
             />
           )}
 

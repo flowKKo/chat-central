@@ -17,7 +17,7 @@
   "dataTransfer": "Data Transfer",
   "dataTransferDesc": "Export or import your conversations",
   "exportData": "Export Data",
-  "exportDataDesc": "Download as ZIP archive",
+  "exportDataDesc": "Download as Markdown ZIP",
   "exporting": "Exporting...",
   "importData": "Import Data",
   "importDataDesc": "Restore from .zip or .json",

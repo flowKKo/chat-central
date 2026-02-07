@@ -3,15 +3,6 @@ import { Provider, createStore } from 'jotai'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { SettingsPanel } from './SettingsPanel'
 import type { ThemePreference } from '@/utils/atoms/theme'
-import {
-  autoSyncEnabledAtom,
-  autoSyncIntervalAtom,
-  cloudSyncErrorAtom,
-  cloudSyncStatusAtom,
-  isCloudConnectedAtom,
-  lastCloudSyncAtom,
-  lastSyncResultAtom,
-} from '@/utils/atoms/cloud-sync'
 
 // Mock wxt/browser
 vi.mock('wxt/browser', () => ({
@@ -20,21 +11,6 @@ vi.mock('wxt/browser', () => ({
       sendMessage: vi.fn().mockResolvedValue({}),
     },
   },
-}))
-
-// Mock cloud-sync module
-vi.mock('@/utils/sync/cloud-sync', () => ({
-  connectCloudProvider: vi.fn().mockResolvedValue(undefined),
-  disconnectCloudProvider: vi.fn().mockResolvedValue(undefined),
-  loadCloudSyncState: vi.fn().mockResolvedValue({
-    provider: null,
-    isConnected: false,
-    lastSyncAt: null,
-    autoSyncEnabled: false,
-    autoSyncIntervalMinutes: 5,
-    error: null,
-  }),
-  syncToCloud: vi.fn().mockResolvedValue({ success: true, stats: {} }),
 }))
 
 // Mock DB functions
@@ -46,7 +22,6 @@ vi.mock('@/utils/db', () => ({
 // Mock export/import functions
 vi.mock('@/utils/sync/export', () => ({
   exportData: vi.fn().mockResolvedValue({ blob: new Blob(), filename: 'export.zip' }),
-  downloadExport: vi.fn(),
 }))
 
 vi.mock('@/utils/sync/import', () => ({
@@ -57,6 +32,7 @@ vi.mock('@/utils/sync/import', () => ({
 
 vi.mock('@/utils/sync/utils', () => ({
   isFileSizeSafe: vi.fn().mockReturnValue({ safe: true, sizeFormatted: '1 MB' }),
+  downloadBlob: vi.fn(),
 }))
 
 // Mock theme atom module to avoid localStorage.getItem issue in jsdom
@@ -86,14 +62,6 @@ describe('settingsPanel', () => {
   beforeEach(() => {
     store = createStore()
     store.set(mockThemePreferenceAtom, 'system')
-    // Cloud sync defaults
-    store.set(isCloudConnectedAtom, false)
-    store.set(cloudSyncStatusAtom, 'idle')
-    store.set(lastCloudSyncAtom, null)
-    store.set(cloudSyncErrorAtom, null)
-    store.set(lastSyncResultAtom, null)
-    store.set(autoSyncEnabledAtom, false)
-    store.set(autoSyncIntervalAtom, 5)
     confirmSpy.mockReset()
   })
 
@@ -104,11 +72,11 @@ describe('settingsPanel', () => {
       expect(screen.getByText('Manage your preferences and data')).toBeInTheDocument()
     })
 
-    it('should render all sections', () => {
+    it('should render all sections except Cloud Sync', () => {
       renderWithStore(store)
       expect(screen.getByText('Appearance')).toBeInTheDocument()
       expect(screen.getByText('Data Transfer')).toBeInTheDocument()
-      expect(screen.getByText('Cloud Sync')).toBeInTheDocument()
+      expect(screen.queryByText('Cloud Sync')).not.toBeInTheDocument()
       expect(screen.getByText('Platform Data')).toBeInTheDocument()
       expect(screen.getByText('Your Data is Private')).toBeInTheDocument()
       expect(screen.getByText('Delete All Data')).toBeInTheDocument()
