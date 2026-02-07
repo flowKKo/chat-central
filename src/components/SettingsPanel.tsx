@@ -1,7 +1,6 @@
 import { Info } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { APP_VERSION } from '@/utils/constants'
-import { CloudSyncPanel } from './CloudSyncPanel'
 import {
   AppearanceSettings,
   DangerZoneSettings,
@@ -29,7 +28,6 @@ export function SettingsPanel() {
         <LanguageSettings />
         <WidgetSettings />
         <DataTransferSettings />
-        <CloudSyncPanel />
         <PlatformDataSettings />
         <PrivacyNotice />
         <DangerZoneSettings />

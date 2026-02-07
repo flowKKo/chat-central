@@ -13,17 +13,7 @@ import {
   handleUpdateTags,
 } from './handlers'
 import { batchFetchDetails, cancelBatchFetch } from './services'
-import {
-  connectCloudProvider,
-  disconnectCloudProvider,
-  initializeCloudSync,
-  isCloudConnected,
-  loadCloudSyncState,
-  saveCloudSyncState,
-  syncToCloud,
-} from '@/utils/sync/cloud-sync'
 import type { Platform } from '@/types'
-import type { CloudProviderType } from '@/utils/sync/providers/cloud-types'
 import { initLanguage } from '@/locales'
 import { createLogger, getErrorMessage } from '@/utils/logger'
 
@@ -71,58 +61,8 @@ export default defineBackground({
 
     // Dev reload: Connect to local WebSocket server for auto-reload
     connectDevReloadServer()
-
-    // Initialize cloud sync
-    initializeCloudSync().catch((e) => {
-      log.warn('Failed to initialize cloud sync:', e)
-    })
-
-    // Set up auto-sync alarm
-    setupAutoSyncAlarm()
-
-    // Handle alarm events
-    safeAddListener(browser.alarms?.onAlarm, handleAlarm)
   },
 })
-
-// ============================================================================
-// Auto-Sync Support
-// ============================================================================
-
-const AUTO_SYNC_ALARM_NAME = 'cloud-auto-sync'
-
-async function setupAutoSyncAlarm() {
-  try {
-    const state = await loadCloudSyncState()
-
-    // Clear existing alarm first
-    await browser.alarms?.clear(AUTO_SYNC_ALARM_NAME)
-
-    if (state.isConnected && state.autoSyncEnabled) {
-      // Create new alarm
-      await browser.alarms?.create(AUTO_SYNC_ALARM_NAME, {
-        periodInMinutes: state.autoSyncIntervalMinutes,
-      })
-      log.info(`Auto-sync alarm set for every ${state.autoSyncIntervalMinutes} minutes`)
-    }
-  } catch (e) {
-    log.error('Failed to setup auto-sync alarm:', e)
-  }
-}
-
-async function handleAlarm(alarm: { name: string }) {
-  if (alarm.name === AUTO_SYNC_ALARM_NAME) {
-    log.info('Auto-sync alarm triggered')
-    try {
-      if (isCloudConnected()) {
-        await syncToCloud()
-        log.info('Auto-sync completed')
-      }
-    } catch (e) {
-      log.error('Auto-sync failed:', e)
-    }
-  }
-}
 
 // Generic helper to safely call addListener on browser event targets
 // that may be undefined (e.g. browser.contextMenus?.onClicked).
@@ -193,96 +133,8 @@ async function handleMessage(message: unknown): Promise<unknown> {
       cancelBatchFetch()
       return { success: true }
 
-    // Cloud Sync Actions
-    case 'CLOUD_SYNC_CONNECT':
-      return handleCloudConnect(message)
-
-    case 'CLOUD_SYNC_DISCONNECT':
-      return handleCloudDisconnect()
-
-    case 'CLOUD_SYNC_NOW':
-      return handleCloudSyncNow()
-
-    case 'CLOUD_SYNC_GET_STATE':
-      return handleCloudGetState()
-
-    case 'CLOUD_SYNC_UPDATE_SETTINGS':
-      return handleCloudUpdateSettings(message)
-
     default:
       log.warn('Unknown action:', action)
       return { error: 'Unknown action' }
-  }
-}
-
-// ============================================================================
-// Cloud Sync Message Handlers
-// ============================================================================
-
-async function handleCloudConnect(message: MessagePayload): Promise<unknown> {
-  const provider = message.provider as CloudProviderType
-  if (!provider) {
-    return { error: 'Provider not specified' }
-  }
-
-  try {
-    await connectCloudProvider(provider)
-    // Reset alarm with new state
-    await setupAutoSyncAlarm()
-    return { success: true }
-  } catch (e) {
-    return { error: getErrorMessage(e, 'Connection failed') }
-  }
-}
-
-async function handleCloudDisconnect(): Promise<unknown> {
-  try {
-    await disconnectCloudProvider()
-    // Clear auto-sync alarm
-    await browser.alarms?.clear(AUTO_SYNC_ALARM_NAME)
-    return { success: true }
-  } catch (e) {
-    return { error: getErrorMessage(e, 'Disconnect failed') }
-  }
-}
-
-async function handleCloudSyncNow(): Promise<unknown> {
-  if (!isCloudConnected()) {
-    return { error: 'Not connected to cloud' }
-  }
-
-  try {
-    const result = await syncToCloud()
-    return { success: result.success, result }
-  } catch (e) {
-    return { error: getErrorMessage(e, 'Sync failed') }
-  }
-}
-
-async function handleCloudGetState(): Promise<unknown> {
-  const state = await loadCloudSyncState()
-  return { state }
-}
-
-async function handleCloudUpdateSettings(message: MessagePayload): Promise<unknown> {
-  const { autoSyncEnabled, autoSyncIntervalMinutes } = message as {
-    autoSyncEnabled?: boolean
-    autoSyncIntervalMinutes?: number
-  }
-
-  try {
-    if (autoSyncEnabled !== undefined || autoSyncIntervalMinutes !== undefined) {
-      const state = await loadCloudSyncState()
-      await saveCloudSyncState({
-        ...state,
-        autoSyncEnabled: autoSyncEnabled ?? state.autoSyncEnabled,
-        autoSyncIntervalMinutes: autoSyncIntervalMinutes ?? state.autoSyncIntervalMinutes,
-      })
-      // Reset alarm with new settings
-      await setupAutoSyncAlarm()
-    }
-    return { success: true }
-  } catch (e) {
-    return { error: getErrorMessage(e, 'Failed to update settings') }
   }
 }

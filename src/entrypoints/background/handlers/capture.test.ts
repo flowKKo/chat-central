@@ -13,6 +13,10 @@ vi.mock('wxt/browser', () => ({
         get: vi.fn().mockResolvedValue({}),
       },
     },
+    tabs: {
+      query: vi.fn().mockResolvedValue([]),
+      sendMessage: vi.fn().mockResolvedValue(undefined),
+    },
   },
 }))
 
