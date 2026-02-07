@@ -20,14 +20,12 @@ Automatically capture, search, organize, and export your AI conversations.
 - **Full-text Search** — Find any conversation instantly across all platforms
 - **Tags & Favorites** — Custom tags, star important conversations, filter by any combination
 - **Export** — Markdown, JSON, or ZIP — your data, your format
-- **Cloud Sync** — Google Drive sync with automatic background sync
 - **Dashboard** — Full management UI with detail view, batch actions, and Markdown rendering
 - **Privacy First** — All data stored locally, zero tracking, fully open source
 
 ## Coming Soon
 
-> **Personal Knowledge Base** — Turn your AI conversations into a searchable knowledge graph.
-
+- **Cloud Sync** — Google Drive sync with automatic background sync
 - **Knowledge Graph** — Link topics and ideas across conversations
 - **AI Memory** — Resurface past insights when relevant
 - **Semantic Search** — Search by meaning, not just keywords
@@ -59,8 +57,7 @@ pnpm build:firefox  # Firefox
 
 ## Privacy
 
-- All data stored locally on your device — nothing leaves unless you enable cloud sync
-- Cloud sync uses a private Google Drive folder not visible in your Drive
+- All data stored locally on your device — nothing is sent to any server
 - No analytics, no telemetry, no tracking
 - No data sent to any third-party server
 - Fully open source
