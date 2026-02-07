@@ -8,14 +8,19 @@
 // ============================================================================
 
 /**
- * Current export format version
+ * Current export format version (Markdown ZIP)
  */
-export const EXPORT_VERSION = '1.0'
+export const EXPORT_VERSION = '2.0'
+
+/**
+ * Legacy v1 export format version (JSONL ZIP)
+ */
+export const EXPORT_VERSION_V1 = '1.0'
 
 /**
  * Supported import versions for backward compatibility
  */
-export const SUPPORTED_VERSIONS = ['1.0'] as const
+export const SUPPORTED_VERSIONS = ['1.0', '2.0'] as const
 
 // ============================================================================
 // Archive Filename Constants

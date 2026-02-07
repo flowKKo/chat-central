@@ -145,7 +145,7 @@ export interface MergeResult {
 export const exportTypeSchema = z.enum(['full', 'incremental'])
 export type ExportType = z.infer<typeof exportTypeSchema>
 
-/** Zod schema for validating export manifest */
+/** Zod schema for validating v1 export manifest (JSONL ZIP) */
 export const exportManifestSchema = z.object({
   version: z.string(),
   exportedAt: z.number(),
@@ -165,6 +165,19 @@ export const exportManifestSchema = z.object({
 
 export type ExportManifest = z.infer<typeof exportManifestSchema>
 
+/** Zod schema for v2 export manifest (Markdown ZIP) */
+export const exportManifestV2Schema = z.object({
+  version: z.literal('2.0'),
+  format: z.literal('markdown'),
+  exportedAt: z.number(),
+  counts: z.object({
+    conversations: z.number(),
+    messages: z.number(),
+  }),
+})
+
+export type ExportManifestV2 = z.infer<typeof exportManifestV2Schema>
+
 export interface ExportOptionsSync {
   type: ExportType
   since?: number
@@ -178,8 +191,8 @@ export interface ImportOptions {
 
 export interface ImportResult {
   success: boolean
-  imported: { conversations: number, messages: number }
-  skipped: { conversations: number, messages: number }
+  imported: { conversations: number; messages: number }
+  skipped: { conversations: number; messages: number }
   conflicts: ConflictRecord[]
   errors: ImportError[]
 }
@@ -215,12 +228,11 @@ export function createEmptyImportResult(): ImportResult {
 export function updateImportStats(
   result: ImportResult,
   status: ImportStatus,
-  entityType: ImportEntityType,
+  entityType: ImportEntityType
 ): void {
   if (status === 'imported') {
     result.imported[entityType]++
-  }
-  else if (status === 'skipped') {
+  } else if (status === 'skipped') {
     result.skipped[entityType]++
   }
   // 'conflict' status doesn't increment counters (handled separately)
