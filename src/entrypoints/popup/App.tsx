@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { browser } from 'wxt/browser'
 import { I18nProvider } from '@/components/providers/I18nProvider'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
-import { ConflictResolverModal, SyncSettingsModal, SyncStatusBar } from '@/components/sync'
 import { Tooltip } from '@/components/ui/Tooltip'
 import type { Platform } from '@/types'
 import { PLATFORM_CONFIG } from '@/types'
@@ -21,7 +20,6 @@ import {
   searchResultsAtom,
   setPlatformFilterAtom,
 } from '@/utils/atoms'
-import { initializeSyncAtom } from '@/utils/atoms/sync'
 import { ConversationItem, EmptyState, LoadingSkeleton, PlatformTab } from './components'
 
 export default function App() {
@@ -34,7 +32,6 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedPlatform] = useAtom(currentPlatformFilterAtom)
   const [, setPlatformFilter] = useAtom(setPlatformFilterAtom)
-  const [, initializeSync] = useAtom(initializeSyncAtom)
   const [, performSearch] = useAtom(performSearchAtom)
   const [activeSearchQuery] = useAtom(activeSearchQueryAtom)
   const [searchResults] = useAtom(searchResultsAtom)
@@ -46,8 +43,7 @@ export default function App() {
 
   useEffect(() => {
     loadConversations({ reset: true })
-    initializeSync()
-  }, [loadConversations, initializeSync])
+  }, [loadConversations])
 
   // Debounced search
   useEffect(() => {
@@ -252,13 +248,8 @@ export default function App() {
               <span className="absolute left-1/2 -translate-x-1/2 text-xs tabular-nums text-muted-foreground">
                 {`v${browser.runtime.getManifest().version}`}
               </span>
-              <SyncStatusBar />
             </div>
           </footer>
-
-          {/* Modals */}
-          <SyncSettingsModal />
-          <ConflictResolverModal />
         </div>
       </I18nProvider>
     </ThemeProvider>

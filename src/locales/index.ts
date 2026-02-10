@@ -5,7 +5,6 @@ import { loadConfig, watchConfig } from '@/utils/atoms/config'
 import enCommon from './en/common.json'
 import enConversations from './en/conversations.json'
 import enSettings from './en/settings.json'
-import enCloudSync from './en/cloudSync.json'
 import enConflicts from './en/conflicts.json'
 import enAbout from './en/about.json'
 import enPopup from './en/popup.json'
@@ -13,7 +12,6 @@ import enPopup from './en/popup.json'
 import zhCNCommon from './zh-CN/common.json'
 import zhCNConversations from './zh-CN/conversations.json'
 import zhCNSettings from './zh-CN/settings.json'
-import zhCNCloudSync from './zh-CN/cloudSync.json'
 import zhCNConflicts from './zh-CN/conflicts.json'
 import zhCNAbout from './zh-CN/about.json'
 import zhCNPopup from './zh-CN/popup.json'
@@ -23,7 +21,6 @@ const resources = {
     common: enCommon,
     conversations: enConversations,
     settings: enSettings,
-    cloudSync: enCloudSync,
     conflicts: enConflicts,
     about: enAbout,
     popup: enPopup,
@@ -32,7 +29,6 @@ const resources = {
     common: zhCNCommon,
     conversations: zhCNConversations,
     settings: zhCNSettings,
-    cloudSync: zhCNCloudSync,
     conflicts: zhCNConflicts,
     about: zhCNAbout,
     popup: zhCNPopup,
@@ -46,7 +42,7 @@ i18n.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',
   defaultNS: 'common',
-  ns: ['common', 'conversations', 'settings', 'cloudSync', 'conflicts', 'about', 'popup'],
+  ns: ['common', 'conversations', 'settings', 'conflicts', 'about', 'popup'],
   interpolation: {
     escapeValue: false,
   },

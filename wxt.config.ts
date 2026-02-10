@@ -1,19 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { defineConfig } from 'wxt'
-
-// Load .env into process.env (no external dependencies)
-const envPath = resolve(process.cwd(), '.env')
-if (existsSync(envPath)) {
-  for (const line of readFileSync(envPath, 'utf-8').split('\n')) {
-    const match = line.match(/^([^#=\s]+)\s*=(.*)$/)
-    if (match && !process.env[match[1]]) {
-      process.env[match[1]] = match[2].trim().replace(/^(['"])(.*)\1$/, '$2')
-    }
-  }
-}
-
-const googleClientId = process.env.GOOGLE_CLIENT_ID
 
 export default defineConfig({
   srcDir: 'src',
@@ -34,22 +19,7 @@ export default defineConfig({
         // Can generate fixed dev key later
       }),
 
-    permissions: [
-      'storage',
-      'unlimitedStorage',
-      'tabs',
-      'contextMenus',
-      'alarms',
-      ...(googleClientId ? ['identity' as const] : []),
-    ],
-
-    // OAuth2 — only included when GOOGLE_CLIENT_ID is set in .env
-    ...(googleClientId && {
-      oauth2: {
-        client_id: googleClientId,
-        scopes: ['https://www.googleapis.com/auth/drive.appdata'],
-      },
-    }),
+    permissions: ['storage', 'unlimitedStorage', 'tabs', 'contextMenus'],
 
     host_permissions: [
       'https://claude.ai/*',

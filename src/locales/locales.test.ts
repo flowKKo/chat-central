@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import enCommon from './en/common.json'
 import enConversations from './en/conversations.json'
 import enSettings from './en/settings.json'
-import enCloudSync from './en/cloudSync.json'
 import enConflicts from './en/conflicts.json'
 import enAbout from './en/about.json'
 import enPopup from './en/popup.json'
@@ -11,7 +10,6 @@ import enPopup from './en/popup.json'
 import zhCNCommon from './zh-CN/common.json'
 import zhCNConversations from './zh-CN/conversations.json'
 import zhCNSettings from './zh-CN/settings.json'
-import zhCNCloudSync from './zh-CN/cloudSync.json'
 import zhCNConflicts from './zh-CN/conflicts.json'
 import zhCNAbout from './zh-CN/about.json'
 import zhCNPopup from './zh-CN/popup.json'
@@ -20,7 +18,6 @@ const namespaces = [
   { name: 'common', en: enCommon, zhCN: zhCNCommon },
   { name: 'conversations', en: enConversations, zhCN: zhCNConversations },
   { name: 'settings', en: enSettings, zhCN: zhCNSettings },
-  { name: 'cloudSync', en: enCloudSync, zhCN: zhCNCloudSync },
   { name: 'conflicts', en: enConflicts, zhCN: zhCNConflicts },
   { name: 'about', en: enAbout, zhCN: zhCNAbout },
   { name: 'popup', en: enPopup, zhCN: zhCNPopup },

@@ -40,17 +40,3 @@ export const FILENAME_MESSAGES = 'messages.jsonl'
  * Filename for manifest JSON in export archives
  */
 export const FILENAME_MANIFEST = 'manifest.json'
-
-// ============================================================================
-// Cloud Sync Constants
-// ============================================================================
-
-/**
- * Storage key for cloud sync state in local storage
- */
-export const CLOUD_SYNC_STORAGE_KEY = 'cloudSyncState'
-
-/**
- * Filename for cloud sync data file
- */
-export const CLOUD_SYNC_FILENAME = 'chat-central-sync.json'

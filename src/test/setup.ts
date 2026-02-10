@@ -6,7 +6,6 @@ import { initReactI18next } from 'react-i18next'
 import enCommon from '@/locales/en/common.json'
 import enConversations from '@/locales/en/conversations.json'
 import enSettings from '@/locales/en/settings.json'
-import enCloudSync from '@/locales/en/cloudSync.json'
 import enConflicts from '@/locales/en/conflicts.json'
 import enAbout from '@/locales/en/about.json'
 import enPopup from '@/locales/en/popup.json'
@@ -19,7 +18,6 @@ i18n.use(initReactI18next).init({
       common: enCommon,
       conversations: enConversations,
       settings: enSettings,
-      cloudSync: enCloudSync,
       conflicts: enConflicts,
       about: enAbout,
       popup: enPopup,
@@ -28,7 +26,7 @@ i18n.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',
   defaultNS: 'common',
-  ns: ['common', 'conversations', 'settings', 'cloudSync', 'conflicts', 'about', 'popup'],
+  ns: ['common', 'conversations', 'settings', 'conflicts', 'about', 'popup'],
   interpolation: { escapeValue: false },
 })
 

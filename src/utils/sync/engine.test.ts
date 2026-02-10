@@ -9,9 +9,99 @@ import type {
 } from './types'
 import type { Conversation, Message } from '@/types'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { MockSyncProvider } from './providers/mock'
 import { syncCycle, applyConflictResolution, pullOnly, pushOnly } from './engine'
 import * as dbModule from '@/utils/db'
+
+class MockSyncProvider implements SyncProvider {
+  readonly name = 'Mock Provider'
+  readonly type = 'rest' as const
+  private connected = false
+  private records: Map<string, SyncRecord> = new Map()
+  private pushHistory: SyncRecord[][] = []
+  simulateNetworkError = false
+  simulateConflict = false
+
+  async connect(_config?: unknown): Promise<void> {
+    if (this.simulateNetworkError) throw new Error('Simulated network error')
+    this.connected = true
+  }
+
+  async disconnect(): Promise<void> {
+    this.connected = false
+  }
+
+  isConnected(): boolean {
+    return this.connected
+  }
+
+  async pull(cursor?: string | null): Promise<PullResult> {
+    if (this.simulateNetworkError) {
+      return {
+        success: false,
+        records: [],
+        cursor: null,
+        hasMore: false,
+        error: { code: 'network_error', message: 'Simulated network error', recoverable: true },
+      }
+    }
+    const startIndex = cursor ? Number.parseInt(cursor, 10) : 0
+    const allRecords = Array.from(this.records.values())
+    const pageRecords = allRecords.slice(startIndex, startIndex + 50)
+    const newCursor = startIndex + pageRecords.length
+    return {
+      success: true,
+      records: pageRecords,
+      cursor: newCursor < allRecords.length ? String(newCursor) : null,
+      hasMore: newCursor < allRecords.length,
+    }
+  }
+
+  async push(changes: SyncRecord[]): Promise<PushResult> {
+    if (this.simulateNetworkError) {
+      return {
+        success: false,
+        applied: [],
+        failed: [],
+        error: { code: 'network_error', message: 'Simulated network error', recoverable: true },
+      }
+    }
+    const applied: string[] = []
+    const failed: PushResult['failed'] = []
+    for (const record of changes) {
+      if (this.simulateConflict && this.records.has(record.id)) {
+        failed.push({
+          id: record.id,
+          reason: 'conflict',
+          message: 'Simulated conflict',
+          serverVersion: this.records.get(record.id),
+        })
+      } else {
+        this.records.set(record.id, record)
+        applied.push(record.id)
+      }
+    }
+    this.pushHistory.push(changes)
+    return { success: true, applied, failed }
+  }
+
+  addServerRecords(records: SyncRecord[]): void {
+    for (const r of records) this.records.set(r.id, r)
+  }
+
+  getServerRecords(): SyncRecord[] {
+    return Array.from(this.records.values())
+  }
+  getPushHistory(): SyncRecord[][] {
+    return this.pushHistory
+  }
+
+  reset(): void {
+    this.records.clear()
+    this.pushHistory = []
+    this.simulateNetworkError = false
+    this.simulateConflict = false
+  }
+}
 
 // Hoisted mock tables (accessible inside vi.mock factories)
 const { mockDbTables } = vi.hoisted(() => ({
