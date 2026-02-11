@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { useAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { MessageSquare } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
@@ -60,34 +60,34 @@ export default function ConversationsManager() {
   const isFavorites = showFavoritesOnly
   const { conversations, counts, loadConversations, loadDetail, pagination, isLoading } =
     useConversationSource(isFavorites)
-  const [selectedConversation] = useAtom(selectedConversationAtom)
-  const [selectedMessages] = useAtom(selectedMessagesAtom)
-  const [, toggleFavorite] = useAtom(toggleFavoriteAtom)
-  const [, searchConversations] = useAtom(performSearchAtom)
-  const [activeSearchQuery] = useAtom(activeSearchQueryAtom)
-  const [searchResults] = useAtom(searchResultsAtom)
+  const selectedConversation = useAtomValue(selectedConversationAtom)
+  const selectedMessages = useAtomValue(selectedMessagesAtom)
+  const toggleFavorite = useSetAtom(toggleFavoriteAtom)
+  const searchConversations = useSetAtom(performSearchAtom)
+  const activeSearchQuery = useAtomValue(activeSearchQueryAtom)
+  const searchResults = useAtomValue(searchResultsAtom)
   const searchResultsMap = useMemo(
     () => new Map(searchResults.map((r) => [r.conversation.id, r])),
     [searchResults]
   )
-  const [selectedFilterTags] = useAtom(selectedFilterTagsAtom)
+  const selectedFilterTags = useAtomValue(selectedFilterTagsAtom)
 
   // Batch selection state
-  const [batchSelectedIds] = useAtom(batchSelectedIdsAtom)
-  const [isBatchMode] = useAtom(isBatchModeAtom)
-  const [batchSelectedCount] = useAtom(batchSelectedCountAtom)
-  const [, toggleBatchSelect] = useAtom(toggleBatchSelectAtom)
-  const [, clearBatchSelection] = useAtom(clearBatchSelectionAtom)
-  const [, selectAllVisible] = useAtom(selectAllVisibleAtom)
+  const batchSelectedIds = useAtomValue(batchSelectedIdsAtom)
+  const isBatchMode = useAtomValue(isBatchModeAtom)
+  const batchSelectedCount = useAtomValue(batchSelectedCountAtom)
+  const toggleBatchSelect = useSetAtom(toggleBatchSelectAtom)
+  const clearBatchSelection = useSetAtom(clearBatchSelectionAtom)
+  const selectAllVisible = useSetAtom(selectAllVisibleAtom)
 
   // Date filter state
-  const [filters] = useAtom(filtersAtom)
-  const [, setDateRange] = useAtom(setDateRangeAtom)
-  const [hasDateFilter] = useAtom(hasDateFilterAtom)
+  const filters = useAtomValue(filtersAtom)
+  const setDateRange = useSetAtom(setDateRangeAtom)
+  const hasDateFilter = useAtomValue(hasDateFilterAtom)
 
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedPlatform] = useAtom(currentPlatformFilterAtom)
-  const [, setPlatformFilter] = useAtom(setPlatformFilterAtom)
+  const selectedPlatform = useAtomValue(currentPlatformFilterAtom)
+  const setPlatformFilter = useSetAtom(setPlatformFilterAtom)
 
   useEffect(() => {
     loadConversations({ reset: true })
