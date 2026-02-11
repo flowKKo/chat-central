@@ -15,7 +15,7 @@ import {
   selectedConversationAtom,
   selectedMessagesAtom,
   toggleFavoriteAtom,
-  performSearchAtom,
+  debouncedSearchAtom,
   activeSearchQueryAtom,
   searchResultsAtom,
   selectedFilterTagsAtom,
@@ -63,7 +63,7 @@ export default function ConversationsManager() {
   const selectedConversation = useAtomValue(selectedConversationAtom)
   const selectedMessages = useAtomValue(selectedMessagesAtom)
   const toggleFavorite = useSetAtom(toggleFavoriteAtom)
-  const searchConversations = useSetAtom(performSearchAtom)
+  const debouncedSearch = useSetAtom(debouncedSearchAtom)
   const activeSearchQuery = useAtomValue(activeSearchQueryAtom)
   const searchResults = useAtomValue(searchResultsAtom)
   const searchResultsMap = useMemo(
@@ -94,13 +94,10 @@ export default function ConversationsManager() {
   }, [loadConversations])
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isFavorites) {
-        searchConversations(searchQuery)
-      }
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [searchQuery, searchConversations, isFavorites])
+    if (!isFavorites) {
+      debouncedSearch(searchQuery)
+    }
+  }, [searchQuery, debouncedSearch, isFavorites])
 
   // Memoize array conversion to avoid repeated Set->Array conversions
   const selectedIdsArray = useMemo(() => Array.from(batchSelectedIds), [batchSelectedIds])

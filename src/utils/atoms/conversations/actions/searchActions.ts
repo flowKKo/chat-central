@@ -18,6 +18,10 @@ const log = createLogger('ChatCentral')
 // Track search request version to ignore stale results
 let searchVersion = 0
 
+// Debounce timer for search
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+const SEARCH_DEBOUNCE_MS = 300
+
 // ============================================================================
 // Search Actions
 // ============================================================================
@@ -132,4 +136,24 @@ export const clearSearchAtom = atom(null, async (_get, set) => {
   set(searchResultsAtom, [])
   set(paginationAtom, { offset: 0, limit: DEFAULT_PAGE_SIZE, hasMore: true })
   await set(loadConversationsAtom, { reset: true })
+})
+
+/**
+ * Debounced search - call this from UI components.
+ * Automatically debounces by 300ms and delegates to performSearchAtom.
+ */
+export const debouncedSearchAtom = atom(null, (_get, set, query: string) => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+  }
+
+  if (!query.trim()) {
+    set(performSearchAtom, '')
+    return
+  }
+
+  debounceTimer = setTimeout(() => {
+    debounceTimer = null
+    set(performSearchAtom, query)
+  }, SEARCH_DEBOUNCE_MS)
 })

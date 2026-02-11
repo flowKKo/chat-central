@@ -8,7 +8,7 @@ export {
 
 export { loadConversationsAtom, setDateRangeAtom, setPlatformFilterAtom } from './loadingActions'
 
-export { clearSearchAtom, performSearchAtom } from './searchActions'
+export { clearSearchAtom, debouncedSearchAtom, performSearchAtom } from './searchActions'
 
 export { loadFavoritesAtom, toggleFavoriteAtom } from './favoritesActions'
 

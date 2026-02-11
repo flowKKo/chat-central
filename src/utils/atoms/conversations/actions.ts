@@ -22,6 +22,7 @@ export {
   // Detail actions
   clearSelectionAtom,
   clearTagFiltersAtom,
+  debouncedSearchAtom,
   loadAllTagsAtom,
   loadConversationDetailAtom,
   // Loading actions
