@@ -1,5 +1,5 @@
 import { defineContentScript } from 'wxt/sandbox'
-import { getPlatformFromHost } from '@/utils/platform-adapters'
+import { getAdapterForUrl, getPlatformFromHost } from '@/utils/platform-adapters'
 import { createLogger } from '@/utils/logger'
 
 const log = createLogger('Interceptor')
@@ -36,25 +36,11 @@ export default defineContentScript({
 })
 
 /**
- * Check if the URL needs to be intercepted
+ * Check if the URL needs to be intercepted.
+ * Delegates to platform adapters to avoid duplicating URL patterns.
  */
 function shouldCapture(url: string): boolean {
-  // Claude
-  if (url.includes('/api/organizations/') && url.includes('/chat_conversations')) {
-    return true
-  }
-  // ChatGPT
-  if (url.includes('/backend-api/conversation') || url.includes('/backend-api/conversations')) {
-    return true
-  }
-  // Gemini
-  if (
-    url.includes('gemini.google.com') &&
-    (url.includes('batchexecute') || url.includes('/conversations'))
-  ) {
-    return true
-  }
-  return false
+  return getAdapterForUrl(url) !== null
 }
 
 /**
