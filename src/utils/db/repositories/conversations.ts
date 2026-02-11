@@ -1,3 +1,4 @@
+import Dexie from 'dexie'
 import { db } from '../schema'
 import type { Conversation, Platform } from '@/types'
 import { invalidateSearchIndex, removeFromSearchIndex, updateSearchIndex } from '../search-index'
@@ -61,19 +62,39 @@ export async function getConversations(options?: {
     return query.toArray()
   }
 
-  // With platform filter: Dexie can't combine .where().equals() with .orderBy()
-  // so we filter first, then sort in memory
-  let query = db.conversations.where('platform').equals(platform)
-  if (favoritesOnly) {
-    query = query.filter((conv) => conv.isFavorite)
-  }
-  if (hasDateRange) {
-    query = query.filter(matchesDateRange)
+  // With platform filter and default orderBy: use compound index [platform+updatedAt]
+  if (orderBy === 'updatedAt') {
+    let query = db.conversations
+      .where('[platform+updatedAt]')
+      .between([platform, Dexie.minKey], [platform, Dexie.maxKey])
+      .reverse()
+    if (favoritesOnly) {
+      query = query.filter((conv) => conv.isFavorite)
+    }
+    if (hasDateRange) {
+      query = query.filter(matchesDateRange)
+    }
+    query = query.offset(offset)
+    if (limit !== undefined) {
+      query = query.limit(limit)
+    }
+    return query.toArray()
   }
 
-  const filtered = await query.toArray()
-  filtered.sort((a, b) => score(b) - score(a))
-  return limit !== undefined ? filtered.slice(offset, offset + limit) : filtered.slice(offset)
+  // With platform filter and non-default orderBy: filter first, then sort in memory
+  {
+    let query = db.conversations.where('platform').equals(platform)
+    if (favoritesOnly) {
+      query = query.filter((conv) => conv.isFavorite)
+    }
+    if (hasDateRange) {
+      query = query.filter(matchesDateRange)
+    }
+
+    const filtered = await query.toArray()
+    filtered.sort((a, b) => score(b) - score(a))
+    return limit !== undefined ? filtered.slice(offset, offset + limit) : filtered.slice(offset)
+  }
 }
 
 /**

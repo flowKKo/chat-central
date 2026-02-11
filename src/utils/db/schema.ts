@@ -111,6 +111,16 @@ export class ChatCentralDB extends Dexie {
           lastErrorAt: null,
         })
       })
+
+    // Version 5: Add compound index for platform+updatedAt queries
+    this.version(5).stores({
+      conversations:
+        'id, platform, updatedAt, syncedAt, isFavorite, favoriteAt, dirty, deleted, modifiedAt, [platform+updatedAt], *tags',
+      messages: 'id, conversationId, createdAt, dirty, deleted, modifiedAt',
+      operationLog: 'id, entityType, entityId, timestamp, synced',
+      syncState: 'id',
+      conflicts: 'id, entityType, entityId, resolution, createdAt',
+    })
   }
 }
 
