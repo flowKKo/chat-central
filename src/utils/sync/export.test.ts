@@ -400,10 +400,11 @@ describe('export functions', () => {
         makeConversation({ id: 'c1', platform: 'claude', title: 'Claude Chat' }),
         makeConversation({ id: 'c2', platform: 'chatgpt', title: 'GPT Chat' }),
       ])
-      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([
-        makeMessage({ conversationId: 'c1' }),
-        makeMessage({ id: 'msg-2', conversationId: 'c2' }),
-      ])
+      vi.mocked(db.getMessagesByConversationId).mockImplementation(async (convId: string) => {
+        if (convId === 'c1') return [makeMessage({ conversationId: 'c1' })]
+        if (convId === 'c2') return [makeMessage({ id: 'msg-2', conversationId: 'c2' })]
+        return []
+      })
 
       const result = await exportData()
       const zip = await JSZip.loadAsync(result.blob)
@@ -418,7 +419,7 @@ describe('export functions', () => {
 
     it('should produce valid Markdown content with YAML frontmatter', async () => {
       vi.mocked(db.getAllConversationsForExport).mockResolvedValue([makeConversation()])
-      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([
+      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([
         makeMessage({ role: 'user', content: 'Hello' }),
         makeMessage({ id: 'msg-2', role: 'assistant', content: 'Hi!' }),
       ])
@@ -443,7 +444,7 @@ describe('export functions', () => {
       const c1 = makeConversation({ id: 'c1' })
       const c2 = makeConversation({ id: 'c2' })
       vi.mocked(db.getAllConversationsForExport).mockResolvedValue([c1, c2])
-      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([])
+      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([])
 
       const result = await exportData({ type: 'selected', conversationIds: ['c1'] })
 
@@ -455,7 +456,7 @@ describe('export functions', () => {
         makeConversation({ id: 'c1', title: 'Same Title' }),
         makeConversation({ id: 'c2', title: 'Same Title' }),
       ])
-      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([])
+      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([])
 
       const result = await exportData()
       const zip = await JSZip.loadAsync(result.blob)
@@ -470,7 +471,7 @@ describe('export functions', () => {
   describe('exportConversations', () => {
     it('should call exportData with selected type', async () => {
       vi.mocked(db.getAllConversationsForExport).mockResolvedValue([makeConversation({ id: 'c1' })])
-      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([])
+      vi.mocked(db.getMessagesByConversationId).mockResolvedValue([])
 
       const result = await exportConversations(['c1'])
 
@@ -487,7 +488,11 @@ describe('export functions', () => {
       const m3 = makeMessage({ id: 'm3', conversationId: 'c1' })
 
       vi.mocked(db.getAllConversationsForExport).mockResolvedValue([c1, c2])
-      vi.mocked(db.getAllMessagesForExport).mockResolvedValue([m1, m2, m3])
+      vi.mocked(db.getMessagesByConversationId).mockImplementation(async (convId: string) => {
+        if (convId === 'c1') return [m1, m3]
+        if (convId === 'c2') return [m2]
+        return []
+      })
 
       const result = await exportToJson()
 

@@ -1,9 +1,8 @@
 import type { ExportManifestV2 } from './types'
-import type { Message, Platform } from '@/types'
+import type { Platform } from '@/types'
 import JSZip from 'jszip'
 import {
   getAllConversationsForExport,
-  getAllMessagesForExport,
   getConversationById,
   getMessagesByConversationId,
 } from '@/utils/db'
@@ -63,19 +62,8 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
     conversations = conversations.filter((c) => idSet.has(c.id))
   }
 
-  // Fetch messages for these conversations
-  const convIds = conversations.map((c) => c.id)
-  const allMessages = await getAllMessagesForExport(convIds, { includeDeleted })
-
-  // Group messages by conversation
-  const messagesByConv = new Map<string, Message[]>()
-  for (const msg of allMessages) {
-    const existing = messagesByConv.get(msg.conversationId) || []
-    existing.push(msg)
-    messagesByConv.set(msg.conversationId, existing)
-  }
-
   const exportedAt = Date.now()
+  let totalMessages = 0
 
   // Create manifest
   const manifest: ExportManifestV2 = {
@@ -84,21 +72,23 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
     exportedAt,
     counts: {
       conversations: conversations.length,
-      messages: allMessages.length,
+      messages: 0, // Updated after building ZIP
     },
   }
 
-  // Create ZIP with platform/ subdirectories
+  // Create ZIP with platform/ subdirectories, loading messages per conversation
   let blob: Blob
   try {
     const zip = new JSZip()
-    zip.file(FILENAME_MANIFEST, JSON.stringify(manifest, null, 2))
 
     // Track used filenames per platform to handle duplicates
     const usedFilenames = new Map<string, Set<string>>()
 
     for (const conv of conversations) {
-      const messages = messagesByConv.get(conv.id) || []
+      // Load messages per conversation to keep memory usage proportional to one conversation
+      const messages = await getMessagesByConversationId(conv.id)
+      totalMessages += messages.length
+
       const md = conversationToMarkdown(conv, messages, exportedAt)
 
       // Build path: platform/Title.md
@@ -120,6 +110,10 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
       zip.file(`${platformDir}/${filename}`, md)
     }
 
+    // Write manifest with final message count
+    manifest.counts.messages = totalMessages
+    zip.file(FILENAME_MANIFEST, JSON.stringify(manifest, null, 2))
+
     blob = await zip.generateAsync({
       type: 'blob',
       compression: 'DEFLATE',
@@ -132,14 +126,14 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
 
   // Generate filename with metadata
   const dateStr = formatDateForFilename(new Date())
-  const filename = `chatcentral_${conversations.length}conv_${allMessages.length}msg_${dateStr}.zip`
+  const filename = `chatcentral_${conversations.length}conv_${totalMessages}msg_${dateStr}.zip`
 
   return {
     blob,
     filename,
     stats: {
       conversations: conversations.length,
-      messages: allMessages.length,
+      messages: totalMessages,
       sizeBytes: blob.size,
     },
   }
@@ -178,27 +172,18 @@ export async function exportToJson(
     includeDeleted: options.includeDeleted,
   })
 
-  const conversationIds = conversations.map((c) => c.id)
-  const messages = await getAllMessagesForExport(conversationIds, {
-    includeDeleted: options.includeDeleted,
-  })
-
-  // Group messages by conversation
-  const messagesByConversation = new Map<string, Message[]>()
-  for (const msg of messages) {
-    const existing = messagesByConversation.get(msg.conversationId) || []
-    existing.push(msg)
-    messagesByConversation.set(msg.conversationId, existing)
+  // Load messages per conversation to avoid loading all into memory
+  // Load messages per conversation to keep memory usage proportional to one conversation
+  const conversationsWithMessages = []
+  for (const conv of conversations) {
+    const messages = await getMessagesByConversationId(conv.id)
+    conversationsWithMessages.push({ ...conv, messages })
   }
 
-  // Build export structure
   const data = {
     exportedAt: new Date().toISOString(),
     version: EXPORT_VERSION,
-    conversations: conversations.map((conv) => ({
-      ...conv,
-      messages: messagesByConversation.get(conv.id) || [],
-    })),
+    conversations: conversationsWithMessages,
   }
 
   const json = JSON.stringify(data, null, 2)
