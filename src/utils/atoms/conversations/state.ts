@@ -175,7 +175,7 @@ export const favoriteCountsAtom = atom<Record<Platform | 'total', number>>({
  */
 function countByPlatform(
   conversations: Conversation[],
-  dateRange: { start: number | null, end: number | null },
+  dateRange: { start: number | null; end: number | null }
 ): Record<Platform | 'total', number> {
   const counts: Record<Platform | 'total', number> = {
     claude: 0,
@@ -215,45 +215,3 @@ export const filteredFavoriteCountsAtom = atom((get) => {
 })
 
 // ============================================================================
-// Derived Atoms
-// ============================================================================
-
-/**
- * Filtered conversation list
- */
-export const filteredConversationsAtom = atom((get) => {
-  const conversations = get(conversationsAtom)
-  const filters = get(filtersAtom)
-  const query = get(searchQueryAtom).toLowerCase()
-
-  let result = conversations
-
-  // Platform filtering
-  if (filters.platforms.length > 0) {
-    result = result.filter((c) => filters.platforms.includes(c.platform))
-  }
-
-  // Date range filtering
-  if (filters.dateRange.start) {
-    result = result.filter((c) => c.updatedAt >= filters.dateRange.start!)
-  }
-  if (filters.dateRange.end) {
-    result = result.filter((c) => c.updatedAt <= filters.dateRange.end!)
-  }
-
-  // Tag filtering (OR logic - conversation must have at least one selected tag)
-  // Use Set for O(1) lookup instead of O(n) includes()
-  if (filters.tags.length > 0) {
-    const filterTagSet = new Set(filters.tags)
-    result = result.filter((c) => c.tags.some((tag) => filterTagSet.has(tag)))
-  }
-
-  // Search filtering
-  if (query) {
-    result = result.filter(
-      (c) => c.title.toLowerCase().includes(query) || c.preview.toLowerCase().includes(query),
-    )
-  }
-
-  return result
-})
