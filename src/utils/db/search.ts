@@ -53,7 +53,7 @@ export async function searchConversations(query: string): Promise<Conversation[]
       .toArray()
   }
 
-  const indexResults = await searchConversationIndex(query)
+  const indexResults = await searchConversationIndex(query, { includeMessages: false })
   if (indexResults.length === 0) return []
 
   const ids = indexResults.map((r) => r.id)
@@ -74,8 +74,10 @@ export async function searchConversationsAndMessages(query: string): Promise<Con
 /**
  * Search conversations and messages with match details.
  *
- * For queries >= 2 chars: uses MiniSearch for conversation matching (BM25 relevance),
- * falls back to substring for short queries. Message search always uses substring.
+ * For queries >= 2 chars: uses MiniSearch for both conversation and message matching
+ * (via messageDigest field in the index). Falls back to substring for short queries.
+ * After MiniSearch identifies candidate conversations, loads their messages to find
+ * exact match details, avoiding a full messages table scan.
  */
 export async function searchConversationsWithMatches(
   query: string
@@ -83,11 +85,11 @@ export async function searchConversationsWithMatches(
   const lowerQuery = query.toLowerCase()
   const useMinisearch = query.length >= MIN_MINISEARCH_QUERY_LENGTH
 
-  // 1. Find conversation matches
+  // 1. Find conversation candidates via MiniSearch or substring
   const resultMap = new Map<string, SearchResultWithMatches & { _score: number }>()
 
   if (useMinisearch) {
-    // MiniSearch BM25 search for conversations
+    // MiniSearch BM25 search for conversations (includes messageDigest matching)
     const indexResults = await searchConversationIndex(query)
     if (indexResults.length > 0) {
       const ids = indexResults.map((r) => r.id)
@@ -98,12 +100,8 @@ export async function searchConversationsWithMatches(
 
       for (const conv of convs) {
         if (!conv) continue
-        // Get substring matches for match type details
         const matches = getConversationFieldMatches(conv, lowerQuery)
-        // If MiniSearch matched but substring didn't (fuzzy/prefix), add title as match
-        if (matches.length === 0) {
-          matches.push({ type: 'title', text: conv.title })
-        }
+        // Don't add placeholder here - we'll resolve after checking messages
         resultMap.set(conv.id, {
           conversation: conv,
           matches,
@@ -123,11 +121,23 @@ export async function searchConversationsWithMatches(
     }
   }
 
-  // 2. Find messages with matching content (always substring)
-  const messageMatches = await db.messages
-    .filter((msg) => msg.content.toLowerCase().includes(lowerQuery))
-    .limit(500)
-    .toArray()
+  // 2. Find message matches for candidate conversations
+  // For MiniSearch: check messages only for conversations already found by the index.
+  // For short queries: fall back to scanning messages table for additional matches.
+  const candidateConvIds = Array.from(resultMap.keys())
+  const shortQueryConvIds = useMinisearch ? [] : await getConvIdsWithMessageMatches(lowerQuery)
+  const allConvIdsForMessageSearch = [...new Set([...candidateConvIds, ...shortQueryConvIds])]
+  const messageMatches: Message[] = []
+
+  for (const convId of allConvIdsForMessageSearch) {
+    const msgs = await db.messages
+      .where('conversationId')
+      .equals(convId)
+      .filter((msg) => msg.content.toLowerCase().includes(lowerQuery))
+      .limit(10)
+      .toArray()
+    messageMatches.push(...msgs)
+  }
 
   // Group messages by conversation
   const messagesByConv = new Map<string, Message[]>()
@@ -170,20 +180,47 @@ export async function searchConversationsWithMatches(
     })
   }
 
-  // 5. Sort: MiniSearch results by score first, then message-only by updatedAt
+  // 5. For MiniSearch results with no field or message matches, add title as fallback
+  for (const entry of resultMap.values()) {
+    if (entry.matches.length === 0) {
+      entry.matches.push({ type: 'title', text: entry.conversation.title })
+    }
+  }
+
+  // 6. Sort: conversation-field matches first (by score), then message-only by updatedAt
   const results = Array.from(resultMap.values())
   results.sort((a, b) => {
-    // Both have MiniSearch scores: sort by score
-    if (a._score > 0 && b._score > 0) return b._score - a._score
-    // One has score, one doesn't: scored first
-    if (a._score > 0) return -1
-    if (b._score > 0) return 1
-    // Both message-only: sort by updatedAt
+    const aHasConvMatch = a.matches.some((m) => m.type !== 'message')
+    const bHasConvMatch = b.matches.some((m) => m.type !== 'message')
+
+    // Conversations with field matches (title/preview/summary) first
+    if (aHasConvMatch && !bHasConvMatch) return -1
+    if (!aHasConvMatch && bHasConvMatch) return 1
+
+    // Both have conversation-field matches: sort by MiniSearch score
+    if (aHasConvMatch && bHasConvMatch && (a._score > 0 || b._score > 0)) {
+      return b._score - a._score
+    }
+
+    // Both message-only or no score: sort by updatedAt
     return (b.conversation.updatedAt ?? 0) - (a.conversation.updatedAt ?? 0)
   })
 
   // Strip internal _score field
   return results.map(({ _score: _, ...rest }) => rest)
+}
+
+/**
+ * For short queries, find conversation IDs that have matching messages.
+ * Falls back to scanning messages table but limits to 500 results.
+ */
+async function getConvIdsWithMessageMatches(lowerQuery: string): Promise<string[]> {
+  const messages = await db.messages
+    .filter((msg) => msg.content.toLowerCase().includes(lowerQuery))
+    .limit(500)
+    .toArray()
+
+  return [...new Set(messages.map((msg) => msg.conversationId))]
 }
 
 /**

@@ -1,5 +1,6 @@
 import { db } from '../schema'
 import type { Message } from '@/types'
+import { updateSearchIndexWithMessages } from '../search-index'
 
 /**
  * Get all messages for a conversation
@@ -13,6 +14,12 @@ export async function getMessagesByConversationId(conversationId: string): Promi
  */
 export async function upsertMessages(messages: Message[]): Promise<void> {
   await db.messages.bulkPut(messages)
+
+  // Update search index for affected conversations
+  const convIds = new Set(messages.map((m) => m.conversationId))
+  for (const convId of convIds) {
+    await updateSearchIndexWithMessages(convId)
+  }
 }
 
 /**
@@ -53,7 +60,7 @@ export async function getMessagesByIds(ids: string[]): Promise<Map<string, Messa
  */
 export async function getAllMessagesForExport(
   conversationIds: string[],
-  options?: { includeDeleted?: boolean },
+  options?: { includeDeleted?: boolean }
 ): Promise<Message[]> {
   if (conversationIds.length === 0) return []
 

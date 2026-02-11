@@ -14,12 +14,16 @@ interface IndexedDocument {
   title: string
   summary: string
   preview: string
+  messageDigest: string
 }
 
 export interface ConversationSearchResult {
   id: string
   score: number
 }
+
+// Max characters per conversation's message digest to keep index size reasonable
+const MAX_DIGEST_LENGTH = 5000
 
 // ============================================================================
 // MiniSearch Singleton
@@ -30,10 +34,10 @@ let dirty = true
 
 function createIndex(): MiniSearch<IndexedDocument> {
   return new MiniSearch<IndexedDocument>({
-    fields: ['title', 'summary', 'preview'],
+    fields: ['title', 'summary', 'preview', 'messageDigest'],
     storeFields: ['id'],
     searchOptions: {
-      boost: { title: 3, summary: 1.5, preview: 1 },
+      boost: { title: 3, summary: 1.5, preview: 1, messageDigest: 0.5 },
       prefix: true,
       fuzzy: 0.2,
       combineWith: 'AND',
@@ -41,13 +45,36 @@ function createIndex(): MiniSearch<IndexedDocument> {
   })
 }
 
-function toDocument(conv: Conversation): IndexedDocument {
+function toDocument(conv: Conversation, messageDigest = ''): IndexedDocument {
   return {
     id: conv.id,
     title: conv.title,
     summary: conv.summary ?? '',
     preview: conv.preview,
+    messageDigest,
   }
+}
+
+/**
+ * Build a message digest string for a conversation by concatenating message content.
+ * Truncated to MAX_DIGEST_LENGTH to keep index size manageable.
+ */
+async function buildMessageDigest(conversationId: string): Promise<string> {
+  const messages = await db.messages
+    .where('conversationId')
+    .equals(conversationId)
+    .limit(100)
+    .toArray()
+
+  if (messages.length === 0) return ''
+
+  let digest = ''
+  for (const msg of messages) {
+    if (digest.length >= MAX_DIGEST_LENGTH) break
+    digest += `${msg.content} `
+  }
+
+  return digest.slice(0, MAX_DIGEST_LENGTH)
 }
 
 // ============================================================================
@@ -66,7 +93,10 @@ export async function getOrBuildIndex(): Promise<MiniSearch<IndexedDocument>> {
 
   const conversations = await db.conversations.filter((conv) => !conv.deleted).toArray()
 
-  const documents = conversations.map(toDocument)
+  // Build message digests for all conversations in parallel
+  const digests = await Promise.all(conversations.map((conv) => buildMessageDigest(conv.id)))
+
+  const documents = conversations.map((conv, i) => toDocument(conv, digests[i]))
   newIndex.addAll(documents)
 
   index = newIndex
@@ -78,19 +108,39 @@ export async function getOrBuildIndex(): Promise<MiniSearch<IndexedDocument>> {
 
 /**
  * Incrementally add or replace a single conversation in the index.
+ * Does NOT update message digest - use updateSearchIndexWithMessages for that.
  */
 export function updateSearchIndex(conv: Conversation): void {
   if (!index || dirty) return
 
-  const doc = toDocument(conv)
+  if (index.has(conv.id)) {
+    // Preserve existing messageDigest by re-adding with empty digest
+    // Full digest update happens via updateSearchIndexWithMessages
+    index.discard(conv.id)
+  }
+
+  if (!conv.deleted) {
+    index.add(toDocument(conv))
+  }
+}
+
+/**
+ * Incrementally update a conversation's search index including message digest.
+ * Call this after messages are upserted for a conversation.
+ */
+export async function updateSearchIndexWithMessages(conversationId: string): Promise<void> {
+  if (!index || dirty) return
+
+  const conv = await db.conversations.get(conversationId)
+  if (!conv || conv.deleted) return
+
+  const digest = await buildMessageDigest(conversationId)
 
   if (index.has(conv.id)) {
     index.discard(conv.id)
   }
 
-  if (!conv.deleted) {
-    index.add(doc)
-  }
+  index.add(toDocument(conv, digest))
 }
 
 /**
@@ -116,9 +166,18 @@ export function invalidateSearchIndex(): void {
  * Search conversations using MiniSearch.
  * Returns results sorted by BM25 relevance score.
  */
-export async function searchConversationIndex(query: string): Promise<ConversationSearchResult[]> {
+export async function searchConversationIndex(
+  query: string,
+  options?: { includeMessages?: boolean }
+): Promise<ConversationSearchResult[]> {
   const idx = await getOrBuildIndex()
-  const results = idx.search(query)
+  const { includeMessages = true } = options ?? {}
+
+  const results = includeMessages
+    ? idx.search(query)
+    : idx.search(query, {
+        fields: ['title', 'summary', 'preview'],
+      })
 
   return results.map((r) => ({
     id: r.id,

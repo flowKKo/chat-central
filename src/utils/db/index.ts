@@ -80,7 +80,12 @@ export {
 } from './search'
 
 // Search index
-export { invalidateSearchIndex, removeFromSearchIndex, updateSearchIndex } from './search-index'
+export {
+  invalidateSearchIndex,
+  removeFromSearchIndex,
+  updateSearchIndex,
+  updateSearchIndexWithMessages,
+} from './search-index'
 
 // Statistics
 export { type DBStats, getDBStats } from './stats'
