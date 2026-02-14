@@ -11,7 +11,7 @@ export function useInfiniteScroll(
   onLoadMore: () => void,
   options: { hasMore: boolean; isLoading: boolean; rootMargin?: string }
 ) {
-  const { hasMore, isLoading, rootMargin = '100px' } = options
+  const { hasMore, isLoading, rootMargin = '0px' } = options
   const sentinelRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null)
