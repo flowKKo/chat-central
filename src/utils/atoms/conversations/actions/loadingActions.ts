@@ -19,8 +19,11 @@ const log = createLogger('ChatCentral')
 /**
  * Load conversation list
  */
+const MIN_LOADING_MS = 500
+
 export const loadConversationsAtom = atom(null, async (get, set, options?: { reset?: boolean }) => {
   const { reset = false } = options ?? {}
+  const startTime = reset ? 0 : Date.now()
 
   set(isLoadingConversationsAtom, true)
 
@@ -75,6 +78,14 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
   } catch (e) {
     log.error('Failed to load conversations:', e)
   } finally {
+    if (startTime > 0) {
+      const elapsed = Date.now() - startTime
+      if (elapsed < MIN_LOADING_MS) {
+        await new Promise((r) => {
+          setTimeout(r, MIN_LOADING_MS - elapsed)
+        })
+      }
+    }
     set(isLoadingConversationsAtom, false)
   }
 })

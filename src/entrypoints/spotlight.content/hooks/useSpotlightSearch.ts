@@ -23,6 +23,7 @@ interface UseSpotlightSearchReturn {
 
 const DEBOUNCE_MS = 200
 const PAGE_SIZE = 30
+const MIN_LOADING_MS = 500
 
 export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn {
   const [query, setQuery] = useState('')
@@ -152,6 +153,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     setIsLoadingMore(true)
     const version = searchVersionRef.current
     const currentOffset = offsetRef.current
+    const startTime = Date.now()
 
     const message = isDefaultView
       ? { action: 'GET_RECENT_CONVERSATIONS', limit: PAGE_SIZE, offset: currentOffset }
@@ -190,7 +192,13 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
         }
       })
       .catch(() => {})
-      .finally(() => {
+      .finally(async () => {
+        const elapsed = Date.now() - startTime
+        if (elapsed < MIN_LOADING_MS) {
+          await new Promise((r) => {
+            setTimeout(r, MIN_LOADING_MS - elapsed)
+          })
+        }
         setIsLoadingMore(false)
       })
   }, [isLoadingMore, hasMore, isDefaultView, query])
