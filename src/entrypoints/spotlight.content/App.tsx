@@ -30,7 +30,7 @@ export function App({ isVisible, onClose }: AppProps) {
         // are blocked by Chrome when opened from web page context)
         browser.runtime.sendMessage({
           action: 'OPEN_EXTENSION_PAGE',
-          path: '/manage.html#/conversations',
+          path: `/manage.html#/conversations?detail=${result.conversation.id}`,
         })
       }
       onClose()
@@ -46,7 +46,7 @@ export function App({ isVisible, onClose }: AppProps) {
       // Open in dashboard via background
       browser.runtime.sendMessage({
         action: 'OPEN_EXTENSION_PAGE',
-        path: '/manage.html#/conversations',
+        path: `/manage.html#/conversations?detail=${result.conversation.id}`,
       })
       onClose()
     },

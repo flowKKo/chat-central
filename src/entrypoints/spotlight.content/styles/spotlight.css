@@ -84,9 +84,9 @@
 
 /* ─── Dialog ─── */
 .spotlight-dialog {
-  width: 640px;
+  width: 720px;
   max-width: calc(100vw - 2rem);
-  max-height: 480px;
+  max-height: 560px;
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   border-radius: calc(var(--radius) * 1.5);

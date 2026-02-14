@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { storage } from 'wxt/storage'
 import { browser } from 'wxt/browser'
@@ -12,6 +12,19 @@ import { App } from './App'
 import styles from './styles/spotlight.css?inline'
 
 const log = createLogger('Spotlight')
+
+/**
+ * Shared toggle signal between message listener and React.
+ * The listener fires immediately (before React renders), so we queue
+ * toggle requests and let React pick them up via a subscription.
+ */
+let toggleVersion = 0
+const toggleListeners = new Set<() => void>()
+
+function emitToggle() {
+  toggleVersion++
+  for (const fn of toggleListeners) fn()
+}
 
 export default defineContentScript({
   matches: [
@@ -40,30 +53,54 @@ export default defineContentScript({
     initLanguage()
     log.info('Mounting Spotlight')
 
-    let toggleCallback: (() => void) | null = null
+    // Listen for TOGGLE_SPOTLIGHT messages BEFORE mounting UI
+    // so the first keypress is never missed.
+    const handleMessage = (message: unknown) => {
+      if (
+        typeof message === 'object' &&
+        message !== null &&
+        'action' in message &&
+        (message as { action: string }).action === 'TOGGLE_SPOTLIGHT'
+      ) {
+        emitToggle()
+      }
+    }
+    browser.runtime.onMessage.addListener(handleMessage)
 
     const ui = await createShadowRootUi(ctx, {
       name: 'chat-central-spotlight',
       position: 'overlay',
       zIndex: 2147483646,
       onMount(container, shadow) {
-        // Inject styles into shadow root
         const styleEl = document.createElement('style')
         styleEl.textContent = styles
         shadow.appendChild(styleEl)
 
-        // Apply dark mode to shadow host
         applyThemeToHost(shadow.host as HTMLElement)
 
         const root = ReactDOM.createRoot(container)
 
-        // Wrapper component to manage visibility state
-        // Starts hidden — only shown when toggled via TOGGLE_SPOTLIGHT message
         function SpotlightWrapper() {
           const [isVisible, setIsVisible] = useState(false)
 
-          // Expose toggle callback
-          toggleCallback = () => setIsVisible((prev) => !prev)
+          // Subscribe to toggle signals from the message listener
+          useEffect(() => {
+            // Capture the version at mount time so we can detect
+            // toggles that arrived before React rendered.
+            let lastSeen = toggleVersion
+            const check = () => {
+              if (toggleVersion !== lastSeen) {
+                lastSeen = toggleVersion
+                setIsVisible((prev) => !prev)
+              }
+            }
+            // Check immediately in case a toggle arrived before mount
+            check()
+            toggleListeners.add(check)
+            return () => {
+              toggleListeners.delete(check)
+            }
+          }, [])
 
           return <App isVisible={isVisible} onClose={() => setIsVisible(false)} />
         }
@@ -72,28 +109,11 @@ export default defineContentScript({
         return root
       },
       onRemove(root) {
-        toggleCallback = null
         root?.unmount()
       },
     })
 
     ui.mount()
-
-    // Listen for TOGGLE_SPOTLIGHT messages from background
-    const handleMessage = (message: unknown) => {
-      if (
-        typeof message === 'object' &&
-        message !== null &&
-        'action' in message &&
-        (message as { action: string }).action === 'TOGGLE_SPOTLIGHT'
-      ) {
-        if (toggleCallback) {
-          toggleCallback()
-        }
-      }
-    }
-
-    browser.runtime.onMessage.addListener(handleMessage)
 
     // Watch config changes
     const unwatchConfig = storage.watch<Config>('local:config', (newConfig) => {

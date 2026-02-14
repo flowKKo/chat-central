@@ -93,6 +93,23 @@ export default function ConversationsManager() {
     loadConversations({ reset: true })
   }, [loadConversations])
 
+  // Open conversation detail from URL param (e.g. ?detail=claude_abc123)
+  const detailId = searchParams.get('detail')
+  useEffect(() => {
+    if (detailId) {
+      loadDetail(detailId, undefined)
+      // Remove param from URL to avoid re-triggering on re-renders
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.delete('detail')
+          return next
+        },
+        { replace: true }
+      )
+    }
+  }, [detailId, loadDetail, setSearchParams])
+
   useEffect(() => {
     if (!isFavorites) {
       debouncedSearch(searchQuery)
