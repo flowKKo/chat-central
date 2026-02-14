@@ -69,7 +69,6 @@ export function SpotlightResultList({
       )}
       {results.map((result, index) => {
         const isNew = newStartIndex.current >= 0 && index >= newStartIndex.current
-        const staggerDelay = isNew ? (index - newStartIndex.current) * 10 : 0
         return (
           <SpotlightResultItem
             key={result.conversation.id}
@@ -79,7 +78,6 @@ export function SpotlightResultList({
             onSelect={() => onSelect(index)}
             onMouseEnter={() => onMouseSelect(index)}
             isNew={isNew}
-            animationDelay={staggerDelay}
           />
         )
       })}
