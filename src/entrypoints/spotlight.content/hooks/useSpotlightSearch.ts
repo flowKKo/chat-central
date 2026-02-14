@@ -166,7 +166,15 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
 
     browser.runtime
       .sendMessage(message)
-      .then((response: unknown) => {
+      .then(async (response: unknown) => {
+        if (searchVersionRef.current !== version) return
+
+        const elapsed = Date.now() - startTime
+        if (elapsed < MIN_LOADING_MS) {
+          await new Promise((r) => {
+            setTimeout(r, MIN_LOADING_MS - elapsed)
+          })
+        }
         if (searchVersionRef.current !== version) return
 
         if (isDefaultView) {
@@ -192,13 +200,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
         }
       })
       .catch(() => {})
-      .finally(async () => {
-        const elapsed = Date.now() - startTime
-        if (elapsed < MIN_LOADING_MS) {
-          await new Promise((r) => {
-            setTimeout(r, MIN_LOADING_MS - elapsed)
-          })
-        }
+      .finally(() => {
         setIsLoadingMore(false)
       })
   }, [isLoadingMore, hasMore, isDefaultView, query])

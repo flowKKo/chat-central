@@ -59,6 +59,16 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
       const hasMore = conversations.length > limit
       const data = hasMore ? conversations.slice(0, limit) : conversations
 
+      // For load-more: wait at least MIN_LOADING_MS before showing content
+      if (startTime > 0) {
+        const elapsed = Date.now() - startTime
+        if (elapsed < MIN_LOADING_MS) {
+          await new Promise((r) => {
+            setTimeout(r, MIN_LOADING_MS - elapsed)
+          })
+        }
+      }
+
       if (reset) {
         set(conversationsAtom, data)
       } else {
@@ -78,14 +88,6 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
   } catch (e) {
     log.error('Failed to load conversations:', e)
   } finally {
-    if (startTime > 0) {
-      const elapsed = Date.now() - startTime
-      if (elapsed < MIN_LOADING_MS) {
-        await new Promise((r) => {
-          setTimeout(r, MIN_LOADING_MS - elapsed)
-        })
-      }
-    }
     set(isLoadingConversationsAtom, false)
   }
 })
