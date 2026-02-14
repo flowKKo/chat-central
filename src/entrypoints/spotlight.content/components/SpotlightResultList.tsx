@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import type { SpotlightResult } from '../hooks/useSpotlightSearch'
 import { SpotlightResultItem } from './SpotlightResultItem'
 
@@ -10,6 +11,9 @@ interface SpotlightResultListProps {
   onSelect: (index: number) => void
   onMouseSelect: (index: number) => void
   isDefaultView: boolean
+  hasMore: boolean
+  isLoadingMore: boolean
+  onLoadMore: () => void
 }
 
 export function SpotlightResultList({
@@ -19,21 +23,27 @@ export function SpotlightResultList({
   onSelect,
   onMouseSelect,
   isDefaultView,
+  hasMore,
+  isLoadingMore,
+  onLoadMore,
 }: SpotlightResultListProps) {
   const { t } = useTranslation('spotlight')
-  const listRef = useRef<HTMLDivElement>(null)
+  const { sentinelRef, containerRef } = useInfiniteScroll(onLoadMore, {
+    hasMore,
+    isLoading: isLoadingMore,
+  })
 
   // Scroll selected item into view
   useEffect(() => {
-    if (!listRef.current) return
-    const selected = listRef.current.querySelector('[data-selected="true"]')
+    if (!containerRef.current) return
+    const selected = containerRef.current.querySelector('[data-selected="true"]')
     if (selected) {
       selected.scrollIntoView({ block: 'nearest' })
     }
-  }, [selectedIndex])
+  }, [selectedIndex, containerRef])
 
   return (
-    <div className="spotlight-results" ref={listRef} role="listbox">
+    <div className="spotlight-results" ref={containerRef} role="listbox">
       {isDefaultView && results.length > 0 && (
         <div className="spotlight-section-header">{t('recentConversations')}</div>
       )}
@@ -47,6 +57,12 @@ export function SpotlightResultList({
           onMouseEnter={() => onMouseSelect(index)}
         />
       ))}
+      {isLoadingMore && (
+        <div className="spotlight-load-more">
+          <div className="spotlight-spinner" />
+        </div>
+      )}
+      <div ref={sentinelRef} aria-hidden="true" />
     </div>
   )
 }

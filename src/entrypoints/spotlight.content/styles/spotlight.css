@@ -265,6 +265,13 @@
   font-size: 0.75rem;
 }
 
+/* ─── Load more indicator ─── */
+.spotlight-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
 /* ─── Loading spinner ─── */
 .spotlight-spinner {
   width: 1rem;

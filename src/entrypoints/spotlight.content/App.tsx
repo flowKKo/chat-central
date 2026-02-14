@@ -14,7 +14,8 @@ interface AppProps {
 }
 
 export function App({ isVisible, onClose }: AppProps) {
-  const { query, setQuery, results, isLoading, isDefaultView } = useSpotlightSearch(isVisible)
+  const { query, setQuery, results, isLoading, isLoadingMore, isDefaultView, hasMore, loadMore } =
+    useSpotlightSearch(isVisible)
 
   const handleSelect = useCallback(
     (index: number) => {
@@ -80,6 +81,9 @@ export function App({ isVisible, onClose }: AppProps) {
           onSelect={handleSelect}
           onMouseSelect={setSelectedIndex}
           isDefaultView={isDefaultView}
+          hasMore={hasMore}
+          isLoadingMore={isLoadingMore}
+          onLoadMore={loadMore}
         />
       ) : (
         !isLoading && <SpotlightEmpty hasQuery={!!query.trim()} />

@@ -134,16 +134,18 @@ export async function handleGetAllTags(): Promise<{ tags: string[] }> {
  */
 export async function handleSearchWithMatches(
   rawMessage: unknown
-): Promise<{ results: SearchResultWithMatches[] } | { error: string }> {
+): Promise<{ results: SearchResultWithMatches[]; hasMore: boolean } | { error: string }> {
   const parseResult = SearchWithMatchesSchema.safeParse(rawMessage)
   if (!parseResult.success) {
     log.warn('Invalid search with matches message:', parseResult.error.message)
     return { error: 'Invalid message format' }
   }
 
-  const { query, limit } = parseResult.data
-  const results = await searchConversationsWithMatches(query)
-  return { results: limit ? results.slice(0, limit) : results }
+  const { query, limit, offset = 0 } = parseResult.data
+  const allResults = await searchConversationsWithMatches(query)
+  const end = limit ? offset + limit : allResults.length
+  const results = allResults.slice(offset, end)
+  return { results, hasMore: end < allResults.length }
 }
 
 /**
@@ -151,14 +153,16 @@ export async function handleSearchWithMatches(
  */
 export async function handleGetRecentConversations(
   rawMessage: unknown
-): Promise<{ conversations: Conversation[] } | { error: string }> {
+): Promise<{ conversations: Conversation[]; hasMore: boolean } | { error: string }> {
   const parseResult = GetRecentConversationsSchema.safeParse(rawMessage)
   if (!parseResult.success) {
     log.warn('Invalid get recent conversations message:', parseResult.error.message)
     return { error: 'Invalid message format' }
   }
 
-  const { limit = 10 } = parseResult.data
-  const conversations = await getConversations({ limit, orderBy: 'updatedAt' })
-  return { conversations }
+  const { limit = 10, offset = 0 } = parseResult.data
+  // Fetch one extra to determine if there are more
+  const conversations = await getConversations({ limit: limit + 1, offset, orderBy: 'updatedAt' })
+  const hasMore = conversations.length > limit
+  return { conversations: hasMore ? conversations.slice(0, limit) : conversations, hasMore }
 }

@@ -312,10 +312,10 @@ describe('data handlers', () => {
       })
 
       expect(searchConversationsWithMatches).toHaveBeenCalledWith('react')
-      expect(result).toEqual({ results: searchResults })
+      expect(result).toEqual({ results: searchResults, hasMore: false })
     })
 
-    it('should respect limit parameter', async () => {
+    it('should respect limit parameter and return hasMore', async () => {
       const results = Array.from({ length: 5 }, (_, i) => ({
         conversation: makeConversation({ id: `c${i}` }),
         matches: [{ type: 'title' as const, text: `Conv ${i}` }],
@@ -328,8 +328,9 @@ describe('data handlers', () => {
         limit: 2,
       })
 
-      const res = result as { results: unknown[] }
+      const res = result as { results: unknown[]; hasMore: boolean }
       expect(res.results).toHaveLength(2)
+      expect(res.hasMore).toBe(true)
     })
 
     it('should return error for empty query', async () => {
@@ -356,19 +357,25 @@ describe('data handlers', () => {
         action: 'GET_RECENT_CONVERSATIONS',
       })
 
-      expect(result).toEqual({ conversations: convs })
-      expect(getConversations).toHaveBeenCalledWith({ limit: 10, orderBy: 'updatedAt' })
+      expect(result).toEqual({ conversations: convs, hasMore: false })
+      // Fetches limit+1 to detect hasMore
+      expect(getConversations).toHaveBeenCalledWith({ limit: 11, offset: 0, orderBy: 'updatedAt' })
     })
 
-    it('should respect custom limit', async () => {
-      getConversations.mockResolvedValue([])
+    it('should respect custom limit and return hasMore when more exist', async () => {
+      // Return 6 items when limit is 5 (fetches 6 to detect hasMore)
+      const convs = Array.from({ length: 6 }, (_, i) => makeConversation({ id: `c${i}` }))
+      getConversations.mockResolvedValue(convs)
 
-      await handleGetRecentConversations({
+      const result = await handleGetRecentConversations({
         action: 'GET_RECENT_CONVERSATIONS',
         limit: 5,
       })
 
-      expect(getConversations).toHaveBeenCalledWith({ limit: 5, orderBy: 'updatedAt' })
+      const res = result as { conversations: unknown[]; hasMore: boolean }
+      expect(res.conversations).toHaveLength(5)
+      expect(res.hasMore).toBe(true)
+      expect(getConversations).toHaveBeenCalledWith({ limit: 6, offset: 0, orderBy: 'updatedAt' })
     })
 
     it('should return error for invalid format', async () => {

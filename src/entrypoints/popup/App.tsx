@@ -6,6 +6,7 @@ import { browser } from 'wxt/browser'
 import { I18nProvider } from '@/components/providers/I18nProvider'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import type { Platform } from '@/types'
 import { PLATFORM_CONFIG } from '@/types'
 import {
@@ -69,6 +70,14 @@ export default function App() {
     setSearchQuery('')
     searchInputRef.current?.focus()
   }, [])
+
+  const handleLoadMore = useCallback(() => {
+    loadConversations()
+  }, [loadConversations])
+  const { sentinelRef, containerRef } = useInfiniteScroll(handleLoadMore, {
+    hasMore: pagination.hasMore,
+    isLoading,
+  })
 
   return (
     <ThemeProvider>
@@ -186,6 +195,7 @@ export default function App() {
           {/* Conversation List */}
           <div
             className="scrollbar-thin flex-1 overflow-y-auto bg-background"
+            ref={containerRef}
             role="list"
             aria-label={t('common:conversations')}
           >
@@ -207,26 +217,13 @@ export default function App() {
                   )
                 })}
                 {pagination.hasMore && (
-                  <div className="pb-1 pt-2">
-                    <button
-                      type="button"
-                      className="kbd-focus w-full cursor-pointer rounded-xl border border-dashed border-border px-3 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-                      onClick={() => loadConversations()}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-foreground" />
-                          {t('common:loading')}
-                        </span>
-                      ) : (
-                        t('loadMore')
-                      )}
-                    </button>
+                  <div className="flex justify-center pb-1 pt-2">
+                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
                   </div>
                 )}
               </div>
             )}
+            <div ref={sentinelRef} aria-hidden="true" />
           </div>
 
           {/* Footer */}

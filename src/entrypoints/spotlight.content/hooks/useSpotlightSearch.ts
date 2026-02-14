@@ -13,7 +13,10 @@ interface UseSpotlightSearchReturn {
   setQuery: (q: string) => void
   results: SpotlightResult[]
   isLoading: boolean
+  isLoadingMore: boolean
   isDefaultView: boolean
+  hasMore: boolean
+  loadMore: () => void
 }
 
 const DEBOUNCE_MS = 200
@@ -24,8 +27,11 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SpotlightResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isDefaultView, setIsDefaultView] = useState(true)
+  const [hasMore, setHasMore] = useState(false)
   const searchVersionRef = useRef(0)
+  const offsetRef = useRef(0)
 
   // Load recent conversations when spotlight opens
   useEffect(() => {
@@ -34,6 +40,8 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     setQuery('')
     setIsDefaultView(true)
     setIsLoading(true)
+    setHasMore(false)
+    offsetRef.current = 0
 
     const version = ++searchVersionRef.current
 
@@ -41,7 +49,11 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
       .sendMessage({ action: 'GET_RECENT_CONVERSATIONS', limit: DEFAULT_LIMIT })
       .then((response: unknown) => {
         if (searchVersionRef.current !== version) return
-        const res = response as { conversations?: Conversation[]; error?: string }
+        const res = response as {
+          conversations?: Conversation[]
+          hasMore?: boolean
+          error?: string
+        }
         if (res.conversations) {
           setResults(
             res.conversations.map((c) => ({
@@ -49,11 +61,11 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
               matches: [{ type: 'title' as const, text: c.title }],
             }))
           )
+          offsetRef.current = res.conversations.length
+          setHasMore(res.hasMore ?? false)
         }
       })
-      .catch(() => {
-        // Silently handle — background may not be ready
-      })
+      .catch(() => {})
       .finally(() => {
         if (searchVersionRef.current === version) {
           setIsLoading(false)
@@ -68,13 +80,19 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     if (!query.trim()) {
       // Reset to recent conversations
       setIsDefaultView(true)
+      setHasMore(false)
+      offsetRef.current = 0
       const version = ++searchVersionRef.current
 
       browser.runtime
         .sendMessage({ action: 'GET_RECENT_CONVERSATIONS', limit: DEFAULT_LIMIT })
         .then((response: unknown) => {
           if (searchVersionRef.current !== version) return
-          const res = response as { conversations?: Conversation[]; error?: string }
+          const res = response as {
+            conversations?: Conversation[]
+            hasMore?: boolean
+            error?: string
+          }
           if (res.conversations) {
             setResults(
               res.conversations.map((c) => ({
@@ -82,6 +100,8 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
                 matches: [{ type: 'title' as const, text: c.title }],
               }))
             )
+            offsetRef.current = res.conversations.length
+            setHasMore(res.hasMore ?? false)
           }
         })
         .catch(() => {})
@@ -90,6 +110,8 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
 
     setIsDefaultView(false)
     setIsLoading(true)
+    setHasMore(false)
+    offsetRef.current = 0
     const version = ++searchVersionRef.current
 
     const timer = setTimeout(() => {
@@ -97,9 +119,15 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
         .sendMessage({ action: 'SEARCH_WITH_MATCHES', query: query.trim(), limit: SEARCH_LIMIT })
         .then((response: unknown) => {
           if (searchVersionRef.current !== version) return
-          const res = response as { results?: SearchResultWithMatches[]; error?: string }
+          const res = response as {
+            results?: SearchResultWithMatches[]
+            hasMore?: boolean
+            error?: string
+          }
           if (res.results) {
             setResults(res.results)
+            offsetRef.current = res.results.length
+            setHasMore(res.hasMore ?? false)
           }
         })
         .catch(() => {})
@@ -113,9 +141,69 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     return () => clearTimeout(timer)
   }, [query, isVisible])
 
+  const loadMore = useCallback(() => {
+    if (isLoadingMore || !hasMore) return
+
+    setIsLoadingMore(true)
+    const version = searchVersionRef.current
+    const currentOffset = offsetRef.current
+
+    const message = isDefaultView
+      ? { action: 'GET_RECENT_CONVERSATIONS', limit: DEFAULT_LIMIT, offset: currentOffset }
+      : {
+          action: 'SEARCH_WITH_MATCHES',
+          query: query.trim(),
+          limit: SEARCH_LIMIT,
+          offset: currentOffset,
+        }
+
+    browser.runtime
+      .sendMessage(message)
+      .then((response: unknown) => {
+        if (searchVersionRef.current !== version) return
+
+        if (isDefaultView) {
+          const res = response as { conversations?: Conversation[]; hasMore?: boolean }
+          if (res.conversations) {
+            const newResults = res.conversations.map((c) => ({
+              conversation: c,
+              matches: [
+                { type: 'title' as const, text: c.title },
+              ] as SearchResultWithMatches['matches'],
+            }))
+            setResults((prev) => [...prev, ...newResults])
+            offsetRef.current = currentOffset + res.conversations.length
+            setHasMore(res.hasMore ?? false)
+          }
+        } else {
+          const res = response as { results?: SearchResultWithMatches[]; hasMore?: boolean }
+          if (res.results) {
+            setResults((prev) => [...prev, ...res.results!])
+            offsetRef.current = currentOffset + res.results.length
+            setHasMore(res.hasMore ?? false)
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (searchVersionRef.current === version) {
+          setIsLoadingMore(false)
+        }
+      })
+  }, [isLoadingMore, hasMore, isDefaultView, query])
+
   const handleSetQuery = useCallback((q: string) => {
     setQuery(q)
   }, [])
 
-  return { query, setQuery: handleSetQuery, results, isLoading, isDefaultView }
+  return {
+    query,
+    setQuery: handleSetQuery,
+    results,
+    isLoading,
+    isLoadingMore,
+    isDefaultView,
+    hasMore,
+    loadMore,
+  }
 }

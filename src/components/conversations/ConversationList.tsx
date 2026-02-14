@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { MessageSquare } from 'lucide-react'
 import type { Conversation } from '@/types'
 import type { SearchResultWithMatches } from '@/utils/db'
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
 import { ConversationListItem } from './ConversationListItem'
 import { ConversationListSkeleton } from './ConversationListSkeleton'
 
@@ -39,6 +40,10 @@ export function ConversationList({
   onLoadMore,
 }: ConversationListProps) {
   const { t } = useTranslation('conversations')
+  const { sentinelRef, containerRef } = useInfiniteScroll(onLoadMore, {
+    hasMore,
+    isLoading,
+  })
 
   return (
     <>
@@ -46,6 +51,7 @@ export function ConversationList({
       <div className="flex-1 overflow-hidden rounded-2xl border border-border bg-card/30">
         <div
           className="scrollbar-thin h-full overflow-y-auto"
+          ref={containerRef}
           role="list"
           aria-label={t('conversationList')}
         >
@@ -87,26 +93,13 @@ export function ConversationList({
             </div>
           )}
 
-          {/* Load More — inside scroll area so it appears at the bottom */}
+          {/* Auto load more — spinner + IntersectionObserver sentinel */}
           {hasMore && conversations.length > 0 && (
-            <div className="p-3">
-              <button
-                type="button"
-                className="kbd-focus w-full cursor-pointer rounded-xl border border-dashed border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
-                onClick={onLoadMore}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-                    {t('common:loading')}
-                  </span>
-                ) : (
-                  t('loadMore')
-                )}
-              </button>
+            <div className="flex justify-center p-3">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
             </div>
           )}
+          <div ref={sentinelRef} aria-hidden="true" />
         </div>
       </div>
     </>
