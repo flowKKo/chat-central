@@ -104,13 +104,17 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
 
   const openDashboard = useCallback(() => {
     browser.runtime.sendMessage({ action: 'GET_SYNC_STATUS' }).catch(() => {})
-    const manageUrl = browser.runtime.getURL('/manage.html#/conversations')
-    window.open(manageUrl, '_blank')
+    browser.runtime.sendMessage({
+      action: 'OPEN_EXTENSION_PAGE',
+      path: '/manage.html#/conversations',
+    })
   }, [])
 
   const openSettings = useCallback(() => {
-    const settingsUrl = browser.runtime.getURL('/manage.html#/settings')
-    window.open(settingsUrl, '_blank')
+    browser.runtime.sendMessage({
+      action: 'OPEN_EXTENSION_PAGE',
+      path: '/manage.html#/settings',
+    })
   }, [])
 
   const handleExportClick = useCallback(() => {
