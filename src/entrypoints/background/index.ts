@@ -148,6 +148,16 @@ async function handleMessage(message: unknown): Promise<unknown> {
     case 'GET_RECENT_CONVERSATIONS':
       return handleGetRecentConversations(message)
 
+    case 'OPEN_EXTENSION_PAGE': {
+      const path = (message as unknown as { path: unknown }).path
+      if (typeof path === 'string' && path.startsWith('/manage.html')) {
+        const url = browser.runtime.getURL(path as `/manage.html${string}`)
+        await browser.tabs.create({ url })
+        return { success: true }
+      }
+      return { error: 'Invalid path' }
+    }
+
     default:
       log.warn('Unknown action:', action)
       return { error: 'Unknown action' }

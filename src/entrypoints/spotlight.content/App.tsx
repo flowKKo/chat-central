@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback } from 'react'
 import { browser } from 'wxt/browser'
 import { useSpotlightSearch } from './hooks/useSpotlightSearch'
 import { useKeyboardNavigation } from './hooks/useKeyboardNavigation'
@@ -15,7 +15,6 @@ interface AppProps {
 
 export function App({ isVisible, onClose }: AppProps) {
   const { query, setQuery, results, isLoading, isDefaultView } = useSpotlightSearch(isVisible)
-  const selectedIndexRef = useRef(0)
 
   const handleSelect = useCallback(
     (index: number) => {
@@ -27,11 +26,12 @@ export function App({ isVisible, onClose }: AppProps) {
       if (url) {
         window.open(url, '_blank')
       } else {
-        // Fallback: open in dashboard
-        const dashUrl = browser.runtime.getURL(
-          `/manage.html#/conversations?detail=${result.conversation.id}`
-        )
-        window.open(dashUrl, '_blank')
+        // Fallback: open in dashboard via background (chrome-extension:// URLs
+        // are blocked by Chrome when opened from web page context)
+        browser.runtime.sendMessage({
+          action: 'OPEN_EXTENSION_PAGE',
+          path: '/manage.html#/conversations',
+        })
       }
       onClose()
     },
@@ -43,11 +43,11 @@ export function App({ isVisible, onClose }: AppProps) {
       const result = results[index]
       if (!result) return
 
-      // Always open in dashboard
-      const dashUrl = browser.runtime.getURL(
-        `/manage.html#/conversations?detail=${result.conversation.id}`
-      )
-      window.open(dashUrl, '_blank')
+      // Open in dashboard via background
+      browser.runtime.sendMessage({
+        action: 'OPEN_EXTENSION_PAGE',
+        path: '/manage.html#/conversations',
+      })
       onClose()
     },
     [results, onClose]
@@ -60,9 +60,6 @@ export function App({ isVisible, onClose }: AppProps) {
     onClose,
     isVisible,
   })
-
-  // Keep ref in sync for callbacks
-  selectedIndexRef.current = selectedIndex
 
   if (!isVisible) return null
 
