@@ -4,11 +4,8 @@ import { useEffect, useRef } from 'react'
  * Hook that triggers a callback when a sentinel element becomes visible
  * in a scrollable container, enabling infinite scroll behavior.
  *
- * @param onLoadMore - Called when the sentinel is visible and loading is allowed
- * @param options.hasMore - Whether more items are available
- * @param options.isLoading - Whether a load is in progress
- * @param options.rootMargin - Margin around root (default: '100px')
- * @returns { sentinelRef, containerRef } - Attach to sentinel and scroll container
+ * @param onLoadMore Called when the sentinel is visible and loading is allowed
+ * @param options Configuration for hasMore, isLoading, and rootMargin
  */
 export function useInfiniteScroll(
   onLoadMore: () => void,
@@ -17,6 +14,7 @@ export function useInfiniteScroll(
   const { hasMore, isLoading, rootMargin = '100px' } = options
   const sentinelRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const cooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const sentinel = sentinelRef.current
@@ -25,7 +23,10 @@ export function useInfiniteScroll(
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && hasMore && !isLoading) {
+        if (entries[0]?.isIntersecting && hasMore && !isLoading && !cooldownRef.current) {
+          cooldownRef.current = setTimeout(() => {
+            cooldownRef.current = null
+          }, 300)
           onLoadMore()
         }
       },
@@ -33,7 +34,13 @@ export function useInfiniteScroll(
     )
 
     observer.observe(sentinel)
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      if (cooldownRef.current) {
+        clearTimeout(cooldownRef.current)
+        cooldownRef.current = null
+      }
+    }
   }, [hasMore, isLoading, onLoadMore, rootMargin])
 
   return { sentinelRef, containerRef }
