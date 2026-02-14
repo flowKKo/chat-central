@@ -14,8 +14,17 @@ interface AppProps {
 }
 
 export function App({ isVisible, onClose }: AppProps) {
-  const { query, setQuery, results, isLoading, isLoadingMore, isDefaultView, hasMore, loadMore } =
-    useSpotlightSearch(isVisible)
+  const {
+    query,
+    setQuery,
+    results,
+    isLoading,
+    isLoadingMore,
+    isDefaultView,
+    hasMore,
+    loadMore,
+    resultsVersion,
+  } = useSpotlightSearch(isVisible)
 
   const handleSelect = useCallback(
     (index: number) => {
@@ -60,6 +69,7 @@ export function App({ isVisible, onClose }: AppProps) {
     onModSelect: handleModSelect,
     onClose,
     isVisible,
+    resultsVersion,
   })
 
   if (!isVisible) return null

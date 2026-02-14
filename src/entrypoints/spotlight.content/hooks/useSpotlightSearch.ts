@@ -17,6 +17,8 @@ interface UseSpotlightSearchReturn {
   isDefaultView: boolean
   hasMore: boolean
   loadMore: () => void
+  /** Increments on every fresh load (not on load-more appends) */
+  resultsVersion: number
 }
 
 const DEBOUNCE_MS = 200
@@ -29,6 +31,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isDefaultView, setIsDefaultView] = useState(true)
   const [hasMore, setHasMore] = useState(false)
+  const [resultsVersion, setResultsVersion] = useState(0)
   const searchVersionRef = useRef(0)
   const offsetRef = useRef(0)
 
@@ -40,6 +43,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     setIsDefaultView(true)
     setIsLoading(true)
     setHasMore(false)
+    setResultsVersion((v) => v + 1)
     offsetRef.current = 0
 
     const version = ++searchVersionRef.current
@@ -80,6 +84,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
       // Reset to recent conversations
       setIsDefaultView(true)
       setHasMore(false)
+      setResultsVersion((v) => v + 1)
       offsetRef.current = 0
       const version = ++searchVersionRef.current
 
@@ -110,6 +115,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     setIsDefaultView(false)
     setIsLoading(true)
     setHasMore(false)
+    setResultsVersion((v) => v + 1)
     offsetRef.current = 0
     const version = ++searchVersionRef.current
 
@@ -204,5 +210,6 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     isDefaultView,
     hasMore,
     loadMore,
+    resultsVersion,
   }
 }

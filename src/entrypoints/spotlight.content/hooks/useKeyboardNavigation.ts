@@ -6,6 +6,8 @@ interface UseKeyboardNavigationOptions {
   onModSelect: (index: number) => void
   onClose: () => void
   isVisible: boolean
+  /** When this changes, selectedIndex resets to 0. Use to signal fresh results (not appends). */
+  resultsVersion: number
 }
 
 interface UseKeyboardNavigationReturn {
@@ -19,20 +21,14 @@ export function useKeyboardNavigation({
   onModSelect,
   onClose,
   isVisible,
+  resultsVersion,
 }: UseKeyboardNavigationOptions): UseKeyboardNavigationReturn {
   const [selectedIndex, setSelectedIndex] = useState(0)
 
-  // Reset selection when item count changes
+  // Reset selection on fresh results or when spotlight opens (not on load-more appends)
   useEffect(() => {
     setSelectedIndex(0)
-  }, [itemCount])
-
-  // Reset on visibility change
-  useEffect(() => {
-    if (isVisible) {
-      setSelectedIndex(0)
-    }
-  }, [isVisible])
+  }, [resultsVersion, isVisible])
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {

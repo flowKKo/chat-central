@@ -9,6 +9,7 @@ describe('useKeyboardNavigation', () => {
     onModSelect: vi.fn(),
     onClose: vi.fn(),
     isVisible: true,
+    resultsVersion: 0,
   }
 
   beforeEach(() => {
@@ -106,7 +107,7 @@ describe('useKeyboardNavigation', () => {
     expect(defaultProps.onClose).toHaveBeenCalled()
   })
 
-  it('should reset selectedIndex when itemCount changes', () => {
+  it('should reset selectedIndex when resultsVersion changes', () => {
     const { result, rerender } = renderHook((props) => useKeyboardNavigation(props), {
       initialProps: defaultProps,
     })
@@ -115,7 +116,12 @@ describe('useKeyboardNavigation', () => {
     act(() => fireKeyDown('ArrowDown'))
     expect(result.current.selectedIndex).toBe(2)
 
-    rerender({ ...defaultProps, itemCount: 3 })
+    // Changing itemCount alone (load-more append) should NOT reset
+    rerender({ ...defaultProps, itemCount: 10 })
+    expect(result.current.selectedIndex).toBe(2)
+
+    // Changing resultsVersion (fresh search) should reset
+    rerender({ ...defaultProps, itemCount: 3, resultsVersion: 1 })
     expect(result.current.selectedIndex).toBe(0)
   })
 
