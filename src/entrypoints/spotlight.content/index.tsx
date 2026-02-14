@@ -14,16 +14,19 @@ import styles from './styles/spotlight.css?inline'
 const log = createLogger('Spotlight')
 
 /**
- * Shared toggle signal between message listener and React.
- * The listener fires immediately (before React renders), so we queue
- * toggle requests and let React pick them up via a subscription.
+ * Direct reference to React's setState for toggling visibility.
+ * If a toggle arrives before React mounts, `pendingShow` queues it.
  */
-let toggleVersion = 0
-const toggleListeners = new Set<() => void>()
+let setVisibleFn: ((updater: (prev: boolean) => boolean) => void) | null = null
+let pendingShow = false
 
-function emitToggle() {
-  toggleVersion++
-  for (const fn of toggleListeners) fn()
+function handleToggle() {
+  if (setVisibleFn) {
+    setVisibleFn((prev) => !prev)
+  } else {
+    // React hasn't mounted yet — queue the toggle
+    pendingShow = !pendingShow
+  }
 }
 
 export default defineContentScript({
@@ -43,18 +46,8 @@ export default defineContentScript({
       return
     }
 
-    // Check if spotlight is enabled
-    const config = await storage.getItem<Config>('local:config')
-    if (config?.spotlight?.enabled === false) {
-      log.debug('Spotlight disabled by config')
-      return
-    }
-
-    initLanguage()
-    log.info('Mounting Spotlight')
-
-    // Listen for TOGGLE_SPOTLIGHT messages BEFORE mounting UI
-    // so the first keypress is never missed.
+    // Register message listener IMMEDIATELY — before any await —
+    // so toggles sent right after scripting.executeScript are never missed.
     const handleMessage = (message: unknown) => {
       if (
         typeof message === 'object' &&
@@ -62,10 +55,21 @@ export default defineContentScript({
         'action' in message &&
         (message as { action: string }).action === 'TOGGLE_SPOTLIGHT'
       ) {
-        emitToggle()
+        handleToggle()
       }
     }
     browser.runtime.onMessage.addListener(handleMessage)
+
+    // Check if spotlight is enabled
+    const config = await storage.getItem<Config>('local:config')
+    if (config?.spotlight?.enabled === false) {
+      log.debug('Spotlight disabled by config')
+      browser.runtime.onMessage.removeListener(handleMessage)
+      return
+    }
+
+    initLanguage()
+    log.info('Mounting Spotlight')
 
     const ui = await createShadowRootUi(ctx, {
       name: 'chat-central-spotlight',
@@ -83,22 +87,16 @@ export default defineContentScript({
         function SpotlightWrapper() {
           const [isVisible, setIsVisible] = useState(false)
 
-          // Subscribe to toggle signals from the message listener
           useEffect(() => {
-            // Capture the version at mount time so we can detect
-            // toggles that arrived before React rendered.
-            let lastSeen = toggleVersion
-            const check = () => {
-              if (toggleVersion !== lastSeen) {
-                lastSeen = toggleVersion
-                setIsVisible((prev) => !prev)
-              }
+            // Expose setState to module-level handleToggle
+            setVisibleFn = setIsVisible
+            // Flush any toggle that arrived before React mounted
+            if (pendingShow) {
+              pendingShow = false
+              setIsVisible(true)
             }
-            // Check immediately in case a toggle arrived before mount
-            check()
-            toggleListeners.add(check)
             return () => {
-              toggleListeners.delete(check)
+              setVisibleFn = null
             }
           }, [])
 
