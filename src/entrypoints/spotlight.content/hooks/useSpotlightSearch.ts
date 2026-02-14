@@ -20,8 +20,7 @@ interface UseSpotlightSearchReturn {
 }
 
 const DEBOUNCE_MS = 200
-const DEFAULT_LIMIT = 10
-const SEARCH_LIMIT = 20
+const PAGE_SIZE = 30
 
 export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn {
   const [query, setQuery] = useState('')
@@ -46,7 +45,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     const version = ++searchVersionRef.current
 
     browser.runtime
-      .sendMessage({ action: 'GET_RECENT_CONVERSATIONS', limit: DEFAULT_LIMIT })
+      .sendMessage({ action: 'GET_RECENT_CONVERSATIONS', limit: PAGE_SIZE })
       .then((response: unknown) => {
         if (searchVersionRef.current !== version) return
         const res = response as {
@@ -85,7 +84,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
       const version = ++searchVersionRef.current
 
       browser.runtime
-        .sendMessage({ action: 'GET_RECENT_CONVERSATIONS', limit: DEFAULT_LIMIT })
+        .sendMessage({ action: 'GET_RECENT_CONVERSATIONS', limit: PAGE_SIZE })
         .then((response: unknown) => {
           if (searchVersionRef.current !== version) return
           const res = response as {
@@ -116,7 +115,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
 
     const timer = setTimeout(() => {
       browser.runtime
-        .sendMessage({ action: 'SEARCH_WITH_MATCHES', query: query.trim(), limit: SEARCH_LIMIT })
+        .sendMessage({ action: 'SEARCH_WITH_MATCHES', query: query.trim(), limit: PAGE_SIZE })
         .then((response: unknown) => {
           if (searchVersionRef.current !== version) return
           const res = response as {
@@ -149,11 +148,11 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     const currentOffset = offsetRef.current
 
     const message = isDefaultView
-      ? { action: 'GET_RECENT_CONVERSATIONS', limit: DEFAULT_LIMIT, offset: currentOffset }
+      ? { action: 'GET_RECENT_CONVERSATIONS', limit: PAGE_SIZE, offset: currentOffset }
       : {
           action: 'SEARCH_WITH_MATCHES',
           query: query.trim(),
-          limit: SEARCH_LIMIT,
+          limit: PAGE_SIZE,
           offset: currentOffset,
         }
 
