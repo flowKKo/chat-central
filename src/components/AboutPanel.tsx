@@ -1,4 +1,5 @@
 import {
+  Chrome,
   Database,
   Github,
   Heart,
@@ -188,6 +189,15 @@ export function AboutPanel() {
                 >
                   <Star className="h-4 w-4" />
                   {t('reportIssue')}
+                </a>
+                <a
+                  href="https://chromewebstore.google.com/detail/chat-central/mkkjdicijdpjgbbbfldonopfjaflllad"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg p-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+                >
+                  <Chrome className="h-4 w-4" />
+                  {t('chromeWebStore')}
                 </a>
               </div>
             </div>

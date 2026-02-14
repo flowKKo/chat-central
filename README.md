@@ -35,7 +35,9 @@ Automatically capture, search, organize, and export your AI conversations.
 
 ### Chrome Web Store
 
-Coming soon.
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/mkkjdicijdpjgbbbfldonopfjaflllad?style=flat-square)](https://chromewebstore.google.com/detail/chat-central/mkkjdicijdpjgbbbfldonopfjaflllad)
+
+[**Install from Chrome Web Store**](https://chromewebstore.google.com/detail/chat-central/mkkjdicijdpjgbbbfldonopfjaflllad)
 
 ### Manual Install
 

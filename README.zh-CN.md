@@ -35,7 +35,9 @@
 
 ### Chrome Web Store
 
-即将上线。
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/mkkjdicijdpjgbbbfldonopfjaflllad?style=flat-square)](https://chromewebstore.google.com/detail/chat-central/mkkjdicijdpjgbbbfldonopfjaflllad)
+
+[**从 Chrome Web Store 安装**](https://chromewebstore.google.com/detail/chat-central/mkkjdicijdpjgbbbfldonopfjaflllad)
 
 ### 手动安装
 

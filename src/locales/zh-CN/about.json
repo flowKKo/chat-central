@@ -17,5 +17,6 @@
   "supportedPlatforms": "支持的平台",
   "quickLinks": "快捷链接",
   "sourceCode": "源代码",
-  "reportIssue": "报告问题"
+  "reportIssue": "报告问题",
+  "chromeWebStore": "Chrome Web Store"
 }
