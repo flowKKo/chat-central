@@ -3,7 +3,9 @@ import {
   CaptureApiResponseSchema,
   GetConversationsSchema,
   GetMessagesSchema,
+  GetRecentConversationsSchema,
   SearchSchema,
+  SearchWithMatchesSchema,
   ToggleFavoriteSchema,
 } from './schemas'
 
@@ -174,6 +176,74 @@ describe('background Message Schemas', () => {
         action: 'TOGGLE_FAVORITE',
         conversationId: 'claude_abc123',
         value: 'true',
+      })
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('searchWithMatchesSchema', () => {
+    it('should validate valid message', () => {
+      const result = SearchWithMatchesSchema.safeParse({
+        action: 'SEARCH_WITH_MATCHES',
+        query: 'react',
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should validate with optional limit', () => {
+      const result = SearchWithMatchesSchema.safeParse({
+        action: 'SEARCH_WITH_MATCHES',
+        query: 'react',
+        limit: 20,
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject empty query', () => {
+      const result = SearchWithMatchesSchema.safeParse({
+        action: 'SEARCH_WITH_MATCHES',
+        query: '',
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject missing query', () => {
+      const result = SearchWithMatchesSchema.safeParse({
+        action: 'SEARCH_WITH_MATCHES',
+      })
+      expect(result.success).toBe(false)
+    })
+
+    it('should reject non-positive limit', () => {
+      const result = SearchWithMatchesSchema.safeParse({
+        action: 'SEARCH_WITH_MATCHES',
+        query: 'test',
+        limit: 0,
+      })
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('getRecentConversationsSchema', () => {
+    it('should validate minimal message', () => {
+      const result = GetRecentConversationsSchema.safeParse({
+        action: 'GET_RECENT_CONVERSATIONS',
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should validate with optional limit', () => {
+      const result = GetRecentConversationsSchema.safeParse({
+        action: 'GET_RECENT_CONVERSATIONS',
+        limit: 5,
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('should reject non-positive limit', () => {
+      const result = GetRecentConversationsSchema.safeParse({
+        action: 'GET_RECENT_CONVERSATIONS',
+        limit: -1,
       })
       expect(result.success).toBe(false)
     })

@@ -183,6 +183,12 @@ export const configSchema = z.object({
       enabled: z.boolean(),
     })
     .default({ enabled: true }),
+  // Spotlight settings
+  spotlight: z
+    .object({
+      enabled: z.boolean(),
+    })
+    .default({ enabled: true }),
 })
 export type Config = z.infer<typeof configSchema>
 
@@ -203,6 +209,9 @@ export const DEFAULT_CONFIG: Config = {
     cleanupDays: 90,
   },
   widget: {
+    enabled: true,
+  },
+  spotlight: {
     enabled: true,
   },
 }

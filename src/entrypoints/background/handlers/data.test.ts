@@ -5,6 +5,8 @@ import {
   handleGetMessages,
   handleGetStats,
   handleSearch,
+  handleSearchWithMatches,
+  handleGetRecentConversations,
   handleToggleFavorite,
   handleUpdateTags,
   handleGetAllTags,
@@ -20,6 +22,7 @@ vi.mock('@/utils/db', () => ({
   updateConversationTags: vi.fn(),
   getAllTags: vi.fn(),
   searchConversations: vi.fn(),
+  searchConversationsWithMatches: vi.fn(),
 }))
 
 vi.mock('@/utils/logger', () => ({
@@ -40,6 +43,7 @@ const {
   updateConversationTags,
   getAllTags,
   searchConversations,
+  searchConversationsWithMatches,
 } = await vi.importMock<typeof import('@/utils/db')>('@/utils/db')
 
 function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
@@ -291,6 +295,85 @@ describe('data handlers', () => {
 
       const result = await handleGetAllTags()
       expect(result).toEqual({ tags: [] })
+    })
+  })
+
+  describe('handleSearchWithMatches', () => {
+    it('should return search results with matches', async () => {
+      const conv = makeConversation({ title: 'React hooks guide' })
+      const searchResults = [
+        { conversation: conv, matches: [{ type: 'title' as const, text: 'React hooks guide' }] },
+      ]
+      searchConversationsWithMatches.mockResolvedValue(searchResults)
+
+      const result = await handleSearchWithMatches({
+        action: 'SEARCH_WITH_MATCHES',
+        query: 'react',
+      })
+
+      expect(searchConversationsWithMatches).toHaveBeenCalledWith('react')
+      expect(result).toEqual({ results: searchResults })
+    })
+
+    it('should respect limit parameter', async () => {
+      const results = Array.from({ length: 5 }, (_, i) => ({
+        conversation: makeConversation({ id: `c${i}` }),
+        matches: [{ type: 'title' as const, text: `Conv ${i}` }],
+      }))
+      searchConversationsWithMatches.mockResolvedValue(results)
+
+      const result = await handleSearchWithMatches({
+        action: 'SEARCH_WITH_MATCHES',
+        query: 'test',
+        limit: 2,
+      })
+
+      const res = result as { results: unknown[] }
+      expect(res.results).toHaveLength(2)
+    })
+
+    it('should return error for empty query', async () => {
+      const result = await handleSearchWithMatches({
+        action: 'SEARCH_WITH_MATCHES',
+        query: '',
+      })
+
+      expect(result).toEqual({ error: 'Invalid message format' })
+    })
+
+    it('should return error for invalid format', async () => {
+      const result = await handleSearchWithMatches({ action: 'WRONG' })
+      expect(result).toEqual({ error: 'Invalid message format' })
+    })
+  })
+
+  describe('handleGetRecentConversations', () => {
+    it('should return recent conversations with default limit', async () => {
+      const convs = [makeConversation()]
+      getConversations.mockResolvedValue(convs)
+
+      const result = await handleGetRecentConversations({
+        action: 'GET_RECENT_CONVERSATIONS',
+      })
+
+      expect(result).toEqual({ conversations: convs })
+      expect(getConversations).toHaveBeenCalledWith({ limit: 10, orderBy: 'updatedAt' })
+    })
+
+    it('should respect custom limit', async () => {
+      getConversations.mockResolvedValue([])
+
+      await handleGetRecentConversations({
+        action: 'GET_RECENT_CONVERSATIONS',
+        limit: 5,
+      })
+
+      expect(getConversations).toHaveBeenCalledWith({ limit: 5, orderBy: 'updatedAt' })
+    })
+
+    it('should return error for invalid format', async () => {
+      const result = await handleGetRecentConversations({ action: 'WRONG' })
+      expect(result).toEqual({ error: 'Invalid message format' })
     })
   })
 })

@@ -7,8 +7,10 @@ import {
   handleGetAllTags,
   handleGetConversations,
   handleGetMessages,
+  handleGetRecentConversations,
   handleGetStats,
   handleSearch,
+  handleSearchWithMatches,
   handleToggleFavorite,
   handleUpdateTags,
 } from './handlers'
@@ -58,6 +60,13 @@ export default defineBackground({
         registerContextMenus()
       }
     )
+
+    // Handle keyboard shortcut commands
+    safeAddListener(browser.commands?.onCommand, (command: string) => {
+      if (command === 'toggle-spotlight') {
+        handleSpotlightCommand()
+      }
+    })
 
     // Dev reload: Connect to local WebSocket server for auto-reload
     connectDevReloadServer()
@@ -133,8 +142,39 @@ async function handleMessage(message: unknown): Promise<unknown> {
       cancelBatchFetch()
       return { success: true }
 
+    case 'SEARCH_WITH_MATCHES':
+      return handleSearchWithMatches(message)
+
+    case 'GET_RECENT_CONVERSATIONS':
+      return handleGetRecentConversations(message)
+
     default:
       log.warn('Unknown action:', action)
       return { error: 'Unknown action' }
+  }
+}
+
+/**
+ * Handle Spotlight toggle command (Cmd/Ctrl+Shift+K)
+ */
+async function handleSpotlightCommand() {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
+  if (!tab?.id) return
+
+  try {
+    // Try to toggle an already-loaded Spotlight content script
+    await browser.tabs.sendMessage(tab.id, { action: 'TOGGLE_SPOTLIGHT' })
+  } catch {
+    // Content script not loaded on this page — inject it, then toggle open
+    try {
+      await browser.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['/content-scripts/spotlight.js'],
+      })
+      // Script starts hidden; send toggle to open it
+      await browser.tabs.sendMessage(tab.id, { action: 'TOGGLE_SPOTLIGHT' })
+    } catch (e) {
+      log.warn('Cannot inject Spotlight into this tab:', e)
+    }
   }
 }

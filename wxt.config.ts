@@ -19,7 +19,17 @@ export default defineConfig({
         // Can generate fixed dev key later
       }),
 
-    permissions: ['storage', 'unlimitedStorage', 'tabs', 'contextMenus'],
+    permissions: ['storage', 'unlimitedStorage', 'tabs', 'contextMenus', 'activeTab', 'scripting'],
+
+    commands: {
+      'toggle-spotlight': {
+        suggested_key: {
+          default: 'Ctrl+Shift+K',
+          mac: 'Command+Shift+K',
+        },
+        description: '__MSG_spotlightCommandDescription__',
+      },
+    },
 
     host_permissions: [
       'https://claude.ai/*',

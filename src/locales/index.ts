@@ -8,6 +8,7 @@ import enSettings from './en/settings.json'
 import enConflicts from './en/conflicts.json'
 import enAbout from './en/about.json'
 import enPopup from './en/popup.json'
+import enSpotlight from './en/spotlight.json'
 
 import zhCNCommon from './zh-CN/common.json'
 import zhCNConversations from './zh-CN/conversations.json'
@@ -15,6 +16,7 @@ import zhCNSettings from './zh-CN/settings.json'
 import zhCNConflicts from './zh-CN/conflicts.json'
 import zhCNAbout from './zh-CN/about.json'
 import zhCNPopup from './zh-CN/popup.json'
+import zhCNSpotlight from './zh-CN/spotlight.json'
 
 const resources = {
   en: {
@@ -24,6 +26,7 @@ const resources = {
     conflicts: enConflicts,
     about: enAbout,
     popup: enPopup,
+    spotlight: enSpotlight,
   },
   'zh-CN': {
     common: zhCNCommon,
@@ -32,6 +35,7 @@ const resources = {
     conflicts: zhCNConflicts,
     about: zhCNAbout,
     popup: zhCNPopup,
+    spotlight: zhCNSpotlight,
   },
 }
 
@@ -42,7 +46,7 @@ i18n.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',
   defaultNS: 'common',
-  ns: ['common', 'conversations', 'settings', 'conflicts', 'about', 'popup'],
+  ns: ['common', 'conversations', 'settings', 'conflicts', 'about', 'popup', 'spotlight'],
   interpolation: {
     escapeValue: false,
   },

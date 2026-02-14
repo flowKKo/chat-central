@@ -1,0 +1,15 @@
+{
+  "title": "Search Conversations",
+  "searchPlaceholder": "Search conversations...",
+  "recentConversations": "Recent Conversations",
+  "noResults": "No results found",
+  "noResultsHint": "Try a different search term",
+  "noConversations": "No conversations yet",
+  "noConversationsHint": "Visit Claude, ChatGPT, or Gemini to start capturing",
+  "openInPlatform": "Open in platform",
+  "openInDashboard": "Open in Dashboard",
+  "navigate": "Navigate",
+  "open": "Open",
+  "dismiss": "Dismiss",
+  "messagesCount": "{{count}} messages"
+}

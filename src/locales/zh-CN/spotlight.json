@@ -1,0 +1,15 @@
+{
+  "title": "搜索对话",
+  "searchPlaceholder": "搜索对话...",
+  "recentConversations": "最近的对话",
+  "noResults": "未找到结果",
+  "noResultsHint": "试试其他搜索词",
+  "noConversations": "暂无对话",
+  "noConversationsHint": "访问 Claude、ChatGPT 或 Gemini 开始捕获",
+  "openInPlatform": "在平台中打开",
+  "openInDashboard": "在 Dashboard 中打开",
+  "navigate": "导航",
+  "open": "打开",
+  "dismiss": "关闭",
+  "messagesCount": "{{count}} 条消息"
+}

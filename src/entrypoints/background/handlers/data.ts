@@ -1,7 +1,9 @@
 import {
   GetConversationsSchema,
   GetMessagesSchema,
+  GetRecentConversationsSchema,
   SearchSchema,
+  SearchWithMatchesSchema,
   ToggleFavoriteSchema,
   UpdateTagsSchema,
 } from '../schemas'
@@ -15,7 +17,9 @@ import {
   updateConversationFavorite,
   updateConversationTags,
   searchConversations,
+  searchConversationsWithMatches,
 } from '@/utils/db'
+import type { SearchResultWithMatches } from '@/utils/db'
 import { createLogger } from '@/utils/logger'
 
 const log = createLogger('ChatCentral')
@@ -123,4 +127,38 @@ export async function handleUpdateTags(
 export async function handleGetAllTags(): Promise<{ tags: string[] }> {
   const tags = await getAllTags()
   return { tags }
+}
+
+/**
+ * Search conversations with match details (for Spotlight)
+ */
+export async function handleSearchWithMatches(
+  rawMessage: unknown
+): Promise<{ results: SearchResultWithMatches[] } | { error: string }> {
+  const parseResult = SearchWithMatchesSchema.safeParse(rawMessage)
+  if (!parseResult.success) {
+    log.warn('Invalid search with matches message:', parseResult.error.message)
+    return { error: 'Invalid message format' }
+  }
+
+  const { query, limit } = parseResult.data
+  const results = await searchConversationsWithMatches(query)
+  return { results: limit ? results.slice(0, limit) : results }
+}
+
+/**
+ * Get recent conversations (for Spotlight default view)
+ */
+export async function handleGetRecentConversations(
+  rawMessage: unknown
+): Promise<{ conversations: Conversation[] } | { error: string }> {
+  const parseResult = GetRecentConversationsSchema.safeParse(rawMessage)
+  if (!parseResult.success) {
+    log.warn('Invalid get recent conversations message:', parseResult.error.message)
+    return { error: 'Invalid message format' }
+  }
+
+  const { limit = 10 } = parseResult.data
+  const conversations = await getConversations({ limit, orderBy: 'updatedAt' })
+  return { conversations }
 }

@@ -4,5 +4,8 @@
   },
   "appDescription": {
     "message": "一站式管理所有 AI 对话。自动捕获、搜索、整理和导出你的 AI 对话。"
+  },
+  "spotlightCommandDescription": {
+    "message": "搜索对话 (Spotlight)"
   }
 }

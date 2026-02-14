@@ -4,5 +4,8 @@
   },
   "appDescription": {
     "message": "One place for all your AI conversations. Automatically capture, search, organize, and export your AI conversations."
+  },
+  "spotlightCommandDescription": {
+    "message": "Search conversations (Spotlight)"
   }
 }

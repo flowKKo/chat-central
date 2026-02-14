@@ -104,6 +104,23 @@ export const BatchFetchCancelSchema = z.object({
 })
 
 /**
+ * Search with match details (for Spotlight)
+ */
+export const SearchWithMatchesSchema = z.object({
+  action: z.literal('SEARCH_WITH_MATCHES'),
+  query: z.string().min(1),
+  limit: z.number().positive().optional(),
+})
+
+/**
+ * Get recent conversations (for Spotlight default view)
+ */
+export const GetRecentConversationsSchema = z.object({
+  action: z.literal('GET_RECENT_CONVERSATIONS'),
+  limit: z.number().positive().optional(),
+})
+
+/**
  * Union of all valid message schemas
  */
 export const MessageSchema = z.discriminatedUnion('action', [
@@ -117,6 +134,8 @@ export const MessageSchema = z.discriminatedUnion('action', [
   GetAllTagsSchema,
   BatchFetchAndExportSchema,
   BatchFetchCancelSchema,
+  SearchWithMatchesSchema,
+  GetRecentConversationsSchema,
 ])
 
 export type CaptureApiResponseMessage = z.infer<typeof CaptureApiResponseSchema>
@@ -129,4 +148,6 @@ export type UpdateTagsMessage = z.infer<typeof UpdateTagsSchema>
 export type GetAllTagsMessage = z.infer<typeof GetAllTagsSchema>
 export type BatchFetchAndExportMessage = z.infer<typeof BatchFetchAndExportSchema>
 export type BatchFetchCancelMessage = z.infer<typeof BatchFetchCancelSchema>
+export type SearchWithMatchesMessage = z.infer<typeof SearchWithMatchesSchema>
+export type GetRecentConversationsMessage = z.infer<typeof GetRecentConversationsSchema>
 export type Message = z.infer<typeof MessageSchema>
