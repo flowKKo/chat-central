@@ -26,7 +26,7 @@ export function useInfiniteScroll(
         if (entries[0]?.isIntersecting && hasMore && !isLoading && !cooldownRef.current) {
           cooldownRef.current = setTimeout(() => {
             cooldownRef.current = null
-          }, 500)
+          }, 1000)
           onLoadMore()
         }
       },
