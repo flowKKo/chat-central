@@ -23,7 +23,6 @@ interface UseSpotlightSearchReturn {
 
 const DEBOUNCE_MS = 200
 const PAGE_SIZE = 30
-const MIN_LOADING_MS = 400
 
 export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn {
   const [query, setQuery] = useState('')
@@ -153,7 +152,6 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     setIsLoadingMore(true)
     const version = searchVersionRef.current
     const currentOffset = offsetRef.current
-    const startTime = Date.now()
 
     const message = isDefaultView
       ? { action: 'GET_RECENT_CONVERSATIONS', limit: PAGE_SIZE, offset: currentOffset }
@@ -166,17 +164,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
 
     browser.runtime
       .sendMessage(message)
-      .then(async (response: unknown) => {
-        if (searchVersionRef.current !== version) return
-
-        // Ensure spinner shows for at least MIN_LOADING_MS
-        const elapsed = Date.now() - startTime
-        if (elapsed < MIN_LOADING_MS) {
-          await new Promise((r) => {
-            setTimeout(r, MIN_LOADING_MS - elapsed)
-          })
-        }
-
+      .then((response: unknown) => {
         if (searchVersionRef.current !== version) return
 
         if (isDefaultView) {
@@ -200,9 +188,9 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
             setHasMore(res.hasMore ?? false)
           }
         }
-        setIsLoadingMore(false)
       })
-      .catch(() => {
+      .catch(() => {})
+      .finally(() => {
         setIsLoadingMore(false)
       })
   }, [isLoadingMore, hasMore, isDefaultView, query])
