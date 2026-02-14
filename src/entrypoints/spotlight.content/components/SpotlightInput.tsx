@@ -4,16 +4,10 @@ import { useTranslation } from 'react-i18next'
 interface SpotlightInputProps {
   query: string
   onQueryChange: (q: string) => void
-  isLoading: boolean
   isVisible: boolean
 }
 
-export function SpotlightInput({
-  query,
-  onQueryChange,
-  isLoading,
-  isVisible,
-}: SpotlightInputProps) {
+export function SpotlightInput({ query, onQueryChange, isVisible }: SpotlightInputProps) {
   const { t } = useTranslation('spotlight')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -55,9 +49,7 @@ export function SpotlightInput({
         autoComplete="off"
       />
 
-      {isLoading && <div className="spotlight-spinner" />}
-
-      {!isLoading && query && (
+      {query && (
         <button
           type="button"
           onClick={() => onQueryChange('')}

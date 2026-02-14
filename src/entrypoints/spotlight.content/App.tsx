@@ -66,12 +66,7 @@ export function App({ isVisible, onClose }: AppProps) {
 
   return (
     <SpotlightOverlay onClose={onClose}>
-      <SpotlightInput
-        query={query}
-        onQueryChange={setQuery}
-        isLoading={isLoading}
-        isVisible={isVisible}
-      />
+      <SpotlightInput query={query} onQueryChange={setQuery} isVisible={isVisible} />
 
       {results.length > 0 ? (
         <SpotlightResultList
