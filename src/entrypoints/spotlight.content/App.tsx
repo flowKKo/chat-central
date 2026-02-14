@@ -89,6 +89,7 @@ export function App({ isVisible, onClose }: AppProps) {
           hasMore={hasMore}
           isLoadingMore={isLoadingMore}
           onLoadMore={loadMore}
+          resultsVersion={resultsVersion}
         />
       ) : (
         !isLoading && <SpotlightEmpty hasQuery={!!query.trim()} />

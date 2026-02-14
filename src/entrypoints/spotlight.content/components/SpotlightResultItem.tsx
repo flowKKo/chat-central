@@ -8,6 +8,8 @@ interface SpotlightResultItemProps {
   isSelected: boolean
   onSelect: () => void
   onMouseEnter: () => void
+  isNew?: boolean
+  animationDelay?: number
 }
 
 export function SpotlightResultItem({
@@ -16,6 +18,8 @@ export function SpotlightResultItem({
   isSelected,
   onSelect,
   onMouseEnter,
+  isNew,
+  animationDelay = 0,
 }: SpotlightResultItemProps) {
   const { conversation, matches } = result
   const platform = PLATFORM_CONFIG[conversation.platform]
@@ -46,6 +50,8 @@ export function SpotlightResultItem({
     <div
       className="spotlight-item"
       data-selected={isSelected}
+      data-new={isNew || undefined}
+      style={isNew && animationDelay > 0 ? { animationDelay: `${animationDelay}ms` } : undefined}
       onClick={handleClick}
       onMouseEnter={onMouseEnter}
       role="option"

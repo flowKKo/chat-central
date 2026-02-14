@@ -158,6 +158,10 @@
   transition: background 0.1s ease;
 }
 
+.spotlight-item[data-new='true'] {
+  animation: spotlight-item-in 0.25s ease-out both;
+}
+
 .spotlight-item:hover,
 .spotlight-item[data-selected='true'] {
   background: hsl(var(--accent));
@@ -325,6 +329,17 @@
 @keyframes spotlight-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes spotlight-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
