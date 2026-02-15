@@ -1,0 +1,153 @@
+<svg width="1280" height="800" viewBox="0 0 1280 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F1A"/>
+      <stop offset="50%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#0a0e18"/>
+    </linearGradient>
+    <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="0.5" fill="#ffffff" fill-opacity="0.025"/>
+    </pattern>
+    <radialGradient id="centerGlow" cx="50%" cy="42%" r="40%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.12"/>
+      <stop offset="60%" stop-color="#3b82f6" stop-opacity="0.03"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbOrange" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D97757" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#D97757" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbGreen" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#10A37F" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#10A37F" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbBlue" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4285F4" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#4285F4" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="arcGlow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4"/>
+    </filter>
+    <filter id="arcGlowSm">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+    </filter>
+    <filter id="textGlow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="8"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="800" fill="url(#bg)"/>
+  <rect width="1280" height="800" fill="url(#dots)"/>
+  <ellipse cx="640" cy="340" rx="600" ry="400" fill="url(#centerGlow)"/>
+
+  <!-- Platform orbs -->
+  <ellipse cx="200" cy="200" rx="250" ry="200" fill="url(#orbOrange)"/>
+  <ellipse cx="1080" cy="200" rx="250" ry="200" fill="url(#orbGreen)"/>
+  <ellipse cx="640" cy="680" rx="300" ry="200" fill="url(#orbBlue)"/>
+
+  <!-- Convergence curves: Three flowing paths from platforms to center logo -->
+
+  <!-- Claude curve (top-left to center) -->
+  <g opacity="0.2" filter="url(#arcGlow)">
+    <path d="M 80 140 C 200 180, 350 250, 540 310" stroke="#D97757" stroke-width="6" fill="none" stroke-linecap="round"/>
+  </g>
+  <path d="M 80 140 C 200 180, 350 250, 540 310" stroke="#D97757" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="6 4" opacity="0.6"/>
+  <path d="M 80 140 C 200 180, 350 250, 540 310" stroke="#D97757" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- ChatGPT curve (top-right to center) -->
+  <g opacity="0.2" filter="url(#arcGlow)">
+    <path d="M 1200 140 C 1080 180, 930 250, 740 310" stroke="#10A37F" stroke-width="6" fill="none" stroke-linecap="round"/>
+  </g>
+  <path d="M 1200 140 C 1080 180, 930 250, 740 310" stroke="#10A37F" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="6 4" opacity="0.6"/>
+  <path d="M 1200 140 C 1080 180, 930 250, 740 310" stroke="#10A37F" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- Gemini curve (bottom to center) -->
+  <g opacity="0.2" filter="url(#arcGlow)">
+    <path d="M 640 720 C 640 620, 640 500, 640 400" stroke="#4285F4" stroke-width="6" fill="none" stroke-linecap="round"/>
+  </g>
+  <path d="M 640 720 C 640 620, 640 500, 640 400" stroke="#4285F4" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="6 4" opacity="0.6"/>
+  <path d="M 640 720 C 640 620, 640 500, 640 400" stroke="#4285F4" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- Small floating particles along curves -->
+  <circle cx="180" cy="170" r="2.5" fill="#D97757" opacity="0.5"/>
+  <circle cx="310" cy="220" r="1.5" fill="#D97757" opacity="0.3"/>
+  <circle cx="430" cy="270" r="2" fill="#D97757" opacity="0.4"/>
+  <circle cx="1100" cy="170" r="2.5" fill="#10A37F" opacity="0.5"/>
+  <circle cx="970" cy="220" r="1.5" fill="#10A37F" opacity="0.3"/>
+  <circle cx="850" cy="270" r="2" fill="#10A37F" opacity="0.4"/>
+  <circle cx="640" cy="660" r="2.5" fill="#4285F4" opacity="0.5"/>
+  <circle cx="640" cy="570" r="1.5" fill="#4285F4" opacity="0.3"/>
+  <circle cx="640" cy="480" r="2" fill="#4285F4" opacity="0.4"/>
+
+  <!-- Platform labels at curve origins -->
+  <!-- Claude label -->
+  <g transform="translate(80, 100)">
+    <rect x="-8" y="-16" width="96" height="32" rx="16" fill="#D97757" fill-opacity="0.1" stroke="#D97757" stroke-opacity="0.3" stroke-width="1"/>
+    <circle cx="12" cy="0" r="4.5" fill="#D97757"/>
+    <text x="50" y="5" font-family="'DM Sans', system-ui, sans-serif" font-size="15" fill="#D97757" font-weight="600" text-anchor="middle">Claude</text>
+  </g>
+
+  <!-- ChatGPT label -->
+  <g transform="translate(1200, 100)">
+    <rect x="-58" y="-16" width="116" height="32" rx="16" fill="#10A37F" fill-opacity="0.1" stroke="#10A37F" stroke-opacity="0.3" stroke-width="1"/>
+    <circle cx="-38" cy="0" r="4.5" fill="#10A37F"/>
+    <text x="4" y="5" font-family="'DM Sans', system-ui, sans-serif" font-size="15" fill="#10A37F" font-weight="600" text-anchor="middle">ChatGPT</text>
+  </g>
+
+  <!-- Gemini label -->
+  <g transform="translate(640, 760)">
+    <rect x="-48" y="-16" width="96" height="32" rx="16" fill="#4285F4" fill-opacity="0.1" stroke="#4285F4" stroke-opacity="0.3" stroke-width="1"/>
+    <circle cx="-28" cy="0" r="4.5" fill="#4285F4"/>
+    <text x="6" y="5" font-family="'DM Sans', system-ui, sans-serif" font-size="15" fill="#4285F4" font-weight="600" text-anchor="middle">Gemini</text>
+  </g>
+
+  <!-- CENTER: Large Logo -->
+  <g transform="translate(640, 310)">
+    <!-- Large arcs glow -->
+    <g opacity="0.25" filter="url(#arcGlow)">
+      <path d="M -42 -70 A 82 82 0 0 1 0 -84" stroke="#D97757" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <path d="M 42 -70 A 82 82 0 0 0 0 -84" stroke="#10A37F" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <path d="M -50 50 A 96 96 0 0 0 50 50" stroke="#4285F4" stroke-width="8" fill="none" stroke-linecap="round"/>
+    </g>
+    <!-- Large arcs -->
+    <path d="M -42 -70 A 82 82 0 0 1 0 -84" stroke="#D97757" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+    <path d="M 42 -70 A 82 82 0 0 0 0 -84" stroke="#10A37F" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+    <path d="M -50 50 A 96 96 0 0 0 50 50" stroke="#4285F4" stroke-width="5.5" fill="none" stroke-linecap="round"/>
+    <!-- Inner arcs -->
+    <path d="M -30 -52 A 52 52 0 0 1 0 -60" stroke="#D97757" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M 30 -52 A 52 52 0 0 0 0 -60" stroke="#10A37F" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <!-- Chat bubble (larger) -->
+    <path d="M -18 -16 h 36 a 6 6 0 0 1 6 6 v 14 a 6 6 0 0 1 -6 6 h -20 l -8 8 v -8 h -8 a 6 6 0 0 1 -6 -6 v -14 a 6 6 0 0 1 6 -6 z"
+          fill="#1E293B" stroke="#334155" stroke-width="1.5"/>
+    <circle cx="-8" cy="-2" r="2.5" fill="#94A3B8"/>
+    <circle cx="0" cy="-2" r="2.5" fill="#94A3B8"/>
+    <circle cx="8" cy="-2" r="2.5" fill="#94A3B8"/>
+  </g>
+
+  <!-- Title -->
+  <g opacity="0.15" filter="url(#textGlow)">
+    <text x="640" y="460" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="800" font-size="72" fill="#60A5FA" text-anchor="middle">Chat Central</text>
+  </g>
+  <text x="640" y="460" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="800" font-size="72" text-anchor="middle" letter-spacing="2">
+    <tspan fill="#F1F5F9">Chat </tspan><tspan fill="#60A5FA">Central</tspan>
+  </text>
+
+  <!-- Subtitle -->
+  <text x="640" y="500" font-family="'DM Sans', system-ui, sans-serif" font-size="20" fill="#64748B" text-anchor="middle" letter-spacing="3" font-weight="400">UNIFIED AI CONVERSATION MANAGER</text>
+
+  <!-- Feature text row -->
+  <text x="640" y="560" font-family="'DM Sans', system-ui, sans-serif" font-size="15" text-anchor="middle" letter-spacing="0.3">
+    <tspan fill="#64748B">Auto Capture</tspan>
+    <tspan dx="20" fill="#334155">·</tspan>
+    <tspan dx="20" fill="#64748B">Full-Text Search</tspan>
+    <tspan dx="20" fill="#334155">·</tspan>
+    <tspan dx="20" fill="#64748B">Cloud Sync</tspan>
+    <tspan dx="20" fill="#334155">·</tspan>
+    <tspan dx="20" fill="#64748B">Import / Export</tspan>
+  </text>
+
+  <!-- Additional subtle decorative rings around logo -->
+  <circle cx="640" cy="310" r="130" fill="none" stroke="#1e2a3a" stroke-width="0.5" opacity="0.4"/>
+  <circle cx="640" cy="310" r="160" fill="none" stroke="#1e2a3a" stroke-width="0.3" opacity="0.2"/>
+</svg>

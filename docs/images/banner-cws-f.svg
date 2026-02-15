@@ -1,0 +1,120 @@
+<svg width="1280" height="800" viewBox="0 0 1280 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070a12"/>
+      <stop offset="50%" stop-color="#0f1629"/>
+      <stop offset="100%" stop-color="#070a12"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-opacity="0.015" stroke-width="0.5"/>
+    </pattern>
+    <radialGradient id="glowCenter" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbL" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D97757" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#D97757" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbR" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#10A37F" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#10A37F" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbB" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4285F4" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#4285F4" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="arcGlow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4"/>
+    </filter>
+    <filter id="titleGlow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10"/>
+    </filter>
+    <filter id="pillShadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="8" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+    <!-- Horizontal line gradient fade -->
+    <linearGradient id="lineFadeL" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#60A5FA" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#60A5FA" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="lineFadeR" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#60A5FA" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#60A5FA" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="800" fill="url(#bg)"/>
+  <rect width="1280" height="800" fill="url(#grid)"/>
+
+  <!-- Ambient orbs -->
+  <ellipse cx="300" cy="350" rx="350" ry="280" fill="url(#orbL)"/>
+  <ellipse cx="980" cy="350" rx="350" ry="280" fill="url(#orbR)"/>
+  <ellipse cx="640" cy="550" rx="400" ry="280" fill="url(#orbB)"/>
+  <ellipse cx="640" cy="380" rx="500" ry="350" fill="url(#glowCenter)"/>
+
+  <!-- Decorative horizontal lines -->
+  <line x1="0" y1="310" x2="480" y2="310" stroke="url(#lineFadeL)" stroke-width="0.5"/>
+  <line x1="800" y1="310" x2="1280" y2="310" stroke="url(#lineFadeR)" stroke-width="0.5"/>
+  <line x1="0" y1="490" x2="420" y2="490" stroke="url(#lineFadeL)" stroke-width="0.5"/>
+  <line x1="860" y1="490" x2="1280" y2="490" stroke="url(#lineFadeR)" stroke-width="0.5"/>
+
+  <!-- Large Logo -->
+  <g transform="translate(640, 220)">
+    <g opacity="0.25" filter="url(#arcGlow)">
+      <path d="M -55 -92 A 108 108 0 0 1 0 -110" stroke="#D97757" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <path d="M 55 -92 A 108 108 0 0 0 0 -110" stroke="#10A37F" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <path d="M -66 66 A 126 126 0 0 0 66 66" stroke="#4285F4" stroke-width="10" fill="none" stroke-linecap="round"/>
+    </g>
+    <path d="M -55 -92 A 108 108 0 0 1 0 -110" stroke="#D97757" stroke-width="6.5" fill="none" stroke-linecap="round"/>
+    <path d="M 55 -92 A 108 108 0 0 0 0 -110" stroke="#10A37F" stroke-width="6.5" fill="none" stroke-linecap="round"/>
+    <path d="M -66 66 A 126 126 0 0 0 66 66" stroke="#4285F4" stroke-width="6.5" fill="none" stroke-linecap="round"/>
+    <path d="M -40 -66 A 68 68 0 0 1 0 -78" stroke="#D97757" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M 40 -66 A 68 68 0 0 0 0 -78" stroke="#10A37F" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <!-- Chat bubble -->
+    <path d="M -24 -20 h 48 a 8 8 0 0 1 8 8 v 18 a 8 8 0 0 1 -8 8 h -26 l -12 12 v -12 h -10 a 8 8 0 0 1 -8 -8 v -18 a 8 8 0 0 1 8 -8 z"
+          fill="#151d35" stroke="#253050" stroke-width="1.8"/>
+    <circle cx="-10" cy="-2" r="3.2" fill="#94A3B8"/>
+    <circle cx="0" cy="-2" r="3.2" fill="#94A3B8"/>
+    <circle cx="10" cy="-2" r="3.2" fill="#94A3B8"/>
+  </g>
+
+  <!-- Title -->
+  <g opacity="0.1" filter="url(#titleGlow)">
+    <text x="640" y="405" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="800" font-size="80" fill="#60A5FA" text-anchor="middle">Chat Central</text>
+  </g>
+  <text x="640" y="405" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="800" font-size="80" text-anchor="middle" letter-spacing="3">
+    <tspan fill="#F1F5F9">Chat </tspan><tspan fill="#60A5FA">Central</tspan>
+  </text>
+
+  <!-- Tagline (large, bold) -->
+  <text x="640" y="460" font-family="'DM Sans', system-ui, sans-serif" font-size="24" fill="#94A3B8" text-anchor="middle" font-weight="400">Manage conversations from every AI, in one place.</text>
+
+  <!-- Feature keywords in a clean row -->
+  <g transform="translate(640, 555)">
+    <g transform="translate(-340, 0)">
+      <rect x="-56" y="-14" width="112" height="28" rx="6" fill="#1a2240" stroke="#232d44" stroke-width="0.8"/>
+      <text x="0" y="4" font-family="'DM Sans', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle" font-weight="500">Auto Capture</text>
+    </g>
+    <g transform="translate(-170, 0)">
+      <rect x="-60" y="-14" width="120" height="28" rx="6" fill="#1a2240" stroke="#232d44" stroke-width="0.8"/>
+      <text x="0" y="4" font-family="'DM Sans', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle" font-weight="500">Smart Search</text>
+    </g>
+    <g transform="translate(0, 0)">
+      <rect x="-52" y="-14" width="104" height="28" rx="6" fill="#1a2240" stroke="#232d44" stroke-width="0.8"/>
+      <text x="0" y="4" font-family="'DM Sans', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle" font-weight="500">Cloud Sync</text>
+    </g>
+    <g transform="translate(170, 0)">
+      <rect x="-62" y="-14" width="124" height="28" rx="6" fill="#1a2240" stroke="#232d44" stroke-width="0.8"/>
+      <text x="0" y="4" font-family="'DM Sans', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle" font-weight="500">Import / Export</text>
+    </g>
+    <g transform="translate(340, 0)">
+      <rect x="-66" y="-14" width="132" height="28" rx="6" fill="#1a2240" stroke="#232d44" stroke-width="0.8"/>
+      <text x="0" y="4" font-family="'DM Sans', system-ui, sans-serif" font-size="12" fill="#64748B" text-anchor="middle" font-weight="500">Tags &amp; Favorites</text>
+    </g>
+  </g>
+
+  <!-- Bottom line -->
+  <text x="640" y="640" font-family="'DM Sans', system-ui, sans-serif" font-size="13" fill="#2a3244" text-anchor="middle" letter-spacing="2">FREE &amp; OPEN SOURCE CHROME EXTENSION</text>
+</svg>

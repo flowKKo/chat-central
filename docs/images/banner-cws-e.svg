@@ -1,0 +1,126 @@
+<svg width="1280" height="800" viewBox="0 0 1280 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070a12"/>
+      <stop offset="50%" stop-color="#0f1629"/>
+      <stop offset="100%" stop-color="#070a12"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-opacity="0.02" stroke-width="0.5"/>
+    </pattern>
+    <radialGradient id="heroGlow" cx="50%" cy="45%" r="45%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.14"/>
+      <stop offset="50%" stop-color="#3b82f6" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbOrange" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D97757" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#D97757" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbGreen" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#10A37F" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#10A37F" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orbBlue" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4285F4" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#4285F4" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="arcGlow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4"/>
+    </filter>
+    <filter id="titleGlow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12"/>
+    </filter>
+    <filter id="badgeShadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="800" fill="url(#bg)"/>
+  <rect width="1280" height="800" fill="url(#grid)"/>
+  <ellipse cx="640" cy="360" rx="650" ry="420" fill="url(#heroGlow)"/>
+
+  <!-- Ambient platform orbs -->
+  <ellipse cx="280" cy="250" rx="280" ry="220" fill="url(#orbOrange)"/>
+  <ellipse cx="1000" cy="250" rx="280" ry="220" fill="url(#orbGreen)"/>
+  <ellipse cx="640" cy="620" rx="320" ry="220" fill="url(#orbBlue)"/>
+
+  <!-- Large Logo (centered, prominent) -->
+  <g transform="translate(640, 200)">
+    <g opacity="0.3" filter="url(#arcGlow)">
+      <path d="M -48 -80 A 94 94 0 0 1 0 -96" stroke="#D97757" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <path d="M 48 -80 A 94 94 0 0 0 0 -96" stroke="#10A37F" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <path d="M -58 58 A 110 110 0 0 0 58 58" stroke="#4285F4" stroke-width="9" fill="none" stroke-linecap="round"/>
+    </g>
+    <path d="M -48 -80 A 94 94 0 0 1 0 -96" stroke="#D97757" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M 48 -80 A 94 94 0 0 0 0 -96" stroke="#10A37F" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M -58 58 A 110 110 0 0 0 58 58" stroke="#4285F4" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <!-- Inner arcs -->
+    <path d="M -34 -58 A 60 60 0 0 1 0 -68" stroke="#D97757" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+    <path d="M 34 -58 A 60 60 0 0 0 0 -68" stroke="#10A37F" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+    <!-- Chat bubble -->
+    <path d="M -20 -18 h 40 a 7 7 0 0 1 7 7 v 16 a 7 7 0 0 1 -7 7 h -22 l -10 10 v -10 h -8 a 7 7 0 0 1 -7 -7 v -16 a 7 7 0 0 1 7 -7 z"
+          fill="#1a2240" stroke="#2a3558" stroke-width="1.5"/>
+    <circle cx="-9" cy="-2" r="3" fill="#94A3B8"/>
+    <circle cx="0" cy="-2" r="3" fill="#94A3B8"/>
+    <circle cx="9" cy="-2" r="3" fill="#94A3B8"/>
+  </g>
+
+  <!-- Title with glow -->
+  <g opacity="0.12" filter="url(#titleGlow)">
+    <text x="640" y="380" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="800" font-size="88" fill="#60A5FA" text-anchor="middle">Chat Central</text>
+  </g>
+  <text x="640" y="380" font-family="'Space Grotesk', system-ui, sans-serif" font-weight="800" font-size="88" text-anchor="middle" letter-spacing="2">
+    <tspan fill="#F1F5F9">Chat </tspan><tspan fill="#60A5FA">Central</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="640" y="440" font-family="'DM Sans', system-ui, sans-serif" font-size="26" fill="#94A3B8" text-anchor="middle" font-weight="400" letter-spacing="0.5">All Your AI Conversations in One Place</text>
+
+  <!-- Feature icons row -->
+  <g transform="translate(640, 550)" text-anchor="middle">
+    <g transform="translate(-360, 0)">
+      <circle cx="0" cy="0" r="18" fill="#1a2240" stroke="#232d44" stroke-width="1"/>
+      <g transform="translate(-6, -6)" fill="none" stroke="#60A5FA" stroke-width="1.3" stroke-linecap="round">
+        <path d="M 4 0 v 8 l 4 4"/>
+        <circle cx="6" cy="6" r="5.5"/>
+      </g>
+      <text x="0" y="32" font-family="'DM Sans', system-ui, sans-serif" font-size="13" fill="#64748B">Auto Capture</text>
+    </g>
+    <g transform="translate(-180, 0)">
+      <circle cx="0" cy="0" r="18" fill="#1a2240" stroke="#232d44" stroke-width="1"/>
+      <g transform="translate(-6, -6)" fill="none" stroke="#60A5FA" stroke-width="1.3" stroke-linecap="round">
+        <circle cx="5.5" cy="5.5" r="5"/>
+        <line x1="9" y1="9" x2="12" y2="12"/>
+      </g>
+      <text x="0" y="32" font-family="'DM Sans', system-ui, sans-serif" font-size="13" fill="#64748B">Smart Search</text>
+    </g>
+    <g transform="translate(0, 0)">
+      <circle cx="0" cy="0" r="18" fill="#1a2240" stroke="#232d44" stroke-width="1"/>
+      <g transform="translate(-6, -7)" fill="none" stroke="#60A5FA" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 4 10 A 4.5 4.5 0 0 1 4 2 A 5.5 5.5 0 0 1 12 2 A 4 4 0 0 1 12 10 Z"/>
+      </g>
+      <text x="0" y="32" font-family="'DM Sans', system-ui, sans-serif" font-size="13" fill="#64748B">Cloud Sync</text>
+    </g>
+    <g transform="translate(180, 0)">
+      <circle cx="0" cy="0" r="18" fill="#1a2240" stroke="#232d44" stroke-width="1"/>
+      <g transform="translate(-5.5, -6)" fill="none" stroke="#60A5FA" stroke-width="1.3" stroke-linecap="round">
+        <rect x="1" y="1" width="10" height="10" rx="1"/>
+        <path d="M 4 6 l 2 2 3 -4"/>
+      </g>
+      <text x="0" y="32" font-family="'DM Sans', system-ui, sans-serif" font-size="13" fill="#64748B">Tags &amp; Favorites</text>
+    </g>
+    <g transform="translate(360, 0)">
+      <circle cx="0" cy="0" r="18" fill="#1a2240" stroke="#232d44" stroke-width="1"/>
+      <g transform="translate(-6, -6)" fill="none" stroke="#60A5FA" stroke-width="1.3" stroke-linecap="round">
+        <path d="M 2 8 v 2 a 1 1 0 0 0 1 1 h 8 a 1 1 0 0 0 1 -1 v -2"/>
+        <path d="M 6 1 v 6 M 3.5 4.5 L 6 7 L 8.5 4.5"/>
+      </g>
+      <text x="0" y="32" font-family="'DM Sans', system-ui, sans-serif" font-size="13" fill="#64748B">Import / Export</text>
+    </g>
+  </g>
+
+  <!-- Bottom tagline -->
+  <text x="640" y="660" font-family="'DM Sans', system-ui, sans-serif" font-size="14" fill="#334155" text-anchor="middle" letter-spacing="1">FREE &amp; OPEN SOURCE CHROME EXTENSION</text>
+</svg>
