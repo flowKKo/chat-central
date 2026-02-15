@@ -436,47 +436,7 @@ chat-central/
 
 ---
 
-## 9. Important Files
-
-- `wxt.config.ts`: WXT and Manifest configuration (permissions, OAuth2, host permissions).
-- `src/types/index.ts`: Centralized types (Conversation, Message, Platform, Search, Export, Config).
-- `src/utils/platform-adapters/types.ts`: `PlatformAdapter` interface for all platform parsers.
-- `src/utils/db/schema.ts`: `ChatCentralDB` class with 4 schema versions and migrations.
-- `src/utils/db/index.ts`: Database module re-exports (all repositories, search, stats, bulk).
-- `src/entrypoints/background/index.ts`: Main background service worker (message routing, alarms, sync).
-- `src/entrypoints/background/handlers/`: Modular request handlers (capture, data queries, types, utils).
-- `src/entrypoints/widget.content/`: Floating widget entrypoint (FAB, quick actions panel).
-- `src/utils/atoms/conversations/`: Conversation state, actions (7 action modules), and batch atoms.
-- `src/utils/atoms/cloud-sync.ts`: Cloud sync state and operation atoms.
-- `src/utils/atoms/config.ts`: App config atom with hydration, cross-context watching, and Zod validation.
-- `src/utils/atoms/theme.ts`: Theme state management (light/dark/system).
-- `src/utils/sync/engine/`: Modular sync engine (cycle, pull, merge, push, resolve, types).
-- `src/utils/sync/merge.ts`: Field-level merge strategies for conflict resolution.
-- `src/utils/sync/cloud-sync.ts`: Cloud sync orchestration (download, merge, upload, auto-sync).
-- `src/utils/sync/manager.ts`: Sync state management (singleton, auto-sync, retry, events).
-- `src/utils/sync/utils.ts`: Sync utility functions.
-- `src/utils/sync/providers/cloud-types.ts`: `CloudStorageProvider` interface and error categorization.
-- `src/utils/sync/providers/google-drive/`: Google Drive provider (auth, file-operations, retry, provider).
-- `src/utils/sync/providers/rest.ts`: REST API provider template for new cloud providers.
-- `src/utils/sync/types.ts`: Sync domain types (SyncRecord, SyncState, ConflictRecord, OperationLog).
-- `src/locales/index.ts`: i18next initialization and config (en, zh-CN).
-- `src/components/ErrorBoundary.tsx`: React Error Boundary for crash prevention.
-- `src/components/settings/LanguageSettings.tsx`: Language selector with i18next integration.
-- `src/components/settings/WidgetSettings.tsx`: Widget toggle control.
-- `src/components/conversations/SummaryBlock.tsx`: Collapsible AI summary display with accessibility.
-- `src/components/ui/Tooltip.tsx`: Accessible tooltip with `aria-describedby` and position variants.
-- `src/components/ui/SettingsSection.tsx`: Reusable settings section with icon header pattern.
-- `src/hooks/useConversationSource.ts`: Atom source selector for favorites/all views.
-- `src/hooks/useConversationSearch.ts`: Search state, results, and actions.
-- `src/hooks/useBatchSelection.ts`: Batch selection state and actions.
-- `src/hooks/useConversationFilters.ts`: Filter state (tags, dates, platform).
-- `src/utils/logger.ts`: Structured logging (`createLogger` factory).
-- `src/assets/styles/globals.css`: CSS variables for theming and platform colors.
-- `scripts/dev-reload.ts`: Development reload server (WebSocket on port 3717).
-
----
-
-## 10. Troubleshooting
+## 9. Troubleshooting
 
 - **Build Errors**: Clear `.output` and `.wxt` folders. Run `pnpm install`.
 - **HMR Issues**: Reload the extension in `chrome://extensions`, or use `pnpm dev:reload` for manual control.
@@ -492,7 +452,7 @@ chat-central/
 
 ---
 
-## 11. Completed Features
+## 10. Completed Features
 
 | Feature                    | Description                                                                                                 | Related Files                                                                                                                      |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
@@ -521,7 +481,7 @@ chat-central/
 
 ---
 
-## 12. Future Roadmap
+## 11. Future Roadmap
 
 ### High Priority
 
@@ -558,7 +518,7 @@ chat-central/
 
 ---
 
-## 13. Technology Stack
+## 12. Technology Stack
 
 | Category          | Technology               | Version | Purpose                          |
 | ----------------- | ------------------------ | ------- | -------------------------------- |
