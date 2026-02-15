@@ -4,7 +4,7 @@
 
 One place for all your AI conversations.
 
-Automatically capture, search, organize, and export your AI conversations.
+Auto-capture, search, tag, and export your Claude, ChatGPT & Gemini conversations — all stored locally in your browser.
 
 **English** · [简体中文](README.zh-CN.md) · [Official Website](https://www.chatcentral.cc) · [Tutorial](https://www.chatcentral.cc/tutorial) · [Privacy](https://www.chatcentral.cc/privacy)
 
@@ -16,12 +16,12 @@ Automatically capture, search, organize, and export your AI conversations.
 
 ## Features
 
-- **Auto Capture** — Conversations saved automatically as you chat with Claude, ChatGPT, and Gemini
-- **Full-text Search** — Find any conversation instantly across all platforms
-- **Tags & Favorites** — Custom tags, star important conversations, filter by any combination
-- **Export** — Markdown, JSON, or ZIP — your data, your format
-- **Dashboard** — Full management UI with detail view, batch actions, and Markdown rendering
-- **Privacy First** — All data stored locally, zero tracking, fully open source
+- **Auto Capture** — No manual saving, it just works
+- **Instant Search** — Full-text search across every conversation
+- **Tags & Favorites** — Your system, your rules
+- **Export** — Markdown, JSON, or ZIP
+- **Dashboard** — Detail view, batch actions, Markdown rendering
+- **Private by Design** — All data stays in your browser. Zero tracking.
 
 ## Coming Soon
 
