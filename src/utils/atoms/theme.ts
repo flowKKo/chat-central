@@ -1,4 +1,6 @@
 import { atom } from 'jotai'
+import { storage } from 'wxt/storage'
+import { type Config, DEFAULT_CONFIG, configSchema } from '@/types'
 
 export type ThemePreference = 'light' | 'dark' | 'system'
 export type ResolvedTheme = 'light' | 'dark'
@@ -48,7 +50,10 @@ export const themePreferenceAtom = atom(
     // Apply theme to document
     const resolved = resolveTheme(newPreference)
     applyThemeToDocument(resolved)
-  },
+
+    // Sync to browser.storage.local config for content scripts
+    syncThemeToConfig(newPreference)
+  }
 )
 
 // Read-only atom for resolved theme
@@ -61,9 +66,24 @@ export function applyThemeToDocument(theme: ResolvedTheme): void {
   const root = document.documentElement
   if (theme === 'dark') {
     root.classList.add('dark')
-  }
-  else {
+  } else {
     root.classList.remove('dark')
+  }
+}
+
+// Sync theme preference to browser.storage.local config (for content scripts)
+export async function syncThemeToConfig(theme: ThemePreference): Promise<void> {
+  try {
+    const config = await storage.getItem<Config>('local:config')
+    const current = config ?? DEFAULT_CONFIG
+    if (current.ui.theme === theme) return
+    const updated = { ...current, ui: { ...current.ui, theme } }
+    const parsed = configSchema.safeParse(updated)
+    if (parsed.success) {
+      await storage.setItem('local:config', parsed.data)
+    }
+  } catch {
+    // Best-effort — content script theme sync is non-critical
   }
 }
 
@@ -72,11 +92,14 @@ export function initializeTheme(): void {
   const preference = getStoredPreference()
   const resolved = resolveTheme(preference)
   applyThemeToDocument(resolved)
+
+  // Sync current preference to config storage for content scripts
+  syncThemeToConfig(preference)
 }
 
 // Setup system preference change listener
 export function setupSystemThemeListener(
-  onSystemChange: (resolved: ResolvedTheme) => void,
+  onSystemChange: (resolved: ResolvedTheme) => void
 ): () => void {
   if (typeof window === 'undefined') return () => {}
 

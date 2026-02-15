@@ -1,32 +1,45 @@
 /**
- * Shared theme detection and application for content script Shadow DOM hosts.
- * Used by widget and spotlight content scripts to keep dark mode in sync
- * with the host page.
+ * Shared theme application for content script Shadow DOM hosts.
+ * Reads the theme preference from extension config (browser.storage.local)
+ * and applies the appropriate dark/light class to the Shadow DOM host.
  */
-export function applyThemeToHost(host: HTMLElement): void {
-  // Detect theme from page context
-  const isDark =
-    document.documentElement.classList.contains('dark') ||
-    document.body.classList.contains('dark') ||
-    window.matchMedia('(prefers-color-scheme: dark)').matches
+import { storage } from 'wxt/storage'
+import { type Config, DEFAULT_CONFIG } from '@/types'
 
-  if (isDark) {
-    host.classList.add('dark')
+type ThemePreference = 'light' | 'dark' | 'system'
+
+function isDark(preference: ThemePreference): boolean {
+  if (preference === 'dark') return true
+  if (preference === 'light') return false
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+
+function getThemeFromConfig(config: Config | null): ThemePreference {
+  return (config?.ui?.theme ?? DEFAULT_CONFIG.ui.theme) as ThemePreference
+}
+
+export function applyThemeToHost(host: HTMLElement): void {
+  function apply(config: Config | null): void {
+    host.classList.toggle('dark', isDark(getThemeFromConfig(config)))
   }
 
-  // Watch for system theme changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    host.classList.toggle('dark', e.matches)
-  })
+  // Initial read from extension config
+  storage
+    .getItem<Config>('local:config')
+    .then(apply)
+    .catch(() => {
+      // Fallback to system preference
+      host.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches)
+    })
 
-  // Watch for page class changes (Claude/ChatGPT toggle dark mode via class)
-  const observer = new MutationObserver(() => {
-    const dark =
-      document.documentElement.classList.contains('dark') ||
-      document.body.classList.contains('dark')
-    host.classList.toggle('dark', dark)
-  })
+  // Watch for config changes (user changes theme in settings)
+  storage.watch<Config>('local:config', apply)
 
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+  // Watch for system theme changes (relevant when preference is 'system')
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    storage
+      .getItem<Config>('local:config')
+      .then(apply)
+      .catch(() => {})
+  })
 }

@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createStore } from 'jotai'
+import { DEFAULT_CONFIG } from '@/types'
+
+// Mock wxt/storage
+const mockStorage = vi.hoisted(() => ({
+  getItem: vi.fn().mockResolvedValue(null),
+  setItem: vi.fn().mockResolvedValue(undefined),
+  watch: vi.fn().mockReturnValue(() => {}),
+}))
+vi.mock('wxt/storage', () => ({ storage: mockStorage }))
 
 // Setup localStorage mock before importing theme module
 const localStorageMock = {
@@ -41,8 +50,13 @@ Object.defineProperty(window, 'matchMedia', {
 })
 
 // Import after localStorage is mocked
-const { themePreferenceAtom, resolvedThemeAtom, applyThemeToDocument, initializeTheme }
-  = await import('./theme')
+const {
+  themePreferenceAtom,
+  resolvedThemeAtom,
+  applyThemeToDocument,
+  initializeTheme,
+  syncThemeToConfig,
+} = await import('./theme')
 
 describe('theme atoms', () => {
   let store: ReturnType<typeof createStore>
@@ -52,6 +66,8 @@ describe('theme atoms', () => {
     localStorageMock.store = {}
     localStorageMock.getItem.mockClear()
     localStorageMock.setItem.mockClear()
+    mockStorage.getItem.mockReset().mockResolvedValue(null)
+    mockStorage.setItem.mockReset().mockResolvedValue(undefined)
     document.documentElement.classList.remove('dark')
   })
 
@@ -113,6 +129,50 @@ describe('theme atoms', () => {
       initializeTheme()
       // system -> light in jsdom
       expect(document.documentElement.classList.contains('dark')).toBe(false)
+    })
+
+    it('should sync theme to config storage on init', () => {
+      localStorageMock.store['chat-central-theme'] = 'dark'
+      initializeTheme()
+      expect(mockStorage.getItem).toHaveBeenCalledWith('local:config')
+    })
+  })
+
+  describe('syncThemeToConfig', () => {
+    it('should write theme to config storage when different from current', async () => {
+      mockStorage.getItem.mockResolvedValue(DEFAULT_CONFIG)
+      await syncThemeToConfig('dark')
+      expect(mockStorage.setItem).toHaveBeenCalledWith(
+        'local:config',
+        expect.objectContaining({ ui: expect.objectContaining({ theme: 'dark' }) })
+      )
+    })
+
+    it('should skip write when theme is already the same', async () => {
+      mockStorage.getItem.mockResolvedValue(DEFAULT_CONFIG) // default theme is 'system'
+      await syncThemeToConfig('system')
+      expect(mockStorage.setItem).not.toHaveBeenCalled()
+    })
+
+    it('should use DEFAULT_CONFIG when no config exists in storage', async () => {
+      mockStorage.getItem.mockResolvedValue(null)
+      await syncThemeToConfig('light')
+      expect(mockStorage.setItem).toHaveBeenCalledWith(
+        'local:config',
+        expect.objectContaining({ ui: expect.objectContaining({ theme: 'light' }) })
+      )
+    })
+
+    it('should not throw when storage fails', async () => {
+      mockStorage.getItem.mockRejectedValue(new Error('storage error'))
+      await expect(syncThemeToConfig('dark')).resolves.toBeUndefined()
+    })
+  })
+
+  describe('themePreferenceAtom config sync', () => {
+    it('should sync theme to config storage when preference changes', () => {
+      store.set(themePreferenceAtom, 'dark')
+      expect(mockStorage.getItem).toHaveBeenCalledWith('local:config')
     })
   })
 })
