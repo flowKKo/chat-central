@@ -11,6 +11,7 @@ const CLAUDE_ORG_ID_KEY = 'claude_org_id'
 const DEFAULT_FETCH_INTERVAL_MS = 800
 const DEFAULT_POLL_INTERVAL_MS = 500
 const DEFAULT_POLL_TIMEOUT_MS = 15_000
+const TAB_LOAD_TIMEOUT_MS = 15_000
 
 /** Per-batch token to prevent race conditions between concurrent batch fetches */
 let activeBatchToken: string | null = null
@@ -29,10 +30,10 @@ export interface BatchFetchProgress {
 export interface PlatformFetchStrategy {
   tabPatterns: string[]
   noTabError: string
-  buildDetailUrl: (originalId: string) => Promise<string> | string
+  buildDetailUrl: (originalId: string) => string
   mode: 'fetch' | 'navigate'
-  /** Pre-fetch validation (e.g. Claude org_id check). Returns error string or null. */
-  validate?: () => Promise<string | null>
+  /** One-time init before batch loop. Caches prerequisites (e.g. orgId). Returns error string or null. */
+  init?: () => Promise<string | null>
   pollTimeoutMs?: number
   fetchIntervalMs?: number
 }
@@ -45,19 +46,22 @@ export async function getClaudeOrgId(): Promise<string | null> {
   return (result[CLAUDE_ORG_ID_KEY] as string) ?? null
 }
 
+/** Cached org_id for the current batch, set during claude.init() */
+let cachedClaudeOrgId: string | null = null
+
 const strategies: Record<Platform, PlatformFetchStrategy> = {
   claude: {
     tabPatterns: ['https://claude.ai/*'],
     noTabError: 'No Claude tab open. Please open claude.ai in a tab.',
     mode: 'fetch',
-    async validate() {
-      const orgId = await getClaudeOrgId()
-      if (!orgId) return 'Claude org_id not found. Please visit claude.ai first to capture it.'
+    async init() {
+      cachedClaudeOrgId = await getClaudeOrgId()
+      if (!cachedClaudeOrgId)
+        return 'Claude org_id not found. Please visit claude.ai first to capture it.'
       return null
     },
-    async buildDetailUrl(originalId: string) {
-      const orgId = await getClaudeOrgId()
-      return `https://claude.ai/api/organizations/${orgId}/chat_conversations/${originalId}`
+    buildDetailUrl(originalId: string) {
+      return `https://claude.ai/api/organizations/${cachedClaudeOrgId}/chat_conversations/${originalId}`
     },
   },
   chatgpt: {
@@ -70,7 +74,7 @@ const strategies: Record<Platform, PlatformFetchStrategy> = {
   },
   gemini: {
     tabPatterns: ['https://gemini.google.com/*'],
-    noTabError: 'No Gemini tab found. A background tab will be created.',
+    noTabError: 'Failed to create Gemini tab.',
     mode: 'navigate',
     pollTimeoutMs: 20_000,
     fetchIntervalMs: 3_000,
@@ -98,14 +102,42 @@ export async function findPlatformTab(patterns: string[]): Promise<number | null
   return active?.id ?? tabs[0]?.id ?? null
 }
 
-// ── Legacy Exports (kept for backward compatibility) ──
+/**
+ * Wait for a tab to finish loading using tabs.onUpdated listener with timeout fallback
+ */
+export function waitForTabLoad(
+  tabId: number,
+  timeoutMs: number = TAB_LOAD_TIMEOUT_MS
+): Promise<void> {
+  return new Promise((resolve) => {
+    let settled = false
 
-export async function findClaudeTab(): Promise<number | null> {
-  return findPlatformTab(strategies.claude.tabPatterns)
+    const listener = (updatedTabId: number, changeInfo: { status?: string }) => {
+      if (updatedTabId === tabId && changeInfo.status === 'complete') {
+        cleanup() // eslint-disable-line ts/no-use-before-define -- mutual reference
+      }
+    }
+
+    const cleanup = () => {
+      if (settled) return
+      settled = true
+      browser.tabs.onUpdated.removeListener(listener)
+      resolve()
+    }
+
+    browser.tabs.onUpdated.addListener(listener)
+    setTimeout(cleanup, timeoutMs)
+  })
 }
 
-export function buildDetailApiUrl(orgId: string, originalId: string): string {
-  return `https://claude.ai/api/organizations/${orgId}/chat_conversations/${originalId}`
+/**
+ * Create a background tab for navigate mode and wait for it to load
+ */
+async function createBackgroundTab(baseUrl: string): Promise<number | null> {
+  const tab = await browser.tabs.create({ url: baseUrl, active: false })
+  if (!tab.id) return null
+  await waitForTabLoad(tab.id)
+  return tab.id
 }
 
 // ── Core Logic ──
@@ -144,7 +176,8 @@ function blobToBase64(blob: Blob): Promise<string> {
 }
 
 /**
- * Execute a single detail fetch using the strategy's mode
+ * Execute a single detail fetch using the strategy's mode.
+ * For navigate mode, waits for tab load before returning.
  */
 async function executeFetch(
   strategy: PlatformFetchStrategy,
@@ -153,6 +186,7 @@ async function executeFetch(
 ): Promise<void> {
   if (strategy.mode === 'navigate') {
     await browser.tabs.update(tabId, { url })
+    await waitForTabLoad(tabId)
   } else {
     await browser.tabs.sendMessage(tabId, {
       action: 'FETCH_CONVERSATION_DETAIL',
@@ -200,11 +234,11 @@ export async function batchFetchDetails(platform: Platform, limit?: number): Pro
     return
   }
 
-  // Platform-specific validation (e.g. Claude org_id)
-  if (strategy.validate) {
-    const validationError = await strategy.validate()
-    if (validationError) {
-      sendProgress({ status: 'error', completed: 0, total: toFetch.length, error: validationError })
+  // Platform-specific init (e.g. cache Claude org_id)
+  if (strategy.init) {
+    const initError = await strategy.init()
+    if (initError) {
+      sendProgress({ status: 'error', completed: 0, total: toFetch.length, error: initError })
       return
     }
   }
@@ -216,15 +250,11 @@ export async function batchFetchDetails(platform: Platform, limit?: number): Pro
   if (tabId === null) {
     // For navigate mode, create a background tab
     if (strategy.mode === 'navigate') {
-      const tab = await browser.tabs.create({
-        url: strategy.tabPatterns[0]!.replace('/*', '/'),
-        active: false,
-      })
-      if (tab.id) {
-        tabId = tab.id
-        createdTabId = tab.id
-        // Wait for tab to load
-        await new Promise((resolve) => setTimeout(resolve, 3_000))
+      const baseUrl = strategy.tabPatterns[0]!.replace('/*', '/')
+      const newTabId = await createBackgroundTab(baseUrl)
+      if (newTabId) {
+        tabId = newTabId
+        createdTabId = newTabId
       }
     }
 
@@ -251,29 +281,43 @@ export async function batchFetchDetails(platform: Platform, limit?: number): Pro
       return
     }
 
-    const url = await strategy.buildDetailUrl(originalId)
+    const url = strategy.buildDetailUrl(originalId)
     log.info(`Fetching detail for ${id}: ${url}`)
 
     try {
       await executeFetch(strategy, tabId, url)
     } catch (e) {
       log.warn(`Failed to send fetch request to ${platform} tab for ${id}:`, e)
-      // Try to find another tab
-      const newTabId = await findPlatformTab(strategy.tabPatterns)
-      if (newTabId === null || newTabId === tabId) {
-        sendProgress({
-          status: 'error',
-          completed,
-          total,
-          error: `${platform} tab was closed or became unavailable.`,
-        })
+
+      if (strategy.mode === 'navigate') {
+        // Navigate mode: re-create the tab instead of searching
         await cleanupCreatedTab(createdTabId)
-        return
+        const baseUrl = strategy.tabPatterns[0]!.replace('/*', '/')
+        const newTabId = await createBackgroundTab(baseUrl)
+        if (!newTabId) {
+          sendProgress({ status: 'error', completed, total, error: strategy.noTabError })
+          return
+        }
+        tabId = newTabId
+        createdTabId = newTabId
+      } else {
+        // Fetch mode: try to find another tab
+        const newTabId = await findPlatformTab(strategy.tabPatterns)
+        if (newTabId === null || newTabId === tabId) {
+          sendProgress({
+            status: 'error',
+            completed,
+            total,
+            error: `${platform} tab was closed or became unavailable.`,
+          })
+          return
+        }
+        tabId = newTabId
       }
-      tabId = newTabId
+
       // Retry with the new tab
       try {
-        await executeFetch(strategy, newTabId, url)
+        await executeFetch(strategy, tabId, url)
       } catch {
         log.warn(`Retry also failed for ${id}, skipping`)
         completed++
