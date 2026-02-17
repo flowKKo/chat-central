@@ -129,14 +129,22 @@ export async function searchConversationsWithMatches(
   const allConvIdsForMessageSearch = [...new Set([...candidateConvIds, ...shortQueryConvIds])]
   const messageMatches: Message[] = []
 
-  for (const convId of allConvIdsForMessageSearch) {
-    const msgs = await db.messages
+  if (allConvIdsForMessageSearch.length > 0) {
+    const allMsgs = await db.messages
       .where('conversationId')
-      .equals(convId)
+      .anyOf(allConvIdsForMessageSearch)
       .filter((msg) => msg.content.toLowerCase().includes(lowerQuery))
-      .limit(10)
       .toArray()
-    messageMatches.push(...msgs)
+
+    // Limit to 10 messages per conversation
+    const countByConv = new Map<string, number>()
+    for (const msg of allMsgs) {
+      const count = countByConv.get(msg.conversationId) ?? 0
+      if (count < 10) {
+        messageMatches.push(msg)
+        countByConv.set(msg.conversationId, count + 1)
+      }
+    }
   }
 
   // Group messages by conversation

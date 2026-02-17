@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { User, Bot } from 'lucide-react'
 import type { Message } from '@/types'
 import { cn } from '@/utils/cn'
@@ -9,6 +10,7 @@ interface MessageBubbleProps {
 }
 
 export function MessageBubble({ message, platformColor }: MessageBubbleProps) {
+  const { t } = useTranslation('conversations')
   const isUser = message.role === 'user'
 
   return (
@@ -40,7 +42,7 @@ export function MessageBubble({ message, platformColor }: MessageBubbleProps) {
       >
         <div className="mb-1.5 flex items-center justify-between gap-2">
           <span className="text-xs font-medium text-muted-foreground">
-            {isUser ? 'You' : 'Assistant'}
+            {isUser ? t('you') : t('assistant')}
           </span>
           {message.createdAt && (
             <span className="text-[10px] tabular-nums text-muted-foreground/50">

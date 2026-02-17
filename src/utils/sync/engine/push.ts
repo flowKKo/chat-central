@@ -44,6 +44,9 @@ export async function pushChanges(
     const conversationIdSet = new Set(conversationRecords.map((r) => r.id))
     const messageIdSet = new Set(messageRecords.map((r) => r.id))
 
+    // Fetch pending operations once before the loop to avoid N+1 queries
+    const pendingOps = await getPendingOperations()
+
     // Push in batches
     for (let i = 0; i < allRecords.length; i += batchSize) {
       const batch = allRecords.slice(i, i + batchSize)
@@ -66,8 +69,7 @@ export async function pushChanges(
       // Clear dirty flags for successful records
       await clearDirtyFlags(appliedConvIds, appliedMsgIds)
 
-      // Mark operations as synced (O(n) with Set lookup)
-      const pendingOps = await getPendingOperations()
+      // Mark operations as synced (filter from pre-fetched list)
       const syncedOpIds = pendingOps.filter((op) => appliedSet.has(op.entityId)).map((op) => op.id)
       if (syncedOpIds.length > 0) {
         await markOperationsSynced(syncedOpIds)

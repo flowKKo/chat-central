@@ -42,5 +42,7 @@
   "addTag": "Add tag",
   "addTagPlaceholder": "Add tag...",
   "createTag": "Create \"{{tag}}\"",
-  "conversationList": "Conversation list"
+  "conversationList": "Conversation list",
+  "you": "You",
+  "assistant": "Assistant"
 }

@@ -42,5 +42,7 @@
   "addTag": "添加标签",
   "addTagPlaceholder": "添加标签...",
   "createTag": "创建 \"{{tag}}\"",
-  "conversationList": "对话列表"
+  "conversationList": "对话列表",
+  "you": "你",
+  "assistant": "助手"
 }
