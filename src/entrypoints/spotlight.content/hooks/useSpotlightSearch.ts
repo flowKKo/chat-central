@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { browser } from 'wxt/browser'
 import type { Conversation } from '@/types'
 import type { SearchResultWithMatches } from '@/utils/db/search'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('SpotlightSearch')
 
 export interface SpotlightResult {
   conversation: Conversation
@@ -69,7 +72,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
           setHasMore(res.hasMore ?? false)
         }
       })
-      .catch(() => {})
+      .catch((e: unknown) => log.debug('Failed to load recent conversations:', e))
       .finally(() => {
         if (searchVersionRef.current === version) {
           setIsLoading(false)
@@ -109,7 +112,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
             setHasMore(res.hasMore ?? false)
           }
         })
-        .catch(() => {})
+        .catch((e: unknown) => log.debug('Failed to load recent conversations:', e))
       return
     }
 
@@ -136,7 +139,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
             setHasMore(res.hasMore ?? false)
           }
         })
-        .catch(() => {})
+        .catch((e: unknown) => log.debug('Search request failed:', e))
         .finally(() => {
           if (searchVersionRef.current === version) {
             setIsLoading(false)
@@ -199,7 +202,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
           }
         }
       })
-      .catch(() => {})
+      .catch((e: unknown) => log.debug('Load more failed:', e))
       .finally(() => {
         setIsLoadingMore(false)
       })

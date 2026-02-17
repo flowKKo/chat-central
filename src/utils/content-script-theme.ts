@@ -5,6 +5,9 @@
  */
 import { storage } from 'wxt/storage'
 import { type Config, DEFAULT_CONFIG } from '@/types'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('ContentScriptTheme')
 
 type ThemePreference = 'light' | 'dark' | 'system'
 
@@ -40,6 +43,6 @@ export function applyThemeToHost(host: HTMLElement): void {
     storage
       .getItem<Config>('local:config')
       .then(apply)
-      .catch(() => {})
+      .catch((e: unknown) => log.debug('Failed to read config for theme:', e))
   })
 }

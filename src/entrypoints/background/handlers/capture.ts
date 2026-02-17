@@ -50,7 +50,7 @@ export async function handleCapturedResponse(
 
   // Store Claude org_id for active detail fetching
   if (adapter.platform === 'claude') {
-    extractAndStoreOrgId(url).catch(() => {})
+    extractAndStoreOrgId(url).catch((e: unknown) => log.debug('Failed to store org ID:', e))
   }
 
   const endpointType = adapter.getEndpointType(url)

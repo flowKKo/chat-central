@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { browser } from 'wxt/browser'
 import type { Platform } from '@/types'
 import type { BatchFetchProgress } from '@/entrypoints/background/services/detailFetch'
+import { createLogger } from '@/utils/logger'
+
+const log = createLogger('WidgetPanel')
 
 interface WidgetPanelProps {
   platform: Platform
@@ -103,7 +106,9 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
   }, [])
 
   const openDashboard = useCallback(() => {
-    browser.runtime.sendMessage({ action: 'GET_SYNC_STATUS' }).catch(() => {})
+    browser.runtime
+      .sendMessage({ action: 'GET_SYNC_STATUS' })
+      .catch((e: unknown) => log.debug('sendMessage failed:', e))
     browser.runtime.sendMessage({
       action: 'OPEN_EXTENSION_PAGE',
       path: '/manage.html#/conversations',
@@ -152,7 +157,9 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
   }, [platform, selectedQuantity])
 
   const handleCancelExport = useCallback(() => {
-    browser.runtime.sendMessage({ action: 'BATCH_FETCH_CANCEL' }).catch(() => {})
+    browser.runtime
+      .sendMessage({ action: 'BATCH_FETCH_CANCEL' })
+      .catch((e: unknown) => log.debug('sendMessage failed:', e))
     setExportState('idle')
     setProgress({ completed: 0, total: 0 })
   }, [])
