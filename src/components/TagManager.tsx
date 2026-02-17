@@ -5,6 +5,7 @@ import { cn } from '@/utils/cn'
 import { TagPill } from './ui/TagPill'
 
 const EMPTY_TAGS: string[] = []
+const MAX_SUGGESTIONS = 5
 
 interface TagManagerProps {
   /** Current tags */
@@ -57,7 +58,7 @@ function TagInput({
 
     return allTags
       .filter((tag) => tag.toLowerCase().includes(lowerInput) && !existingTagSet.has(tag))
-      .slice(0, 5)
+      .slice(0, MAX_SUGGESTIONS)
   }, [inputValue, allTags, existingTagSet])
 
   // Check if input is a new tag (not in suggestions and not already added)

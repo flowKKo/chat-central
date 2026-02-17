@@ -15,6 +15,8 @@ import {
 } from '@/utils/atoms'
 import { cn } from '@/utils/cn'
 
+const MAX_BADGE_COUNT = 999
+
 interface NavItem {
   path: string
   label: string
@@ -109,7 +111,7 @@ export function Sidebar() {
                               : 'bg-muted text-muted-foreground'
                           )}
                         >
-                          {badgeCount > 999 ? '999+' : badgeCount}
+                          {badgeCount > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : badgeCount}
                         </span>
                       )}
                     </>
