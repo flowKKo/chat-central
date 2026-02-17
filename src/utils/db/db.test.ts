@@ -205,6 +205,113 @@ describe('conversations repository', () => {
       expect(results).toHaveLength(1)
       expect(results[0]!.id).toBe('c1')
     })
+
+    it('should sort by createdAt with platform filter (in-memory sort)', async () => {
+      const results = await getConversations({ platform: 'claude', orderBy: 'createdAt' })
+      expect(results).toHaveLength(2)
+      expect(results[0]!.id).toBe('c3') // createdAt: 3000
+      expect(results[1]!.id).toBe('c1') // createdAt: 1000
+    })
+
+    it('should sort by syncedAt with platform filter (in-memory sort)', async () => {
+      await upsertConversations([
+        makeConversation({ id: 's1', platform: 'gemini', syncedAt: 5000 }),
+        makeConversation({ id: 's2', platform: 'gemini', syncedAt: 3000 }),
+        makeConversation({ id: 's3', platform: 'gemini', syncedAt: 7000 }),
+      ])
+      const results = await getConversations({ platform: 'gemini', orderBy: 'syncedAt' })
+      expect(results).toHaveLength(3)
+      expect(results[0]!.id).toBe('s3') // syncedAt: 7000
+      expect(results[1]!.id).toBe('s1') // syncedAt: 5000
+      expect(results[2]!.id).toBe('s2') // syncedAt: 3000
+    })
+
+    it('should filter by dateRange start', async () => {
+      const results = await getConversations({ dateRange: { start: 2000, end: null } })
+      expect(results).toHaveLength(2)
+      // c1 updatedAt: 3000, c3 updatedAt: 2000
+      expect(results.map((r) => r.id)).toEqual(['c1', 'c3'])
+    })
+
+    it('should filter by dateRange end', async () => {
+      const results = await getConversations({ dateRange: { start: null, end: 2000 } })
+      expect(results).toHaveLength(2)
+      // c3 updatedAt: 2000, c2 updatedAt: 1000
+      expect(results.map((r) => r.id)).toEqual(['c3', 'c2'])
+    })
+
+    it('should filter by dateRange start and end', async () => {
+      const results = await getConversations({ dateRange: { start: 1500, end: 2500 } })
+      expect(results).toHaveLength(1)
+      expect(results[0]!.id).toBe('c3') // updatedAt: 2000
+    })
+
+    it('should combine platform + dateRange + limit', async () => {
+      await upsertConversations([
+        makeConversation({ id: 'c4', platform: 'claude', updatedAt: 4000, createdAt: 500 }),
+        makeConversation({ id: 'c5', platform: 'claude', updatedAt: 5000, createdAt: 100 }),
+      ])
+
+      const results = await getConversations({
+        platform: 'claude',
+        dateRange: { start: 2000, end: null },
+        limit: 2,
+      })
+      // claude conversations with updatedAt >= 2000: c5(5000), c4(4000), c1(3000), c3(2000)
+      expect(results).toHaveLength(2)
+      expect(results[0]!.id).toBe('c5')
+      expect(results[1]!.id).toBe('c4')
+    })
+
+    it('should combine favoritesOnly + platform', async () => {
+      await updateConversationFavorite('c1', true) // claude
+      await updateConversationFavorite('c3', true) // claude
+
+      const results = await getConversations({ platform: 'claude', favoritesOnly: true })
+      expect(results).toHaveLength(2)
+      results.forEach((r) => {
+        expect(r.platform).toBe('claude')
+        expect(r.isFavorite).toBe(true)
+      })
+    })
+
+    it('should return empty for dateRange that excludes all', async () => {
+      const results = await getConversations({ dateRange: { start: 9000, end: 10000 } })
+      expect(results).toHaveLength(0)
+    })
+
+    it('should handle limit exceeding total count', async () => {
+      const results = await getConversations({ limit: 100 })
+      expect(results).toHaveLength(3)
+    })
+
+    it('should handle offset beyond total count', async () => {
+      const results = await getConversations({ offset: 100 })
+      expect(results).toHaveLength(0)
+    })
+
+    it('should handle dateRange with both null (no filtering)', async () => {
+      const results = await getConversations({ dateRange: { start: null, end: null } })
+      expect(results).toHaveLength(3)
+    })
+
+    it('should paginate with dateRange filter', async () => {
+      const page1 = await getConversations({
+        dateRange: { start: 1000, end: 3000 },
+        limit: 1,
+        offset: 0,
+      })
+      expect(page1).toHaveLength(1)
+      expect(page1[0]!.id).toBe('c1') // updatedAt: 3000
+
+      const page2 = await getConversations({
+        dateRange: { start: 1000, end: 3000 },
+        limit: 1,
+        offset: 1,
+      })
+      expect(page2).toHaveLength(1)
+      expect(page2[0]!.id).toBe('c3') // updatedAt: 2000
+    })
   })
 
   describe('updateConversationFavorite', () => {
