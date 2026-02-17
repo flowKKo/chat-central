@@ -167,18 +167,22 @@ function injectXHRInterceptor() {
     const url = this._chatCentralUrl
 
     if (url && shouldCapture(url)) {
-      this.addEventListener('load', function () {
-        try {
-          log.debug('Captured XHR response length:', this.responseText.length)
-          const data = tryParseResponse(this.responseText)
-          if (data) {
-            log.debug('Successfully parsed XHR response for:', url)
-            sendCapturedData(url, data)
+      this.addEventListener(
+        'load',
+        function () {
+          try {
+            log.debug('Captured XHR response length:', this.responseText.length)
+            const data = tryParseResponse(this.responseText)
+            if (data) {
+              log.debug('Successfully parsed XHR response for:', url)
+              sendCapturedData(url, data)
+            }
+          } catch (e) {
+            log.error('Failed to process XHR response:', e)
           }
-        } catch (e) {
-          log.error('Failed to process XHR response:', e)
-        }
-      })
+        },
+        { once: true }
+      )
     }
 
     return originalSend.call(this, body)
@@ -196,6 +200,15 @@ function setupFetchListener() {
 
     const url = event.data.url as string
     if (!url) return
+
+    // Validate URL: must be HTTPS and match a capturable platform URL
+    try {
+      const parsed = new URL(url)
+      if (parsed.protocol !== 'https:') return
+    } catch {
+      return
+    }
+    if (!shouldCapture(url)) return
 
     log.debug('Active fetch-detail request:', url)
 

@@ -12,7 +12,8 @@ const FETCH_INTERVAL_MS = 800
 const POLL_INTERVAL_MS = 500
 const POLL_TIMEOUT_MS = 15_000
 
-let cancelRequested = false
+/** Per-batch token to prevent race conditions between concurrent batch fetches */
+let activeBatchToken: string | null = null
 
 export interface BatchFetchProgress {
   status: 'fetching' | 'done' | 'error' | 'cancelled'
@@ -94,7 +95,10 @@ function blobToBase64(blob: Blob): Promise<string> {
  * 4. Generate ZIP export and send base64 in done notification
  */
 export async function batchFetchDetails(platform: Platform, limit?: number): Promise<void> {
-  cancelRequested = false
+  const batchToken = `${platform}_${Date.now()}_${Math.random().toString(36).slice(2)}`
+  activeBatchToken = batchToken
+
+  const isCancelled = () => activeBatchToken !== batchToken
 
   // Query conversations for the platform (with optional limit, ordered by most recent)
   const allConversations = await getConversations({
@@ -146,7 +150,7 @@ export async function batchFetchDetails(platform: Platform, limit?: number): Pro
   sendProgress({ status: 'fetching', completed, total })
 
   for (const { id, originalId } of toFetch) {
-    if (cancelRequested) {
+    if (isCancelled()) {
       sendProgress({ status: 'cancelled', completed, total })
       return
     }
@@ -196,7 +200,7 @@ export async function batchFetchDetails(platform: Platform, limit?: number): Pro
     sendProgress({ status: 'fetching', completed, total })
 
     // Rate limit: wait before next fetch
-    if (completed < total && !cancelRequested) {
+    if (completed < total && !isCancelled()) {
       await new Promise((resolve) => setTimeout(resolve, FETCH_INTERVAL_MS))
     }
   }
@@ -232,5 +236,5 @@ async function generateAndSendExport(
  * Cancel an in-progress batch fetch
  */
 export function cancelBatchFetch(): void {
-  cancelRequested = true
+  activeBatchToken = null
 }

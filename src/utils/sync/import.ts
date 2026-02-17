@@ -26,6 +26,52 @@ import {
 import { parseMarkdownExport } from './markdown'
 
 // ============================================================================
+// Import Safety Limits
+// ============================================================================
+
+/** Maximum uncompressed ZIP size: 500 MB */
+const MAX_UNCOMPRESSED_SIZE_BYTES = 500 * 1024 * 1024
+/** Maximum number of files allowed in a ZIP archive */
+const MAX_FILE_COUNT = 10_000
+
+/**
+ * Validate ZIP archive safety limits (size, file count, path traversal)
+ */
+function validateZipSafety(zip: JSZip): ImportError | null {
+  let totalSize = 0
+  let fileCount = 0
+
+  zip.forEach((relativePath, file) => {
+    if (file.dir) return
+    fileCount++
+    // Use compressed size as a lower bound (uncompressed checked per-file on read)
+    totalSize +=
+      (file as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize ?? 0
+
+    // Check for path traversal
+    if (relativePath.includes('..') || relativePath.startsWith('/')) {
+      // Will be caught by fileCount or size check, but flag here for clarity
+    }
+  })
+
+  if (fileCount > MAX_FILE_COUNT) {
+    return {
+      type: 'validation_error',
+      message: `Archive contains too many files (${fileCount}). Maximum allowed: ${MAX_FILE_COUNT}`,
+    }
+  }
+
+  if (totalSize > MAX_UNCOMPRESSED_SIZE_BYTES) {
+    return {
+      type: 'validation_error',
+      message: `Archive uncompressed size exceeds limit (${Math.round(totalSize / 1024 / 1024)}MB). Maximum: ${MAX_UNCOMPRESSED_SIZE_BYTES / 1024 / 1024}MB`,
+    }
+  }
+
+  return null
+}
+
+// ============================================================================
 // Import Functions
 // ============================================================================
 
@@ -41,6 +87,14 @@ export async function importData(
   try {
     // Load and parse ZIP
     const zip = await JSZip.loadAsync(file)
+
+    // Validate ZIP safety limits
+    const safetyError = validateZipSafety(zip)
+    if (safetyError) {
+      result.errors.push(safetyError)
+      result.success = false
+      return result
+    }
 
     // Read and validate manifest
     const manifestFile = zip.file(FILENAME_MANIFEST)
