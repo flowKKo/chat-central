@@ -88,6 +88,10 @@ async function mergeRemoteEntity<T extends { dirty?: boolean }>(
         )
         return { applied: false, conflict }
       }
+      // Auto-resolve: local has unsaved changes, remote wants to delete.
+      // Keep local changes (user's recent edits take priority).
+      // Mark dirty so local version is pushed back to remote on next sync.
+      await table.update(record.id, { dirty: true } as unknown as Partial<T>)
       return { applied: false, conflict: null }
     }
     return { applied: true, conflict: null }

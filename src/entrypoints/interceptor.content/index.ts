@@ -189,12 +189,19 @@ function injectXHRInterceptor() {
   }
 }
 
+let fetchListener: ((event: MessageEvent) => void) | null = null
+
 /**
  * Listen for fetch-detail requests from observer (ISOLATED world)
  * and call window.fetch — the hooked fetch automatically captures the response
  */
 function setupFetchListener() {
-  window.addEventListener('message', (event: MessageEvent) => {
+  // Cleanup old listener on re-init to prevent accumulation
+  if (fetchListener) {
+    window.removeEventListener('message', fetchListener)
+  }
+
+  fetchListener = (event: MessageEvent) => {
     if (event.source !== window) return
     if (event.data?.type !== 'CHAT_CENTRAL_FETCH_DETAIL') return
 
@@ -216,5 +223,7 @@ function setupFetchListener() {
     window.fetch(url).catch((e) => {
       log.error('Failed to fetch conversation detail:', e)
     })
-  })
+  }
+
+  window.addEventListener('message', fetchListener)
 }

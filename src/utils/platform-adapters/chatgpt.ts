@@ -220,7 +220,8 @@ export const chatgptAdapter: PlatformAdapter = {
       let eventData: Record<string, unknown> | null = null
       try {
         eventData = JSON.parse(payload) as Record<string, unknown>
-      } catch {
+      } catch (e) {
+        log.debug('Failed to parse stream event payload:', e)
         continue
       }
 

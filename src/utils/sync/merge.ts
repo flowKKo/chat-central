@@ -62,7 +62,7 @@ type SyncRecord = Record<string, unknown> & Partial<SyncFields> & { modifiedAt?:
 export function mergeRecords(
   local: SyncRecord,
   remote: SyncRecord,
-  strategies: Record<string, MergeStrategy>,
+  strategies: Record<string, MergeStrategy>
 ): MergeResult {
   const merged: Record<string, unknown> = {}
   const conflicts: string[] = []
@@ -154,12 +154,12 @@ export function mergeRecords(
  */
 export function mergeConversation(
   local: Conversation,
-  remote: Conversation,
+  remote: Conversation
 ): MergeResult & { conversation: Conversation } {
   const result = mergeRecords(
     local as unknown as SyncRecord,
     remote as unknown as SyncRecord,
-    conversationMergeStrategies,
+    conversationMergeStrategies
   )
 
   return {
@@ -175,7 +175,7 @@ export function mergeMessage(local: Message, remote: Message): MergeResult & { m
   const result = mergeRecords(
     local as unknown as SyncRecord,
     remote as unknown as SyncRecord,
-    messageMergeStrategies,
+    messageMergeStrategies
   )
 
   return {
@@ -206,7 +206,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
     const bKeys = Object.keys(b as Record<string, unknown>)
     if (aKeys.length !== bKeys.length) return false
     return aKeys.every((key) =>
-      deepEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]),
+      deepEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])
     )
   }
 
@@ -214,12 +214,20 @@ function deepEqual(a: unknown, b: unknown): boolean {
 }
 
 /**
- * Union of two arrays, removing duplicates
+ * Union of two arrays, removing duplicates.
+ * Uses JSON serialization for value equality (handles objects like tags).
  */
 function arrayUnion(a: unknown, b: unknown): unknown[] {
   const arrA = Array.isArray(a) ? a : []
   const arrB = Array.isArray(b) ? b : []
-  return [...new Set([...arrA, ...arrB])]
+  const seen = new Map<string, unknown>()
+  for (const item of [...arrA, ...arrB]) {
+    const key = typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item)
+    if (!seen.has(key)) {
+      seen.set(key, item)
+    }
+  }
+  return [...seen.values()]
 }
 
 /**
@@ -257,7 +265,7 @@ function minNonNull(a: unknown, b: unknown): unknown {
 export function hasConflicts(
   local: SyncRecord,
   remote: SyncRecord,
-  strategies: Record<string, MergeStrategy>,
+  strategies: Record<string, MergeStrategy>
 ): string[] {
   const conflicts: string[] = []
   const allKeys = new Set([...Object.keys(local), ...Object.keys(remote)])
