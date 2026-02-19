@@ -169,7 +169,7 @@ describe('parseConversationListPayload', () => {
     const payload = [['c_abc', 'Title', null]]
     const result = parseConversationListPayload(payload, now)
     expect(result).toHaveLength(1)
-    expect(result[0].title).toBe('Title')
-    expect(result[0].createdAt).toBe(now)
+    expect(result[0]!.title).toBe('Title')
+    expect(result[0]!.createdAt).toBe(now)
   })
 })
