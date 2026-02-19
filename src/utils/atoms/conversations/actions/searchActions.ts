@@ -12,6 +12,7 @@ import {
   searchResultsAtom,
 } from '../state'
 import { loadConversationsAtom } from './loadingActions'
+import { resetAllPagination } from './helpers'
 
 const log = createLogger('ChatCentral')
 
@@ -131,10 +132,10 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
 /**
  * Clear search
  */
-export const clearSearchAtom = atom(null, async (_get, set) => {
+export const clearSearchAtom = atom(null, async (get, set) => {
   set(activeSearchQueryAtom, '')
   set(searchResultsAtom, [])
-  set(paginationAtom, { offset: 0, limit: DEFAULT_PAGE_SIZE, hasMore: true })
+  resetAllPagination(get, set)
   await set(loadConversationsAtom, { reset: true })
 })
 
