@@ -15,7 +15,7 @@ import {
   handleUpdateTags,
 } from './handlers'
 import { batchFetchDetails, cancelBatchFetch } from './services'
-import type { Platform } from '@/types'
+import { BatchFetchAndExportSchema } from './schemas'
 import { initLanguage } from '@/locales'
 import { createLogger, getErrorMessage } from '@/utils/logger'
 
@@ -131,8 +131,12 @@ async function handleMessage(message: unknown): Promise<unknown> {
 
     // Batch Fetch and Export
     case 'BATCH_FETCH_AND_EXPORT': {
-      const msg = message as unknown as { platform: Platform; limit?: number }
-      batchFetchDetails(msg.platform, msg.limit).catch((e) => {
+      const parseResult = BatchFetchAndExportSchema.safeParse(message)
+      if (!parseResult.success) {
+        log.warn('Invalid batch fetch message:', parseResult.error.message)
+        return { error: 'Invalid message format' }
+      }
+      batchFetchDetails(parseResult.data.platform, parseResult.data.limit).catch((e) => {
         log.error('Batch fetch failed:', e)
       })
       return { success: true }
