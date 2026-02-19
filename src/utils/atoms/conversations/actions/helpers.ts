@@ -2,8 +2,8 @@ import type { Getter, Setter } from 'jotai'
 import type { Conversation, Message, Platform } from '@/types'
 import {
   deleteMessagesByConversationId,
-  getConversationCount,
-  getFavoriteConversationCount,
+  getConversationCountsByPlatform,
+  getFavoriteCountsByPlatform,
   getMessagesByConversationId,
   upsertMessages,
 } from '@/utils/db'
@@ -73,41 +73,17 @@ export function updateConversationInAllAtoms(
 // ============================================================================
 
 /**
- * Load and set conversation counts
+ * Load and set conversation counts (single batched query instead of 4 separate ones)
  */
 export async function loadConversationCounts(set: Setter): Promise<void> {
-  const [claudeCount, chatgptCount, geminiCount, totalCount] = await Promise.all([
-    getConversationCount('claude'),
-    getConversationCount('chatgpt'),
-    getConversationCount('gemini'),
-    getConversationCount(),
-  ])
-
-  set(conversationCountsAtom, {
-    claude: claudeCount,
-    chatgpt: chatgptCount,
-    gemini: geminiCount,
-    total: totalCount,
-  })
+  set(conversationCountsAtom, await getConversationCountsByPlatform())
 }
 
 /**
- * Load and set favorite counts
+ * Load and set favorite counts (single table scan instead of 4 separate ones)
  */
 export async function loadFavoriteCounts(set: Setter): Promise<void> {
-  const [claudeCount, chatgptCount, geminiCount, totalCount] = await Promise.all([
-    getFavoriteConversationCount('claude'),
-    getFavoriteConversationCount('chatgpt'),
-    getFavoriteConversationCount('gemini'),
-    getFavoriteConversationCount(),
-  ])
-
-  set(favoriteCountsAtom, {
-    claude: claudeCount,
-    chatgpt: chatgptCount,
-    gemini: geminiCount,
-    total: totalCount,
-  })
+  set(favoriteCountsAtom, await getFavoriteCountsByPlatform())
 }
 
 // ============================================================================

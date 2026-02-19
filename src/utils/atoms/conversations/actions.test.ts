@@ -59,7 +59,13 @@ vi.mock('@/utils/db', () => ({
   getAllTags: vi.fn().mockResolvedValue([]),
   getConversations: vi.fn().mockResolvedValue([]),
   getConversationCount: vi.fn().mockResolvedValue(0),
+  getConversationCountsByPlatform: vi
+    .fn()
+    .mockResolvedValue({ claude: 0, chatgpt: 0, gemini: 0, total: 0 }),
   getFavoriteConversationCount: vi.fn().mockResolvedValue(0),
+  getFavoriteCountsByPlatform: vi
+    .fn()
+    .mockResolvedValue({ claude: 0, chatgpt: 0, gemini: 0, total: 0 }),
   searchConversationsWithMatches: vi.fn().mockResolvedValue([]),
   getMessagesByConversationId: vi.fn().mockResolvedValue([]),
   upsertMessages: vi.fn().mockResolvedValue(undefined),
@@ -219,11 +225,12 @@ describe('conversation actions', () => {
 
     it('should update counts after loading', async () => {
       vi.mocked(db.getConversations).mockResolvedValue([])
-      vi.mocked(db.getConversationCount)
-        .mockResolvedValueOnce(5) // claude
-        .mockResolvedValueOnce(3) // chatgpt
-        .mockResolvedValueOnce(2) // gemini
-        .mockResolvedValueOnce(10) // total
+      vi.mocked(db.getConversationCountsByPlatform).mockResolvedValue({
+        claude: 5,
+        chatgpt: 3,
+        gemini: 2,
+        total: 10,
+      })
 
       await store.set(loadConversationsAtom, { reset: true })
 

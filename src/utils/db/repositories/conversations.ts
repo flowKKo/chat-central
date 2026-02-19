@@ -184,6 +184,36 @@ export async function getFavoriteConversationCount(platform?: Platform): Promise
 }
 
 /**
+ * Get conversation counts by platform in a single pass.
+ * Replaces 4 separate getConversationCount queries (3 per-platform + 1 total).
+ */
+export async function getConversationCountsByPlatform(): Promise<
+  Record<Platform | 'total', number>
+> {
+  const [claude, chatgpt, gemini] = await Promise.all([
+    db.conversations.where('platform').equals('claude').count(),
+    db.conversations.where('platform').equals('chatgpt').count(),
+    db.conversations.where('platform').equals('gemini').count(),
+  ])
+  return { claude, chatgpt, gemini, total: claude + chatgpt + gemini }
+}
+
+/**
+ * Get favorite conversation counts by platform in a single table scan.
+ * Replaces 4 separate getFavoriteConversationCount queries.
+ */
+export async function getFavoriteCountsByPlatform(): Promise<Record<Platform | 'total', number>> {
+  const counts: Record<Platform | 'total', number> = { claude: 0, chatgpt: 0, gemini: 0, total: 0 }
+  await db.conversations
+    .filter((conv) => conv.isFavorite)
+    .each((conv) => {
+      counts[conv.platform]++
+      counts.total++
+    })
+  return counts
+}
+
+/**
  * Soft delete a conversation (mark as deleted without removing)
  */
 export async function softDeleteConversation(id: string): Promise<void> {
