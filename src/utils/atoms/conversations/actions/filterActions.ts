@@ -2,6 +2,8 @@ import { atom } from 'jotai'
 import { getAllTags } from '@/utils/db'
 import { createLogger } from '@/utils/logger'
 import { allTagsAtom, filtersAtom } from '../state'
+import { resetAllPagination } from './helpers'
+import { loadConversationsAtom } from './loadingActions'
 
 const log = createLogger('ChatCentral')
 
@@ -23,14 +25,18 @@ export const loadAllTagsAtom = atom(null, async (_get, set) => {
 
 /**
  * Toggle a tag in the filter
+ * Resets pagination and reloads so client-side tag filtering has all data.
  */
-export const toggleTagFilterAtom = atom(null, (get, set, tag: string) => {
+export const toggleTagFilterAtom = atom(null, async (get, set, tag: string) => {
   const filters = get(filtersAtom)
   const currentTags = filters.tags
   const newTags = currentTags.includes(tag)
     ? currentTags.filter((t) => t !== tag)
     : [...currentTags, tag]
   set(filtersAtom, { ...filters, tags: newTags })
+
+  resetAllPagination(get, set)
+  await set(loadConversationsAtom, { reset: true })
 })
 
 /**
