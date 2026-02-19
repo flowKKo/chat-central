@@ -55,14 +55,6 @@ export async function syncCycle(
     result.pulled = mergeResult.applied
     result.conflicts.push(...mergeResult.conflicts)
 
-    // Update cursor after successful pull
-    if (pullResult.cursor) {
-      await updateSyncState({
-        remoteCursor: pullResult.cursor,
-        lastPullAt: Date.now(),
-      })
-    }
-
     // ========== PUSH ==========
     const pushResult = await pushChanges(provider, pushBatchSize)
 
@@ -86,12 +78,19 @@ export async function syncCycle(
       }
     }
 
-    // Update sync state
+    // Update sync state and cursor AFTER push completes.
+    // Moving the cursor update here prevents data loss when push fails:
+    // if cursor were updated before push and push failed, the next sync
+    // would skip the already-pulled records while local changes remain unpushed.
     const finalStatus = result.conflicts.length > 0 ? 'conflict' : 'idle'
     await updateSyncState({
       status: finalStatus,
       lastPushAt: Date.now(),
       pendingConflicts: result.conflicts.filter((c) => c.resolution === 'pending').length,
+      ...(pullResult.cursor && {
+        remoteCursor: pullResult.cursor,
+        lastPullAt: Date.now(),
+      }),
     })
 
     return result
