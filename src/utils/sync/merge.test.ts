@@ -35,14 +35,14 @@ describe('mergeRecords', () => {
     expect(result.merged.isFavorite).toBe(true) // Any true = true
   })
 
-  it('uses AND strategy for delete flags', () => {
+  it('uses OR strategy for delete flags (deletion propagates)', () => {
     const local = { id: '1', deleted: true, modifiedAt: 1000 }
     const remote = { id: '1', deleted: false, modifiedAt: 2000 }
-    const strategies = { deleted: 'and' as const }
+    const strategies = { deleted: 'or' as const }
 
     const result = mergeRecords(local, remote, strategies)
 
-    expect(result.merged.deleted).toBe(false) // Both must be true
+    expect(result.merged.deleted).toBe(true) // Any true = deleted
   })
 
   it('uses UNION strategy for arrays', () => {
@@ -152,7 +152,7 @@ describe('mergeMessage', () => {
     expect(result.needsUserResolution).toBe(false)
   })
 
-  it('uses AND for deleted flag', () => {
+  it('uses OR for deleted flag (deletion propagates)', () => {
     const local: Message = {
       ...baseMessage,
       deleted: true,
@@ -167,6 +167,6 @@ describe('mergeMessage', () => {
 
     const result = mergeMessage(local, remote)
 
-    expect(result.message.deleted).toBe(false) // AND: both must be true
+    expect(result.message.deleted).toBe(true) // Any true = deleted
   })
 })

@@ -27,8 +27,8 @@ export const conversationMergeStrategies: Record<string, MergeStrategy> = {
   // Array union for tags
   tags: 'union',
 
-  // Soft delete requires both sides to agree (AND)
-  deleted: 'and',
+  // Soft delete propagates: if deleted anywhere, stay deleted
+  deleted: 'or',
 
   // Sync metadata
   syncVersion: 'max',
@@ -42,8 +42,8 @@ export const messageMergeStrategies: Record<string, MergeStrategy> = {
   content: 'lww',
   role: 'lww',
 
-  // Soft delete requires both sides to agree
-  deleted: 'and',
+  // Soft delete propagates: if deleted anywhere, stay deleted
+  deleted: 'or',
 
   // Sync metadata
   syncVersion: 'max',
