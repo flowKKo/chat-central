@@ -111,10 +111,11 @@ export async function importData(
     let manifestParsed: unknown
     try {
       manifestParsed = JSON.parse(manifestRaw)
-    } catch {
+    } catch (error) {
+      syncLogger.error('Manifest JSON parse failed', error)
       result.errors.push({
         type: 'parse_error',
-        message: 'Failed to parse manifest.json',
+        message: `Failed to parse manifest.json: ${error instanceof Error ? error.message : 'unknown error'}`,
       })
       result.success = false
       return result

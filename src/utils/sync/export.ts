@@ -121,7 +121,9 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
     })
   } catch (error) {
     syncLogger.error('Failed to generate ZIP file', error)
-    throw new Error('Failed to generate export file. Please try again.')
+    throw new Error(
+      `Failed to generate export file: ${error instanceof Error ? error.message : 'unknown error'}`
+    )
   }
 
   // Generate filename with metadata

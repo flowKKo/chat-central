@@ -19,11 +19,8 @@ const log = createLogger('ChatCentral')
 /**
  * Load conversation list
  */
-const MIN_LOADING_MS = 500
-
 export const loadConversationsAtom = atom(null, async (get, set, options?: { reset?: boolean }) => {
   const { reset = false } = options ?? {}
-  const startTime = reset ? 0 : Date.now()
 
   set(isLoadingConversationsAtom, true)
 
@@ -58,16 +55,6 @@ export const loadConversationsAtom = atom(null, async (get, set, options?: { res
 
       const hasMore = conversations.length > limit
       const data = hasMore ? conversations.slice(0, limit) : conversations
-
-      // For load-more: wait at least MIN_LOADING_MS before showing content
-      if (startTime > 0) {
-        const elapsed = Date.now() - startTime
-        if (elapsed < MIN_LOADING_MS) {
-          await new Promise((r) => {
-            setTimeout(r, MIN_LOADING_MS - elapsed)
-          })
-        }
-      }
 
       if (reset) {
         set(conversationsAtom, data)
