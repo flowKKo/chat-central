@@ -12,6 +12,7 @@ import {
   updateImportStats,
 } from './types'
 import type { Conversation, Message } from '@/types'
+import { z } from 'zod'
 import JSZip from 'jszip'
 import { conversationSchema, messageSchema } from '@/types'
 import { addConflict, db, invalidateSearchIndex } from '@/utils/db'
@@ -409,11 +410,21 @@ function importMessage(record: Message, options: ImportOptions, result: ImportRe
 // Import from Simple JSON
 // ============================================================================
 
-interface SimpleExportFormat {
-  exportedAt: string
-  version: string
-  conversations: Array<Conversation & { messages?: Message[] }>
-}
+// Lenient schema for simple JSON import: validates structure but allows partial conversation data
+// (older exports may not have all fields that the current conversationSchema requires)
+const simpleExportConversationSchema = z
+  .object({
+    id: z.string(),
+    platform: z.string(),
+    messages: z.array(z.object({ id: z.string() }).passthrough()).optional(),
+  })
+  .passthrough()
+
+const simpleExportFormatSchema = z.object({
+  exportedAt: z.string(),
+  version: z.string(),
+  conversations: z.array(simpleExportConversationSchema),
+})
 
 /**
  * Import from a simple JSON file
@@ -426,20 +437,34 @@ export async function importFromJson(
 
   try {
     const text = await file.text()
-    const data = JSON.parse(text) as SimpleExportFormat
+    const parsed = JSON.parse(text) as unknown
+    const parseResult = simpleExportFormatSchema.safeParse(parsed)
+    if (!parseResult.success) {
+      result.success = false
+      result.errors.push({
+        type: 'validation_error',
+        message: `Invalid JSON format: ${parseResult.error.issues[0]?.message ?? 'unknown error'}`,
+      })
+      return result
+    }
+    const data = parseResult.data
 
     await db.transaction('rw', [db.conversations, db.messages, db.conflicts], async () => {
       for (const convWithMessages of data.conversations) {
         const { messages, ...conv } = convWithMessages
 
-        // Import conversation
-        const convStatus = await importConversation(conv, options, result)
+        // Import conversation (passthrough schema validates structure; cast is safe)
+        const convStatus = await importConversation(
+          conv as unknown as Conversation,
+          options,
+          result
+        )
         updateImportStats(result, convStatus, 'conversations')
 
         // Import messages
         if (messages) {
           for (const msg of messages) {
-            const msgStatus = await importMessage(msg, options, result)
+            const msgStatus = await importMessage(msg as unknown as Message, options, result)
             updateImportStats(result, msgStatus, 'messages')
           }
         }
@@ -485,16 +510,18 @@ export async function validateImportFile(file: File): Promise<{
     }
 
     if (file.name.endsWith('.json')) {
-      // Validate JSON format
+      // Validate JSON format with Zod
       const text = await file.text()
-      const data = JSON.parse(text) as SimpleExportFormat
-      if (!data.conversations || !Array.isArray(data.conversations)) {
+      const parsed = JSON.parse(text) as unknown
+      const jsonResult = simpleExportFormatSchema.safeParse(parsed)
+      if (!jsonResult.success) {
         errors.push({
           type: 'validation_error',
-          message: 'Invalid JSON format: missing conversations array',
+          message: `Invalid JSON format: ${jsonResult.error.issues[0]?.message ?? 'unknown error'}`,
         })
         return { valid: false, errors }
       }
+      const data = jsonResult.data
       return {
         valid: true,
         manifest: {
@@ -536,7 +563,15 @@ export async function validateImportFile(file: File): Promise<{
     }
 
     // Try v1
-    const manifest = manifestParsed as ExportManifest
+    const v1Result = exportManifestSchema.safeParse(manifestParsed)
+    if (!v1Result.success) {
+      errors.push({
+        type: 'validation_error',
+        message: 'Invalid manifest format: does not match v1 or v2 schema',
+      })
+      return { valid: false, errors }
+    }
+    const manifest = v1Result.data
 
     if (!(SUPPORTED_VERSIONS as readonly string[]).includes(manifest.version)) {
       errors.push({
