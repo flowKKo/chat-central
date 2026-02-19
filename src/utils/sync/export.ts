@@ -76,7 +76,7 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
     },
   }
 
-  // Create ZIP with platform/ subdirectories, loading messages per conversation
+  // Create ZIP with platform/ subdirectories, loading messages in parallel batches
   let blob: Blob
   try {
     const zip = new JSZip()
@@ -84,14 +84,9 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
     // Track used filenames per platform to handle duplicates
     const usedFilenames = new Map<string, Set<string>>()
 
+    // Pre-compute unique filenames (sync, no I/O)
+    const filePaths: string[] = []
     for (const conv of conversations) {
-      // Load messages per conversation to keep memory usage proportional to one conversation
-      const messages = await getMessagesByConversationId(conv.id)
-      totalMessages += messages.length
-
-      const md = conversationToMarkdown(conv, messages, exportedAt)
-
-      // Build path: platform/Title.md
       const platformDir = conv.platform
       if (!usedFilenames.has(platformDir)) {
         usedFilenames.set(platformDir, new Set())
@@ -106,8 +101,21 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
         counter++
       }
       used.add(filename)
+      filePaths.push(`${platformDir}/${filename}`)
+    }
 
-      zip.file(`${platformDir}/${filename}`, md)
+    // Load messages and build markdown in parallel batches
+    const BATCH_SIZE = 10
+    for (let i = 0; i < conversations.length; i += BATCH_SIZE) {
+      const batch = conversations.slice(i, i + BATCH_SIZE)
+      const results = await Promise.all(batch.map((conv) => getMessagesByConversationId(conv.id)))
+      for (let j = 0; j < batch.length; j++) {
+        const conv = batch[j]!
+        const messages = results[j]!
+        totalMessages += messages.length
+        const md = conversationToMarkdown(conv, messages, exportedAt)
+        zip.file(filePaths[i + j]!, md)
+      }
     }
 
     // Write manifest with final message count
@@ -174,12 +182,15 @@ export async function exportToJson(
     includeDeleted: options.includeDeleted,
   })
 
-  // Load messages per conversation to avoid loading all into memory
-  // Load messages per conversation to keep memory usage proportional to one conversation
+  // Load messages in parallel batches
+  const BATCH_SIZE = 10
   const conversationsWithMessages = []
-  for (const conv of conversations) {
-    const messages = await getMessagesByConversationId(conv.id)
-    conversationsWithMessages.push({ ...conv, messages })
+  for (let i = 0; i < conversations.length; i += BATCH_SIZE) {
+    const batch = conversations.slice(i, i + BATCH_SIZE)
+    const results = await Promise.all(batch.map((conv) => getMessagesByConversationId(conv.id)))
+    for (let j = 0; j < batch.length; j++) {
+      conversationsWithMessages.push({ ...batch[j]!, messages: results[j]! })
+    }
   }
 
   const data = {
