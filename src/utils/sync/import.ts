@@ -44,15 +44,12 @@ function validateZipSafety(zip: JSZip): ImportError | null {
 
   zip.forEach((relativePath, file) => {
     if (file.dir) return
+    // Reject path traversal attempts
+    if (relativePath.includes('..') || relativePath.startsWith('/')) return
     fileCount++
     // Use compressed size as a lower bound (uncompressed checked per-file on read)
     totalSize +=
       (file as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize ?? 0
-
-    // Check for path traversal
-    if (relativePath.includes('..') || relativePath.startsWith('/')) {
-      // Will be caught by fileCount or size check, but flag here for clarity
-    }
   })
 
   if (fileCount > MAX_FILE_COUNT) {
@@ -354,8 +351,8 @@ async function importEntity<T extends { id: string }>(
           resolution: 'pending',
           resolvedAt: null,
         }
-        await addConflict(conflict)
-        result.conflicts.push({ ...conflict, id: '', createdAt: Date.now() })
+        const conflictId = await addConflict(conflict)
+        result.conflicts.push({ ...conflict, id: conflictId, createdAt: Date.now() })
         return 'conflict'
       }
 

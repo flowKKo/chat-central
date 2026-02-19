@@ -185,8 +185,8 @@ function countByPlatform(
   }
 
   for (const conv of conversations) {
-    if (dateRange.start && conv.updatedAt < dateRange.start) continue
-    if (dateRange.end && conv.updatedAt > dateRange.end) continue
+    if (dateRange.start !== null && conv.updatedAt < dateRange.start) continue
+    if (dateRange.end !== null && conv.updatedAt > dateRange.end) continue
 
     counts[conv.platform]++
     counts.total++

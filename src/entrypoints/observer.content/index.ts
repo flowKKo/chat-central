@@ -8,7 +8,7 @@ const log = createLogger('Observer')
 // Track extension lifecycle to avoid repeated errors after reload/update
 let contextInvalidated = false
 let messageHandler: ((event: MessageEvent) => void) | null = null
-let fetchRelayRegistered = false
+let fetchRelayHandler: ((message: unknown) => void) | null = null
 
 function isContextInvalidatedError(error: unknown): boolean {
   return error instanceof Error && error.message.includes('Extension context invalidated')
@@ -22,6 +22,11 @@ function teardown() {
   if (messageHandler) {
     window.removeEventListener('message', messageHandler)
     messageHandler = null
+  }
+
+  if (fetchRelayHandler) {
+    browser.runtime.onMessage.removeListener(fetchRelayHandler)
+    fetchRelayHandler = null
   }
 }
 
@@ -104,11 +109,12 @@ function setupMessageListener() {
  * Relay fetch-detail requests from background to MAIN world interceptor
  */
 function setupFetchRelay() {
-  // Prevent duplicate listener registration on re-init
-  if (fetchRelayRegistered) return
-  fetchRelayRegistered = true
+  // Cleanup old listener if exists
+  if (fetchRelayHandler) {
+    browser.runtime.onMessage.removeListener(fetchRelayHandler)
+  }
 
-  browser.runtime.onMessage.addListener((message: unknown) => {
+  fetchRelayHandler = (message: unknown) => {
     if (contextInvalidated) return
     if (
       typeof message !== 'object' ||
@@ -128,5 +134,6 @@ function setupFetchRelay() {
       },
       window.location.origin
     )
-  })
+  }
+  browser.runtime.onMessage.addListener(fetchRelayHandler)
 }

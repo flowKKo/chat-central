@@ -23,7 +23,7 @@ export function toEpochMillis(value: unknown): number | null {
   // Handle numeric timestamps
   if (typeof value === 'number') {
     // Already in milliseconds (13 digits)
-    if (value > 1e12) return value
+    if (value >= 1e12) return value
     // In seconds (10 digits)
     if (value > 1e9) return value * 1000
     return null
@@ -94,7 +94,7 @@ export function parseDate(value: unknown): number | null {
   }
   if (typeof value === 'number') {
     // Assume milliseconds if large enough
-    return value > 1e12 ? value : value * 1000
+    return value >= 1e12 ? value : value * 1000
   }
   return null
 }

@@ -203,7 +203,7 @@ export function parseConversationDetailPayload(
       if (objTimestamp && !state.defaultTimestamp) state.defaultTimestamp = objTimestamp
 
       const content = extractMessageContent(obj)
-      if (content && obj.author) {
+      if (content && typeof obj.author === 'string') {
         const role = obj.author === 'user' || obj.author === '0' ? 'user' : 'assistant'
         const createdAt = normalizeMessageTimestamp(state, objTimestamp, now)
         const rawId =

@@ -50,7 +50,7 @@ export async function initializeSyncState(): Promise<SyncState> {
  * Add an operation to the log
  */
 export async function addOperationLog(
-  log: Omit<OperationLog, 'id' | 'synced' | 'syncedAt'>,
+  log: Omit<OperationLog, 'id' | 'synced' | 'syncedAt'>
 ): Promise<string> {
   const id = crypto.randomUUID()
   await db.operationLog.add({
@@ -84,7 +84,7 @@ export async function markOperationsSynced(ids: string[]): Promise<void> {
  * Cleanup old synced operations
  */
 export async function cleanupSyncedOperations(
-  olderThanMs: number = 7 * 24 * 60 * 60 * 1000,
+  olderThanMs: number = 7 * 24 * 60 * 60 * 1000
 ): Promise<number> {
   const cutoff = Date.now() - olderThanMs
   return db.operationLog
@@ -102,7 +102,7 @@ export async function cleanupSyncedOperations(
  * Add a conflict record
  */
 export async function addConflict(
-  conflict: Omit<ConflictRecord, 'id' | 'createdAt'>,
+  conflict: Omit<ConflictRecord, 'id' | 'createdAt'>
 ): Promise<string> {
   const id = crypto.randomUUID()
   await db.conflicts.add({
@@ -125,7 +125,7 @@ export async function getPendingConflicts(): Promise<ConflictRecord[]> {
  */
 export async function resolveConflict(
   id: string,
-  resolution: ConflictRecord['resolution'],
+  resolution: ConflictRecord['resolution']
 ): Promise<void> {
   await db.conflicts.update(id, {
     resolution,
@@ -144,7 +144,7 @@ export async function getConflictById(id: string): Promise<ConflictRecord | unde
  * Cleanup old resolved conflicts
  */
 export async function cleanupResolvedConflicts(
-  olderThanMs: number = 30 * 24 * 60 * 60 * 1000,
+  olderThanMs: number = 30 * 24 * 60 * 60 * 1000
 ): Promise<number> {
   const cutoff = Date.now() - olderThanMs
   return db.conflicts
@@ -178,7 +178,7 @@ export async function markConversationDirty(id: string): Promise<void> {
   await db.conversations.update(id, {
     dirty: true,
     modifiedAt: now,
-    syncVersion: (await db.conversations.get(id))?.syncVersion ?? 0 + 1,
+    syncVersion: ((await db.conversations.get(id))?.syncVersion ?? 0) + 1,
   } as Partial<Conversation>)
 }
 
@@ -190,7 +190,7 @@ export async function markMessageDirty(id: string): Promise<void> {
   await db.messages.update(id, {
     dirty: true,
     modifiedAt: now,
-    syncVersion: (await db.messages.get(id))?.syncVersion ?? 0 + 1,
+    syncVersion: ((await db.messages.get(id))?.syncVersion ?? 0) + 1,
   } as Partial<Message>)
 }
 
@@ -199,7 +199,7 @@ export async function markMessageDirty(id: string): Promise<void> {
  */
 export async function clearDirtyFlags(
   conversationIds: string[],
-  messageIds: string[],
+  messageIds: string[]
 ): Promise<void> {
   const now = Date.now()
   await db.transaction('rw', [db.conversations, db.messages], async () => {
@@ -222,11 +222,11 @@ export async function clearDirtyFlags(
  * Cleanup old deleted records
  */
 export async function cleanupDeletedRecords(
-  olderThanMs: number = 30 * 24 * 60 * 60 * 1000,
+  olderThanMs: number = 30 * 24 * 60 * 60 * 1000
 ): Promise<{
-    conversations: number
-    messages: number
-  }> {
+  conversations: number
+  messages: number
+}> {
   const cutoff = Date.now() - olderThanMs
   let conversationsDeleted = 0
   let messagesDeleted = 0
