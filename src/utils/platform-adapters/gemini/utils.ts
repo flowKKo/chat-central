@@ -37,17 +37,20 @@ export function isStringArray(value: unknown): value is string[] {
  */
 export const findTimestampInArray = findMaxTimestampInArray
 
+const MAX_WALK_DEPTH = 50
+
 /**
- * Walk through nested data structure and call handlers
+ * Walk through nested data structure and call handlers.
+ * Has a depth limit to prevent stack overflow from malformed data.
  */
-export function walk(value: unknown, handlers: WalkHandlers): void {
-  if (!value) return
+export function walk(value: unknown, handlers: WalkHandlers, depth: number = 0): void {
+  if (!value || depth > MAX_WALK_DEPTH) return
 
   if (Array.isArray(value)) {
     const skip = handlers.array?.(value)
     if (skip) return
     for (const item of value) {
-      walk(item, handlers)
+      walk(item, handlers, depth + 1)
     }
     return
   }
@@ -57,7 +60,7 @@ export function walk(value: unknown, handlers: WalkHandlers): void {
     const skip = handlers.object?.(obj)
     if (skip) return
     for (const item of Object.values(obj)) {
-      walk(item, handlers)
+      walk(item, handlers, depth + 1)
     }
     return
   }
@@ -67,7 +70,7 @@ export function walk(value: unknown, handlers: WalkHandlers): void {
     if (skip) return
     if (value.startsWith('[') || value.startsWith('{')) {
       const parsed = parseJsonSafe(value)
-      if (parsed) walk(parsed, handlers)
+      if (parsed) walk(parsed, handlers, depth + 1)
     }
   }
 }

@@ -94,14 +94,9 @@ export const claudeAdapter: PlatformAdapter = {
           const originalId = (obj.uuid as string) || (obj.id as string)
           if (!originalId) return null
 
-          // Extract and clean summary (remove "**Conversation Overview**\n\n" prefix if present)
+          // Extract and clean summary (remove "**Conversation Overview**" prefix if present)
           let summary = (obj.summary as string) || ''
-          if (summary.startsWith('**Conversation Overview**')) {
-            summary = summary.replace(/^\*\*Conversation Overview\*\*\n+/, '').trim()
-          }
-          if (summary.startsWith('**Conversation overview**')) {
-            summary = summary.replace(/^\*\*Conversation overview\*\*\n+/, '').trim()
-          }
+          summary = summary.replace(/^\*\*Conversation overview\*\*\n+/i, '').trim()
 
           const conversation: Conversation = {
             id: `claude_${originalId}`,

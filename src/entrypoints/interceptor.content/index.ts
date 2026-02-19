@@ -122,11 +122,13 @@ function tryParseResponse(text: string): unknown {
 
   // 2. Try Gemini format (starts with )]}')
   if (text.trim().startsWith(")]}'")) {
-    try {
-      const jsonText = text.substring(text.indexOf('\n') + 1)
-      return JSON.parse(jsonText)
-    } catch {
-      // Leave it to the adapter
+    const newlineIndex = text.indexOf('\n')
+    if (newlineIndex !== -1 && newlineIndex < text.length - 1) {
+      try {
+        return JSON.parse(text.substring(newlineIndex + 1))
+      } catch {
+        // Leave it to the adapter
+      }
     }
   }
 

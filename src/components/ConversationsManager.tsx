@@ -10,6 +10,7 @@ import {
   FilterToolbar,
   SearchBar,
 } from './conversations'
+import { ErrorBoundary } from './ErrorBoundary'
 import type { Platform } from '@/types'
 import {
   selectedConversationAtom,
@@ -255,11 +256,13 @@ export default function ConversationsManager() {
         {/* Right: Detail View */}
         <div className="min-w-0 flex-1">
           {selectedConversation ? (
-            <ConversationDetail
-              conversation={selectedConversation}
-              messages={selectedMessages}
-              searchQuery={activeSearchQuery}
-            />
+            <ErrorBoundary>
+              <ConversationDetail
+                conversation={selectedConversation}
+                messages={selectedMessages}
+                searchQuery={activeSearchQuery}
+              />
+            </ErrorBoundary>
           ) : (
             <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-muted/10 text-muted-foreground">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/50">
