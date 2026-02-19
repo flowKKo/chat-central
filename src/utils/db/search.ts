@@ -20,6 +20,9 @@ export interface SearchResultWithMatches {
  */
 const MIN_MINISEARCH_QUERY_LENGTH = 2
 
+/** Cap on how many conversation candidates to process for message matching */
+const MAX_SEARCH_CANDIDATES = 200
+
 /**
  * Get conversation field matches for a search query using substring matching.
  * Returns match descriptors for title, preview, and summary fields.
@@ -92,11 +95,12 @@ export async function searchConversationsWithMatches(
     // MiniSearch BM25 search for conversations (includes messageDigest matching)
     const indexResults = await searchConversationIndex(query)
     if (indexResults.length > 0) {
-      const ids = indexResults.map((r) => r.id)
+      const capped = indexResults.slice(0, MAX_SEARCH_CANDIDATES)
+      const ids = capped.map((r) => r.id)
       const convs = await db.conversations.bulkGet(ids)
 
       // Build score lookup
-      const scoreMap = new Map(indexResults.map((r) => [r.id, r.score]))
+      const scoreMap = new Map(capped.map((r) => [r.id, r.score]))
 
       for (const conv of convs) {
         if (!conv) continue
@@ -110,9 +114,10 @@ export async function searchConversationsWithMatches(
       }
     }
   } else {
-    // Short query fallback: substring matching
+    // Short query fallback: substring matching (capped to avoid scanning all records)
     const titleMatchConvs = await db.conversations
       .filter((conv) => getConversationFieldMatches(conv, lowerQuery).length > 0)
+      .limit(MAX_SEARCH_CANDIDATES)
       .toArray()
 
     for (const conv of titleMatchConvs) {
