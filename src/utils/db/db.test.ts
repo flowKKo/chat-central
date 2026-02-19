@@ -332,6 +332,20 @@ describe('conversations repository', () => {
       expect(result!.favoriteAt).toBeNull()
     })
 
+    it('should refresh favoriteAt when re-favoriting', async () => {
+      const oldFavoriteAt = 1000
+      await upsertConversation(
+        makeConversation({ id: 'c1', isFavorite: true, favoriteAt: oldFavoriteAt })
+      )
+
+      // Unfavorite then re-favorite
+      await updateConversationFavorite('c1', false)
+      const result = await updateConversationFavorite('c1', true)
+
+      expect(result!.isFavorite).toBe(true)
+      expect(result!.favoriteAt).toBeGreaterThan(oldFavoriteAt)
+    })
+
     it('should return null for non-existent conversation', async () => {
       const result = await updateConversationFavorite('nonexistent', true)
       expect(result).toBeNull()

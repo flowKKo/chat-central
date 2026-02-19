@@ -141,7 +141,7 @@ export async function updateConversationFavorite(
   const existing = await db.conversations.get(id)
   if (!existing) return null
 
-  const favoriteAt = isFavorite ? (existing.favoriteAt ?? Date.now()) : null
+  const favoriteAt = isFavorite ? Date.now() : null
   const updated = { ...existing, isFavorite, favoriteAt }
   await db.conversations.put(updated)
   updateSearchIndex(updated)
