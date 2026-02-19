@@ -83,6 +83,7 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
     // Reset search state but keep filters applied
     set(activeSearchQueryAtom, '')
     set(searchResultsAtom, [])
+    set(isLoadingConversationsAtom, false)
     // Reset pagination limit (search overrides it with results.length)
     set(paginationAtom, { offset: 0, limit: DEFAULT_PAGE_SIZE, hasMore: true })
     await set(loadConversationsAtom, { reset: true })
@@ -122,10 +123,11 @@ export const performSearchAtom = atom(null, async (get, set, query: string) => {
   } catch (e) {
     log.error('Failed to search:', e)
   } finally {
-    // Only clear loading if this is still the latest search
-    if (currentVersion === searchVersion) {
-      set(isLoadingConversationsAtom, false)
-    }
+    // Always clear loading when this is the latest search version.
+    // Also unconditionally clear when the stale search early-returned,
+    // because the newer search that bumped the version may have taken
+    // the empty-freeText branch (which skips the try block entirely).
+    set(isLoadingConversationsAtom, false)
   }
 })
 
