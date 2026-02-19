@@ -41,16 +41,27 @@ const MAX_FILE_COUNT = 10_000
 function validateZipSafety(zip: JSZip): ImportError | null {
   let totalSize = 0
   let fileCount = 0
+  let hasPathTraversal = false
 
   zip.forEach((relativePath, file) => {
     if (file.dir) return
-    // Reject path traversal attempts
-    if (relativePath.includes('..') || relativePath.startsWith('/')) return
+    // Detect path traversal attempts
+    if (relativePath.includes('..') || relativePath.startsWith('/')) {
+      hasPathTraversal = true
+      return
+    }
     fileCount++
     // Use compressed size as a lower bound (uncompressed checked per-file on read)
     totalSize +=
       (file as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize ?? 0
   })
+
+  if (hasPathTraversal) {
+    return {
+      type: 'validation_error',
+      message: 'Archive contains files with unsafe paths (path traversal detected)',
+    }
+  }
 
   if (fileCount > MAX_FILE_COUNT) {
     return {
