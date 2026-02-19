@@ -3,6 +3,7 @@ import { useState, useRef } from 'react'
 import { cn } from '@/utils/cn'
 import { exportData } from '@/utils/sync/export'
 import { importData } from '@/utils/sync/import'
+import { downloadBlob } from '@/utils/sync/utils'
 import { createLogger } from '@/utils/logger'
 import { ExportPanel } from './ExportPanel'
 import { ImportPanel } from './ImportPanel'
@@ -35,12 +36,7 @@ export function ImportExportButtons() {
     setIsExporting(true)
     try {
       const result = await exportData({ type: 'full' })
-      const url = URL.createObjectURL(result.blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = result.filename
-      a.click()
-      URL.revokeObjectURL(url)
+      downloadBlob(result.blob, result.filename)
     } finally {
       setIsExporting(false)
     }
