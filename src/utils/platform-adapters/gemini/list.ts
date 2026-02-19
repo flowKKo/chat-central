@@ -1,4 +1,4 @@
-import { readTimestampFromObject } from '../common'
+import { createConversation, readTimestampFromObject } from '../common'
 import {
   GEMINI_APP_URL,
   CONVERSATION_ID_RE,
@@ -15,27 +15,19 @@ export function buildConversation(
   id: string,
   title: string,
   createdAt: number,
-  now: number,
+  now: number
 ): Conversation {
   const normalizedId = normalizeConversationId(id)
   const timestamp = createdAt || now
-  return {
-    id: `gemini_${normalizedId}`,
-    platform: 'gemini' as const,
+  return createConversation({
+    platform: 'gemini',
     originalId: normalizedId,
     title,
     createdAt: timestamp,
     updatedAt: timestamp,
-    messageCount: 0,
-    preview: '',
-    tags: [],
-    syncedAt: now,
-    detailStatus: 'none',
-    detailSyncedAt: null,
-    isFavorite: false,
-    favoriteAt: null,
+    now,
     url: `${GEMINI_APP_URL}${normalizedId}`,
-  }
+  })
 }
 
 /**
@@ -48,9 +40,9 @@ function parseConversationListItem(value: unknown, now: number): Conversation | 
   const title = value[1]
   if (typeof title !== 'string' || !title) return null
   if (
-    CONVERSATION_ID_RE.test(title)
-    || RESPONSE_ID_RE.test(title)
-    || RESPONSE_ID_SHORT_RE.test(title)
+    CONVERSATION_ID_RE.test(title) ||
+    RESPONSE_ID_RE.test(title) ||
+    RESPONSE_ID_SHORT_RE.test(title)
   ) {
     return null
   }
@@ -71,9 +63,9 @@ function parseConversationObject(obj: Record<string, unknown>, now: number): Con
   const id = idValue
   const title = titleValue
   if (
-    CONVERSATION_ID_RE.test(title)
-    || RESPONSE_ID_RE.test(title)
-    || RESPONSE_ID_SHORT_RE.test(title)
+    CONVERSATION_ID_RE.test(title) ||
+    RESPONSE_ID_RE.test(title) ||
+    RESPONSE_ID_SHORT_RE.test(title)
   ) {
     return null
   }

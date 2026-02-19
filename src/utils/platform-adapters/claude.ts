@@ -1,7 +1,12 @@
 import type { PlatformAdapter } from './types'
 import type { Conversation, Message } from '@/types'
 import { extractSsePayloads, normalizeListPayload, parseJsonIfString } from './helpers'
-import { extractClaudeMessageContent, extractClaudeStreamContent, extractRole } from './common'
+import {
+  createConversation,
+  extractClaudeMessageContent,
+  extractClaudeStreamContent,
+  extractRole,
+} from './common'
 import { createLogger } from '@/utils/logger'
 
 const log = createLogger('Claude')
@@ -98,24 +103,18 @@ export const claudeAdapter: PlatformAdapter = {
           let summary = (obj.summary as string) || ''
           summary = summary.replace(/^\*\*Conversation overview\*\*\n+/i, '').trim()
 
-          const conversation: Conversation = {
-            id: `claude_${originalId}`,
+          const conversation = createConversation({
             platform: 'claude',
             originalId,
             title: (obj.name as string) || 'Untitled',
             createdAt: obj.created_at ? new Date(obj.created_at as string).getTime() : now,
             updatedAt: obj.updated_at ? new Date(obj.updated_at as string).getTime() : now,
+            now,
             messageCount: (obj.message_count as number) ?? 0,
             preview: (obj.preview as string) || '',
             summary: summary || undefined,
-            tags: [],
-            syncedAt: now,
-            detailStatus: 'none',
-            detailSyncedAt: null,
-            isFavorite: false,
-            favoriteAt: null,
             url: this.buildConversationUrl(originalId),
-          }
+          })
 
           return conversation
         } catch (e) {
@@ -225,23 +224,17 @@ export const claudeAdapter: PlatformAdapter = {
         ? new Date(base.updatedAt as string).getTime()
         : maxCreatedAt || createdAt
 
-    const conversation: Conversation = {
-      id: `claude_${originalId}`,
+    const conversation = createConversation({
       platform: 'claude',
       originalId: originalId as string,
       title,
       createdAt,
       updatedAt,
+      now,
       messageCount: messages.length,
-      preview: '',
-      tags: [],
-      syncedAt: now,
       detailStatus: 'full',
-      detailSyncedAt: now,
-      isFavorite: false,
-      favoriteAt: null,
       url: this.buildConversationUrl(originalId as string),
-    }
+    })
 
     for (const message of messages) {
       message.conversationId = conversation.id
@@ -309,23 +302,18 @@ export const claudeAdapter: PlatformAdapter = {
     if (!conversationId || !content) return null
 
     const finalMessageId = messageId || `${conversationId}_${createdAt}`
-    const conversation: Conversation = {
-      id: `claude_${conversationId}`,
+    const conversation = createConversation({
       platform: 'claude',
       originalId: conversationId,
       title: title || 'Claude chat',
       createdAt,
       updatedAt: createdAt,
+      now,
       messageCount: 1,
       preview: content.slice(0, 200),
-      tags: [],
-      syncedAt: now,
       detailStatus: 'partial',
-      detailSyncedAt: now,
-      isFavorite: false,
-      favoriteAt: null,
       url: this.buildConversationUrl(conversationId),
-    }
+    })
 
     const messages: Message[] = [
       {

@@ -1,5 +1,6 @@
 import type { Conversation, Message } from '@/types'
 import {
+  createConversation,
   parseJsonSafe,
   toEpochMillis,
   readTimestampFromObject,
@@ -37,7 +38,7 @@ function createDetailState(): DetailState {
 function normalizeMessageTimestamp(
   state: DetailState,
   candidate: number | null,
-  now: number,
+  now: number
 ): number {
   if (candidate == null) {
     const base = state.defaultTimestamp ?? now
@@ -50,8 +51,7 @@ function normalizeMessageTimestamp(
 
   if (state.lastBaseTimestamp === candidate) {
     state.tieBreaker += 1
-  }
-  else {
+  } else {
     state.lastBaseTimestamp = candidate
     state.tieBreaker = 0
   }
@@ -71,8 +71,8 @@ function upsertMessage(state: DetailState, message: Message): void {
     return
   }
 
-  const content
-    = message.content.length >= existing.content.length ? message.content : existing.content
+  const content =
+    message.content.length >= existing.content.length ? message.content : existing.content
   const createdAt = Math.min(existing.createdAt, message.createdAt)
   state.messages.set(message.id, { ...existing, ...message, content, createdAt })
 }
@@ -111,8 +111,8 @@ function findMessageIdFromArray(arr: unknown[]): string | null {
  */
 export function parseConversationDetailPayload(
   payload: unknown,
-  now: number,
-): { conversation: Conversation, messages: Message[] } | null {
+  now: number
+): { conversation: Conversation; messages: Message[] } | null {
   const state = createDetailState()
 
   const visit = (value: unknown, contextTimestamp: number | null): void => {
@@ -156,8 +156,8 @@ export function parseConversationDetailPayload(
           })
           const messageTimestamp = localTimestamp ?? createdAt
           if (
-            !state.earliestUserMessage
-            || messageTimestamp < state.earliestUserMessage.timestamp
+            !state.earliestUserMessage ||
+            messageTimestamp < state.earliestUserMessage.timestamp
           ) {
             state.earliestUserMessage = { content, timestamp: messageTimestamp }
           }
@@ -188,11 +188,11 @@ export function parseConversationDetailPayload(
 
     if (typeof value === 'object') {
       const obj = value as Record<string, unknown>
-      const convId
-        = (obj.conversationId as string | undefined)
-          || (obj.conversation_id as string | undefined)
-          || (obj.cid as string | undefined)
-          || (isConversationId(obj.id) ? (obj.id as string) : null)
+      const convId =
+        (obj.conversationId as string | undefined) ||
+        (obj.conversation_id as string | undefined) ||
+        (obj.cid as string | undefined) ||
+        (isConversationId(obj.id) ? (obj.id as string) : null)
       if (convId && !state.originalId) state.originalId = normalizeConversationId(convId)
 
       if (!state.title && (obj.title || obj.name)) {
@@ -206,12 +206,12 @@ export function parseConversationDetailPayload(
       if (content && obj.author) {
         const role = obj.author === 'user' || obj.author === '0' ? 'user' : 'assistant'
         const createdAt = normalizeMessageTimestamp(state, objTimestamp, now)
-        const rawId
-          = (obj.id as string)
-            || (obj.messageId as string)
-            || `${createdAt}_${state.messages.size + 1}`
-        const resolvedId
-          = role === 'user'
+        const rawId =
+          (obj.id as string) ||
+          (obj.messageId as string) ||
+          `${createdAt}_${state.messages.size + 1}`
+        const resolvedId =
+          role === 'user'
             ? resolveUniqueMessageId(state, `gemini_${rawId}`, content)
             : `gemini_${rawId}`
         upsertMessage(state, {
@@ -225,8 +225,8 @@ export function parseConversationDetailPayload(
         if (role === 'user') {
           const messageTimestamp = objTimestamp ?? createdAt
           if (
-            !state.earliestUserMessage
-            || messageTimestamp < state.earliestUserMessage.timestamp
+            !state.earliestUserMessage ||
+            messageTimestamp < state.earliestUserMessage.timestamp
           ) {
             state.earliestUserMessage = { content, timestamp: messageTimestamp }
           }
@@ -268,30 +268,25 @@ export function parseConversationDetailPayload(
   const createdAt = state.defaultTimestamp ?? messages[0]?.createdAt ?? now
   const firstUserMessage = messages.find((m) => m.role === 'user')
   const preview = firstUserMessage?.content || messages[0]?.content || ''
-  const title
-    = state.earliestUserMessage?.content.slice(0, 80)
-      || firstUserMessage?.content.slice(0, 80)
-      || state.title
-      || 'Gemini Chat'
+  const title =
+    state.earliestUserMessage?.content.slice(0, 80) ||
+    firstUserMessage?.content.slice(0, 80) ||
+    state.title ||
+    'Gemini Chat'
 
   return {
-    conversation: {
-      id: `gemini_${conversationId}`,
-      platform: 'gemini' as const,
+    conversation: createConversation({
+      platform: 'gemini',
       originalId: conversationId,
       title,
       createdAt,
       updatedAt: messages[messages.length - 1]?.createdAt ?? createdAt,
+      now,
       messageCount: messages.length,
       preview: preview.slice(0, 200),
-      tags: [],
-      syncedAt: now,
-      detailStatus: 'full' as const,
-      detailSyncedAt: now,
-      isFavorite: false,
-      favoriteAt: null,
+      detailStatus: 'full',
       url: `${GEMINI_APP_URL}${conversationId}`,
-    },
+    }),
     messages,
   }
 }

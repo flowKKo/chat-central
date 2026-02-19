@@ -1,3 +1,7 @@
+// Conversation factory
+export { createConversation } from './conversation'
+export type { CreateConversationOptions } from './conversation'
+
 // Content extraction utilities
 export {
   extractChatGPTContent,

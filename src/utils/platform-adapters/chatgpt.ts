@@ -1,6 +1,6 @@
 import type { PlatformAdapter } from './types'
 import { extractSsePayloads, normalizeListPayload, parseJsonIfString } from './helpers'
-import { extractChatGPTContent, toEpochMillisWithFallback } from './common'
+import { createConversation, extractChatGPTContent, toEpochMillisWithFallback } from './common'
 import type { Conversation, Message } from '@/types'
 import { createLogger } from '@/utils/logger'
 
@@ -60,23 +60,16 @@ export const chatgptAdapter: PlatformAdapter = {
           const updatedAt = toEpochMillisWithFallback(obj.update_time, createdAt)
           const previewSource = (obj.snippet as string) || (obj.title as string) || ''
 
-          const conversation: Conversation = {
-            id: `chatgpt_${originalId}`,
+          const conversation = createConversation({
             platform: 'chatgpt',
             originalId,
             title: (obj.title as string) || 'New chat',
             createdAt,
             updatedAt,
-            messageCount: 0, // No message count in the list
+            now,
             preview: previewSource,
-            tags: [],
-            syncedAt: now,
-            detailStatus: 'none',
-            detailSyncedAt: null,
-            isFavorite: false,
-            favoriteAt: null,
             url: this.buildConversationUrl(originalId),
-          }
+          })
 
           return conversation
         } catch (e) {
@@ -126,23 +119,16 @@ export const chatgptAdapter: PlatformAdapter = {
     const createdAt = toEpochMillisWithFallback(item.create_time, now)
     const updatedAt = toEpochMillisWithFallback(item.update_time, createdAt)
 
-    const conversation: Conversation = {
-      id: `chatgpt_${originalId}`,
+    const conversation = createConversation({
       platform: 'chatgpt',
       originalId,
       title: (item.title as string) || 'New chat',
       createdAt,
       updatedAt,
-      messageCount: 0,
-      preview: '',
-      tags: [],
-      syncedAt: now,
+      now,
       detailStatus: 'full',
-      detailSyncedAt: now,
-      isFavorite: false,
-      favoriteAt: null,
       url: this.buildConversationUrl(originalId),
-    }
+    })
 
     const messages: Message[] = []
     const mapping = item.mapping
@@ -279,23 +265,18 @@ export const chatgptAdapter: PlatformAdapter = {
     const previewSource = firstUser?.content || messages[0]?.content || ''
     const titleSource = firstUser?.content || messages[0]?.content || 'New chat'
 
-    const conversation: Conversation = {
-      id: `chatgpt_${conversationId}`,
+    const conversation = createConversation({
       platform: 'chatgpt',
       originalId: conversationId,
       title: titleSource.slice(0, 80),
       createdAt: messages[0]?.createdAt ?? now,
       updatedAt: messages[messages.length - 1]?.createdAt ?? now,
+      now,
       messageCount: messages.length,
       preview: previewSource.slice(0, 200),
-      tags: [],
-      syncedAt: now,
       detailStatus: 'partial',
-      detailSyncedAt: now,
-      isFavorite: false,
-      favoriteAt: null,
       url: this.buildConversationUrl(conversationId),
-    }
+    })
 
     return { conversation, messages }
   },
