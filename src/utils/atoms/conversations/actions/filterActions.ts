@@ -41,19 +41,27 @@ export const toggleTagFilterAtom = atom(null, async (get, set, tag: string) => {
 
 /**
  * Clear all tag filters
+ * Resets pagination and reloads to reflect the unfiltered data.
  */
-export const clearTagFiltersAtom = atom(null, (get, set) => {
+export const clearTagFiltersAtom = atom(null, async (get, set) => {
   const filters = get(filtersAtom)
   set(filtersAtom, { ...filters, tags: [] })
+
+  resetAllPagination(get, set)
+  await set(loadConversationsAtom, { reset: true })
 })
 
 /**
  * Clear all filters
+ * Resets pagination and reloads to reflect the unfiltered data.
  */
-export const clearAllFiltersAtom = atom(null, (_get, set) => {
+export const clearAllFiltersAtom = atom(null, async (get, set) => {
   set(filtersAtom, {
     platforms: [],
     dateRange: { start: null, end: null },
     tags: [],
   })
+
+  resetAllPagination(get, set)
+  await set(loadConversationsAtom, { reset: true })
 })
