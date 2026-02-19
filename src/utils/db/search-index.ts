@@ -31,6 +31,8 @@ const MAX_DIGEST_LENGTH = 5000
 
 let index: MiniSearch<IndexedDocument> | null = null
 let dirty = true
+// Cache message digests so metadata-only updates (favorites, tags) don't lose them
+const digestCache = new Map<string, string>()
 
 function createIndex(): MiniSearch<IndexedDocument> {
   return new MiniSearch<IndexedDocument>({
@@ -94,7 +96,16 @@ export async function getOrBuildIndex(): Promise<MiniSearch<IndexedDocument>> {
   const conversations = await db.conversations.filter((conv) => !conv.deleted).toArray()
 
   // Build message digests for all conversations in parallel
-  const digests = await Promise.all(conversations.map((conv) => buildMessageDigest(conv.id)))
+  const digestResults = await Promise.allSettled(
+    conversations.map((conv) => buildMessageDigest(conv.id))
+  )
+  const digests = digestResults.map((r) => (r.status === 'fulfilled' ? r.value : ''))
+
+  // Populate digest cache
+  digestCache.clear()
+  conversations.forEach((conv, i) => {
+    if (digests[i]) digestCache.set(conv.id, digests[i])
+  })
 
   const documents = conversations.map((conv, i) => toDocument(conv, digests[i]))
   newIndex.addAll(documents)
@@ -114,13 +125,15 @@ export function updateSearchIndex(conv: Conversation): void {
   if (!index || dirty) return
 
   if (index.has(conv.id)) {
-    // Preserve existing messageDigest by re-adding with empty digest
-    // Full digest update happens via updateSearchIndexWithMessages
     index.discard(conv.id)
   }
 
   if (!conv.deleted) {
-    index.add(toDocument(conv))
+    // Preserve cached messageDigest so metadata-only updates don't break message search
+    const cachedDigest = digestCache.get(conv.id) ?? ''
+    index.add(toDocument(conv, cachedDigest))
+  } else {
+    digestCache.delete(conv.id)
   }
 }
 
@@ -135,6 +148,7 @@ export async function updateSearchIndexWithMessages(conversationId: string): Pro
   if (!conv || conv.deleted) return
 
   const digest = await buildMessageDigest(conversationId)
+  digestCache.set(conversationId, digest)
 
   if (index.has(conv.id)) {
     index.discard(conv.id)
@@ -148,6 +162,7 @@ export async function updateSearchIndexWithMessages(conversationId: string): Pro
  */
 export function removeFromSearchIndex(id: string): void {
   if (!index || dirty) return
+  digestCache.delete(id)
 
   if (index.has(id)) {
     index.discard(id)
@@ -160,6 +175,7 @@ export function removeFromSearchIndex(id: string): void {
 export function invalidateSearchIndex(): void {
   dirty = true
   index = null
+  digestCache.clear()
 }
 
 /**
@@ -195,4 +211,5 @@ export async function searchConversationIndex(
 export function _resetSearchIndex(): void {
   index = null
   dirty = true
+  digestCache.clear()
 }
