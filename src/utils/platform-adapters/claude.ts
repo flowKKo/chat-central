@@ -276,7 +276,10 @@ export const claudeAdapter: PlatformAdapter = {
       if (msg) {
         messageId = (msg.uuid as string) || (msg.id as string) || messageId
         if (msg.created_at) {
-          createdAt = new Date(msg.created_at as string).getTime()
+          const parsed = toEpochMillis(msg.created_at)
+          if (parsed !== null) {
+            createdAt = parsed
+          }
         }
         if (msg.name) {
           title = msg.name as string
