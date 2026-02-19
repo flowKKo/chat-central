@@ -165,9 +165,11 @@ describe('parseConversationListPayload', () => {
     expect(result).toHaveLength(0)
   })
 
-  it('should skip array items without a timestamp', () => {
+  it('should fall back to now for array items without a timestamp', () => {
     const payload = [['c_abc', 'Title', null]]
     const result = parseConversationListPayload(payload, now)
-    expect(result).toHaveLength(0)
+    expect(result).toHaveLength(1)
+    expect(result[0].title).toBe('Title')
+    expect(result[0].createdAt).toBe(now)
   })
 })

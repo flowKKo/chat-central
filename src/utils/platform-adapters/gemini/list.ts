@@ -47,8 +47,7 @@ function parseConversationListItem(value: unknown, now: number): Conversation | 
     return null
   }
   if (title.startsWith('http')) return null
-  const createdAt = findTimestampInArray(value)
-  if (!createdAt) return null
+  const createdAt = findTimestampInArray(value) ?? now
   return buildConversation(value[0], title, createdAt, now)
 }
 
