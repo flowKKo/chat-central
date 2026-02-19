@@ -108,10 +108,16 @@ export async function exportData(options: ExportOptions = {}): Promise<ExportRes
     const BATCH_SIZE = 10
     for (let i = 0; i < conversations.length; i += BATCH_SIZE) {
       const batch = conversations.slice(i, i + BATCH_SIZE)
-      const results = await Promise.all(batch.map((conv) => getMessagesByConversationId(conv.id)))
+      const results = await Promise.allSettled(
+        batch.map((conv) => getMessagesByConversationId(conv.id))
+      )
       for (let j = 0; j < batch.length; j++) {
         const conv = batch[j]!
-        const messages = results[j]!
+        const result = results[j]!
+        if (result.status === 'rejected') {
+          syncLogger.warn(`Failed to load messages for ${conv.id}, exporting without messages`)
+        }
+        const messages = result.status === 'fulfilled' ? result.value : []
         totalMessages += messages.length
         const md = conversationToMarkdown(conv, messages, exportedAt)
         zip.file(filePaths[i + j]!, md)
@@ -187,9 +193,16 @@ export async function exportToJson(
   const conversationsWithMessages = []
   for (let i = 0; i < conversations.length; i += BATCH_SIZE) {
     const batch = conversations.slice(i, i + BATCH_SIZE)
-    const results = await Promise.all(batch.map((conv) => getMessagesByConversationId(conv.id)))
+    const results = await Promise.allSettled(
+      batch.map((conv) => getMessagesByConversationId(conv.id))
+    )
     for (let j = 0; j < batch.length; j++) {
-      conversationsWithMessages.push({ ...batch[j]!, messages: results[j]! })
+      const result = results[j]!
+      if (result.status === 'rejected') {
+        syncLogger.warn(`Failed to load messages for ${batch[j]!.id}, exporting without messages`)
+      }
+      const messages = result.status === 'fulfilled' ? result.value : []
+      conversationsWithMessages.push({ ...batch[j]!, messages })
     }
   }
 
