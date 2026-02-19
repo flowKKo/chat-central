@@ -217,7 +217,9 @@ export async function softDeleteConversation(id: string): Promise<void> {
       syncedAt: null,
     })
   })
-  removeFromSearchIndex(id)
+  // Invalidate entire search index to guarantee consistency.
+  // removeFromSearchIndex could fail leaving stale entries.
+  invalidateSearchIndex()
 }
 
 /**

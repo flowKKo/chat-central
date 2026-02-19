@@ -1,3 +1,4 @@
+/* eslint-disable style/multiline-ternary, style/brace-style, style/operator-linebreak, style/jsx-one-expression-per-line */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { browser } from 'wxt/browser'
@@ -41,31 +42,37 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
   const [customValue, setCustomValue] = useState('')
   const [platformCount, setPlatformCount] = useState<number | null>(null)
 
+  // Use refs for values used in event listeners to avoid re-registering on every change
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+  const exportStateRef = useRef(exportState)
+  exportStateRef.current = exportState
+
   // Click-outside close (within Shadow DOM)
   useEffect(() => {
     const handlePointerDown = (e: PointerEvent) => {
       if (panelRef.current && !e.composedPath().includes(panelRef.current)) {
-        onClose()
+        onCloseRef.current()
       }
     }
     document.addEventListener('pointerdown', handlePointerDown, true)
     return () => document.removeEventListener('pointerdown', handlePointerDown, true)
-  }, [onClose])
+  }, [])
 
   // Escape key close
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (exportState === 'selecting') {
+        if (exportStateRef.current === 'selecting') {
           setExportState('idle')
         } else {
-          onClose()
+          onCloseRef.current()
         }
       }
     }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
-  }, [onClose, exportState])
+  }, [])
 
   // Listen for BATCH_FETCH_PROGRESS from background
   useEffect(() => {
