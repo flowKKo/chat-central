@@ -54,7 +54,23 @@ export const messageMergeStrategies: Record<string, MergeStrategy> = {
 // Merge Functions
 // ============================================================================
 
-type SyncRecord = Record<string, unknown> & Partial<SyncFields> & { modifiedAt?: number }
+type SyncRecord = Record<string, unknown> &
+  Partial<SyncFields> & { modifiedAt?: number; updatedAt?: number }
+
+/**
+ * Compare two records for LWW ordering.
+ * Uses modifiedAt as primary, updatedAt as tiebreaker.
+ * Returns true if local should win.
+ */
+function localWinsLww(local: SyncRecord, remote: SyncRecord): boolean {
+  const localMod = local.modifiedAt ?? 0
+  const remoteMod = remote.modifiedAt ?? 0
+  if (localMod !== remoteMod) return localMod > remoteMod
+  // Tiebreaker: use updatedAt when modifiedAt is equal (or both missing)
+  const localUpd = (local.updatedAt as number | undefined) ?? 0
+  const remoteUpd = (remote.updatedAt as number | undefined) ?? 0
+  return localUpd >= remoteUpd
+}
 
 /**
  * Merge two records using field-level strategies
@@ -100,14 +116,14 @@ export function mergeRecords(
 
     if (!strategy) {
       // No strategy defined - use LWW as default
-      merged[key] = (local.modifiedAt ?? 0) >= (remote.modifiedAt ?? 0) ? localVal : remoteVal
+      merged[key] = localWinsLww(local, remote) ? localVal : remoteVal
       continue
     }
 
     switch (strategy) {
       case 'lww':
-        // Last-Write-Wins based on modifiedAt
-        merged[key] = (local.modifiedAt ?? 0) >= (remote.modifiedAt ?? 0) ? localVal : remoteVal
+        // Last-Write-Wins based on modifiedAt with updatedAt tiebreaker
+        merged[key] = localWinsLww(local, remote) ? localVal : remoteVal
         break
 
       case 'or':
