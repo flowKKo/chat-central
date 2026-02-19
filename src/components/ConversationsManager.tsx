@@ -19,6 +19,7 @@ import {
   debouncedSearchAtom,
   activeSearchQueryAtom,
   searchResultsAtom,
+  clearSearchAtom,
   selectedFilterTagsAtom,
   filtersAtom,
   setDateRangeAtom,
@@ -89,10 +90,18 @@ export default function ConversationsManager() {
   const [searchQuery, setSearchQuery] = useState('')
   const selectedPlatform = useAtomValue(currentPlatformFilterAtom)
   const setPlatformFilter = useSetAtom(setPlatformFilterAtom)
+  const clearSearch = useSetAtom(clearSearchAtom)
 
   useEffect(() => {
     loadConversations({ reset: true })
   }, [loadConversations])
+
+  // Clear stale search and batch state when switching between All/Favorites views
+  useEffect(() => {
+    setSearchQuery('')
+    clearSearch()
+    clearBatchSelection()
+  }, [isFavorites, clearSearch, clearBatchSelection])
 
   // Open conversation detail from URL param (e.g. ?detail=claude_abc123)
   const detailId = searchParams.get('detail')

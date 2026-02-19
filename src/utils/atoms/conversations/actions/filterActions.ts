@@ -1,7 +1,7 @@
 import { atom } from 'jotai'
 import { getAllTags } from '@/utils/db'
 import { createLogger } from '@/utils/logger'
-import { allTagsAtom, filtersAtom } from '../state'
+import { activeSearchQueryAtom, allTagsAtom, filtersAtom, searchResultsAtom } from '../state'
 import { resetAllPagination } from './helpers'
 import { loadConversationsAtom } from './loadingActions'
 
@@ -61,6 +61,10 @@ export const clearAllFiltersAtom = atom(null, async (get, set) => {
     dateRange: { start: null, end: null },
     tags: [],
   })
+
+  // Also clear any active search so the UI fully resets
+  set(activeSearchQueryAtom, '')
+  set(searchResultsAtom, [])
 
   resetAllPagination(get, set)
   await set(loadConversationsAtom, { reset: true })
