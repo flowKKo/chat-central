@@ -6,6 +6,7 @@ import {
   extractClaudeMessageContent,
   extractClaudeStreamContent,
   extractRole,
+  toEpochMillis,
 } from './common'
 import { createLogger } from '@/utils/logger'
 
@@ -107,8 +108,8 @@ export const claudeAdapter: PlatformAdapter = {
             platform: 'claude',
             originalId,
             title: (obj.name as string) || 'Untitled',
-            createdAt: obj.created_at ? new Date(obj.created_at as string).getTime() : now,
-            updatedAt: obj.updated_at ? new Date(obj.updated_at as string).getTime() : now,
+            createdAt: toEpochMillis(obj.created_at) ?? now,
+            updatedAt: toEpochMillis(obj.updated_at) ?? now,
             now,
             messageCount: (obj.message_count as number) ?? 0,
             preview: (obj.preview as string) || '',
@@ -182,13 +183,11 @@ export const claudeAdapter: PlatformAdapter = {
           if (candidate) originalId = candidate
         }
 
-        const createdAt = msgObj.created_at
-          ? new Date(msgObj.created_at as string).getTime()
-          : msgObj.createdAt
-            ? new Date(msgObj.createdAt as string).getTime()
-            : msgObj.timestamp
-              ? new Date(msgObj.timestamp as string).getTime()
-              : now
+        const createdAt =
+          toEpochMillis(msgObj.created_at) ??
+          toEpochMillis(msgObj.createdAt) ??
+          toEpochMillis(msgObj.timestamp) ??
+          now
 
         minCreatedAt = Math.min(minCreatedAt, createdAt)
         maxCreatedAt = Math.max(maxCreatedAt, createdAt)
@@ -212,17 +211,13 @@ export const claudeAdapter: PlatformAdapter = {
     const firstUserMessage = messages.find((m) => m.role === 'user')
     const title = titleSource || firstUserMessage?.content.slice(0, 80) || 'Untitled'
 
-    const createdAt = base?.created_at
-      ? new Date(base.created_at as string).getTime()
-      : base?.createdAt
-        ? new Date(base.createdAt as string).getTime()
-        : minCreatedAt || now
+    const createdAt =
+      toEpochMillis(base?.created_at) ?? toEpochMillis(base?.createdAt) ?? (minCreatedAt || now)
 
-    const updatedAt = base?.updated_at
-      ? new Date(base.updated_at as string).getTime()
-      : base?.updatedAt
-        ? new Date(base.updatedAt as string).getTime()
-        : maxCreatedAt || createdAt
+    const updatedAt =
+      toEpochMillis(base?.updated_at) ??
+      toEpochMillis(base?.updatedAt) ??
+      (maxCreatedAt || createdAt)
 
     const conversation = createConversation({
       platform: 'claude',
