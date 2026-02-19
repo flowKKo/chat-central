@@ -29,10 +29,10 @@ describe('json utilities', () => {
       expect(result).toBe('[1, 2, 3]')
     })
 
-    it('should return empty string if no newline after prefix', () => {
+    it('should strip prefix directly if no newline after prefix', () => {
       const input = ")]}'noNewline"
       const result = stripXssiPrefix(input)
-      expect(result).toBe('')
+      expect(result).toBe('noNewline')
     })
 
     it('should return trimmed input if no XSSI prefix', () => {
