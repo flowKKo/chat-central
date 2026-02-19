@@ -64,19 +64,21 @@ export function parseJsonl<T>(
  * Returns true if download was successful, false otherwise
  */
 export function downloadBlob(blob: Blob, filename: string): boolean {
+  let url: string | undefined
   try {
-    const url = URL.createObjectURL(blob)
+    url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = filename
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
-    URL.revokeObjectURL(url)
     return true
   } catch (error) {
     syncLogger.error('Failed to download file', error)
     return false
+  } finally {
+    if (url) URL.revokeObjectURL(url)
   }
 }
 
