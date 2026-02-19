@@ -222,4 +222,64 @@ describe('pushChanges', () => {
     expect(result.error?.code).toBe('network_error')
     expect(result.error?.message).toBe('Connection reset')
   })
+
+  it('should not clear dirty flags when a later batch fails', async () => {
+    // 4 conversations, batch size 2 → 2 batches
+    const convs = Array.from({ length: 4 }, (_, i) => ({
+      id: `c${i}`,
+      syncVersion: 1,
+      modifiedAt: i * 1000,
+    }))
+    vi.mocked(dbModule.getDirtyConversations).mockResolvedValue(convs as never)
+    vi.mocked(dbModule.getDirtyMessages).mockResolvedValue([])
+
+    let callCount = 0
+    const pushFn = vi.fn().mockImplementation(() => {
+      callCount++
+      if (callCount === 1) {
+        // First batch succeeds
+        return Promise.resolve({ success: true, applied: ['c0', 'c1'], failed: [] })
+      }
+      // Second batch fails
+      return Promise.resolve({
+        success: false,
+        applied: [],
+        failed: [],
+        error: { code: 'server_error', message: 'Server down', recoverable: true },
+      })
+    })
+    const provider = createMockProvider({ push: pushFn })
+
+    const result = await pushChanges(provider, 2)
+    expect(result.success).toBe(false)
+    // Dirty flags should NOT have been cleared for the first batch
+    expect(vi.mocked(dbModule.clearDirtyFlags)).not.toHaveBeenCalled()
+  })
+
+  it('should clear dirty flags only after all batches succeed', async () => {
+    const convs = Array.from({ length: 4 }, (_, i) => ({
+      id: `c${i}`,
+      syncVersion: 1,
+      modifiedAt: i * 1000,
+    }))
+    vi.mocked(dbModule.getDirtyConversations).mockResolvedValue(convs as never)
+    vi.mocked(dbModule.getDirtyMessages).mockResolvedValue([])
+
+    let callCount = 0
+    const pushFn = vi.fn().mockImplementation(() => {
+      callCount++
+      if (callCount === 1) {
+        return Promise.resolve({ success: true, applied: ['c0', 'c1'], failed: [] })
+      }
+      return Promise.resolve({ success: true, applied: ['c2', 'c3'], failed: [] })
+    })
+    const provider = createMockProvider({ push: pushFn })
+
+    const result = await pushChanges(provider, 2)
+    expect(result.success).toBe(true)
+    expect(result.counts.conversations).toBe(4)
+    // Dirty flags cleared once with all IDs
+    expect(vi.mocked(dbModule.clearDirtyFlags)).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(dbModule.clearDirtyFlags)).toHaveBeenCalledWith(['c0', 'c1', 'c2', 'c3'], [])
+  })
 })

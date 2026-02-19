@@ -47,6 +47,12 @@ export async function pushChanges(
     // Fetch pending operations once before the loop to avoid N+1 queries
     const pendingOps = await getPendingOperations()
 
+    // Accumulate successful IDs across all batches — only clear dirty flags
+    // after ALL batches complete to prevent data loss on partial failure.
+    const allAppliedConvIds: string[] = []
+    const allAppliedMsgIds: string[] = []
+    const allAppliedEntityIds = new Set<string>()
+
     // Push in batches
     for (let i = 0; i < allRecords.length; i += batchSize) {
       const batch = allRecords.slice(i, i + batchSize)
@@ -59,21 +65,15 @@ export async function pushChanges(
       }
 
       // Track successful pushes (O(n) with Set lookup)
-      const appliedSet = new Set(pushResult.applied)
       const appliedConvIds = pushResult.applied.filter((id) => conversationIdSet.has(id))
       const appliedMsgIds = pushResult.applied.filter((id) => messageIdSet.has(id))
 
       result.counts.conversations += appliedConvIds.length
       result.counts.messages += appliedMsgIds.length
 
-      // Clear dirty flags for successful records
-      await clearDirtyFlags(appliedConvIds, appliedMsgIds)
-
-      // Mark operations as synced (filter from pre-fetched list)
-      const syncedOpIds = pendingOps.filter((op) => appliedSet.has(op.entityId)).map((op) => op.id)
-      if (syncedOpIds.length > 0) {
-        await markOperationsSynced(syncedOpIds)
-      }
+      allAppliedConvIds.push(...appliedConvIds)
+      allAppliedMsgIds.push(...appliedMsgIds)
+      for (const id of pushResult.applied) allAppliedEntityIds.add(id)
 
       // Track failures
       result.failed.push(
@@ -83,6 +83,17 @@ export async function pushChanges(
           serverVersion: f.serverVersion,
         }))
       )
+    }
+
+    // Clear dirty flags only after all batches succeed
+    await clearDirtyFlags(allAppliedConvIds, allAppliedMsgIds)
+
+    // Mark operations as synced
+    const syncedOpIds = pendingOps
+      .filter((op) => allAppliedEntityIds.has(op.entityId))
+      .map((op) => op.id)
+    if (syncedOpIds.length > 0) {
+      await markOperationsSynced(syncedOpIds)
     }
 
     return result

@@ -172,26 +172,34 @@ export async function getDirtyMessages(): Promise<Message[]> {
 
 /**
  * Mark a conversation as dirty (needs sync)
+ * Uses .modify() callback for atomic read-increment-write within a single cursor operation.
  */
 export async function markConversationDirty(id: string): Promise<void> {
   const now = Date.now()
-  await db.conversations.update(id, {
-    dirty: true,
-    modifiedAt: now,
-    syncVersion: ((await db.conversations.get(id))?.syncVersion ?? 0) + 1,
-  } as Partial<Conversation>)
+  await db.conversations
+    .where('id')
+    .equals(id)
+    .modify((conv) => {
+      conv.dirty = true
+      conv.modifiedAt = now
+      conv.syncVersion = (conv.syncVersion ?? 0) + 1
+    })
 }
 
 /**
  * Mark a message as dirty
+ * Uses .modify() callback for atomic read-increment-write within a single cursor operation.
  */
 export async function markMessageDirty(id: string): Promise<void> {
   const now = Date.now()
-  await db.messages.update(id, {
-    dirty: true,
-    modifiedAt: now,
-    syncVersion: ((await db.messages.get(id))?.syncVersion ?? 0) + 1,
-  } as Partial<Message>)
+  await db.messages
+    .where('id')
+    .equals(id)
+    .modify((msg) => {
+      msg.dirty = true
+      msg.modifiedAt = now
+      msg.syncVersion = (msg.syncVersion ?? 0) + 1
+    })
 }
 
 /**
