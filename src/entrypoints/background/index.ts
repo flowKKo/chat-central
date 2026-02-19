@@ -155,7 +155,7 @@ async function handleMessage(message: unknown): Promise<unknown> {
     case 'OPEN_EXTENSION_PAGE': {
       const path = (message as unknown as { path: unknown }).path
       // Validate: must be a string, start with /manage.html, and only contain safe characters
-      if (typeof path === 'string' && /^\/manage\.html(?:#[\w/=-]*)?$/.test(path)) {
+      if (typeof path === 'string' && /^\/manage\.html(?:#[\w/=?&.%-]*)?$/.test(path)) {
         const url = browser.runtime.getURL(path as `/manage.html${string}`)
         await browser.tabs.create({ url })
         return { success: true }
