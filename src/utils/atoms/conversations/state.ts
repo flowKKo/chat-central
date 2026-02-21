@@ -195,23 +195,41 @@ function countByPlatform(
   return counts
 }
 
+type PlatformCounts = Record<Platform | 'total', number>
+
+function countsEqual(a: PlatformCounts, b: PlatformCounts): boolean {
+  return (
+    a.claude === b.claude && a.chatgpt === b.chatgpt && a.gemini === b.gemini && a.total === b.total
+  )
+}
+
 /**
  * Filtered conversation counts per platform (respects date filter)
  * When a date filter is active, these counts reflect the filtered results
  */
+let prevFilteredConvCounts: PlatformCounts | null = null
 export const filteredConversationCountsAtom = atom((get) => {
   const { dateRange } = get(filtersAtom)
   if (!dateRange.start && !dateRange.end) return get(conversationCountsAtom)
-  return countByPlatform(get(conversationsAtom), dateRange)
+  const next = countByPlatform(get(conversationsAtom), dateRange)
+  if (prevFilteredConvCounts && countsEqual(prevFilteredConvCounts, next))
+    return prevFilteredConvCounts
+  prevFilteredConvCounts = next
+  return next
 })
 
 /**
  * Filtered favorite counts per platform (respects date filter)
  */
+let prevFilteredFavCounts: PlatformCounts | null = null
 export const filteredFavoriteCountsAtom = atom((get) => {
   const { dateRange } = get(filtersAtom)
   if (!dateRange.start && !dateRange.end) return get(favoriteCountsAtom)
-  return countByPlatform(get(favoritesConversationsAtom), dateRange)
+  const next = countByPlatform(get(favoritesConversationsAtom), dateRange)
+  if (prevFilteredFavCounts && countsEqual(prevFilteredFavCounts, next))
+    return prevFilteredFavCounts
+  prevFilteredFavCounts = next
+  return next
 })
 
 // ============================================================================
