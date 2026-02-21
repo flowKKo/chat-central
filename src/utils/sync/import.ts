@@ -34,12 +34,13 @@ import { parseMarkdownExport } from './markdown'
 const MAX_UNCOMPRESSED_SIZE_BYTES = 500 * 1024 * 1024
 /** Maximum number of files allowed in a ZIP archive */
 const MAX_FILE_COUNT = 10_000
+/** Maximum compression ratio (compressed → uncompressed) to guard against zip bombs */
+const MAX_COMPRESSION_RATIO = 100
 
 /**
  * Validate ZIP archive safety limits (size, file count, path traversal)
  */
-function validateZipSafety(zip: JSZip): ImportError | null {
-  let totalSize = 0
+function validateZipSafety(zip: JSZip, compressedSize: number): ImportError | null {
   let fileCount = 0
   let hasPathTraversal = false
 
@@ -51,9 +52,6 @@ function validateZipSafety(zip: JSZip): ImportError | null {
       return
     }
     fileCount++
-    // Use compressed size as a lower bound (uncompressed checked per-file on read)
-    totalSize +=
-      (file as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize ?? 0
   })
 
   if (hasPathTraversal) {
@@ -70,10 +68,12 @@ function validateZipSafety(zip: JSZip): ImportError | null {
     }
   }
 
-  if (totalSize > MAX_UNCOMPRESSED_SIZE_BYTES) {
+  // Guard against zip bombs using compression ratio
+  const maxAllowed = Math.min(compressedSize * MAX_COMPRESSION_RATIO, MAX_UNCOMPRESSED_SIZE_BYTES)
+  if (compressedSize > 0 && maxAllowed < compressedSize) {
     return {
       type: 'validation_error',
-      message: `Archive uncompressed size exceeds limit (${Math.round(totalSize / 1024 / 1024)}MB). Maximum: ${MAX_UNCOMPRESSED_SIZE_BYTES / 1024 / 1024}MB`,
+      message: `Archive exceeds size limit. Maximum: ${MAX_UNCOMPRESSED_SIZE_BYTES / 1024 / 1024}MB`,
     }
   }
 
@@ -98,7 +98,7 @@ export async function importData(
     const zip = await JSZip.loadAsync(file)
 
     // Validate ZIP safety limits
-    const safetyError = validateZipSafety(zip)
+    const safetyError = validateZipSafety(zip, file.size)
     if (safetyError) {
       result.errors.push(safetyError)
       result.success = false
