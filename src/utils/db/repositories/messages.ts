@@ -1,6 +1,6 @@
 import { db } from '../schema'
 import type { Message } from '@/types'
-import { updateSearchIndexWithMessages } from '../search-index'
+import { invalidateSearchIndex, updateSearchIndexWithMessages } from '../search-index'
 
 /**
  * Get all messages for a conversation
@@ -27,6 +27,7 @@ export async function upsertMessages(messages: Message[]): Promise<void> {
  */
 export async function deleteMessagesByConversationId(conversationId: string): Promise<void> {
   await db.messages.where('conversationId').equals(conversationId).delete()
+  invalidateSearchIndex()
 }
 
 /**
