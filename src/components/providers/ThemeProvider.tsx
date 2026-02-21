@@ -4,7 +4,6 @@ import {
   applyThemeToDocument,
   initializeTheme,
   type ResolvedTheme,
-  resolvedThemeAtom,
   setupSystemThemeListener,
   themePreferenceAtom,
 } from '@/utils/atoms/theme'
@@ -15,7 +14,6 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [preference] = useAtom(themePreferenceAtom)
-  const [, setResolved] = useAtom(resolvedThemeAtom)
 
   // Initialize theme on mount
   useEffect(() => {
@@ -31,7 +29,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     })
 
     return cleanup
-  }, [preference, setResolved])
+  }, [preference])
 
   return <>{children}</>
 }
