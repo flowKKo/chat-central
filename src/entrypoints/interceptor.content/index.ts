@@ -222,9 +222,18 @@ function setupFetchListener() {
     log.debug('Active fetch-detail request:', url)
 
     // Fire-and-forget: the hooked fetch will capture the response
-    window.fetch(url).catch((e) => {
-      log.error('Failed to fetch conversation detail:', e)
-    })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 30_000)
+    window
+      .fetch(url, { signal: controller.signal })
+      .catch((e) => {
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          log.warn('Fetch conversation detail timed out:', url)
+        } else {
+          log.error('Failed to fetch conversation detail:', e)
+        }
+      })
+      .finally(() => clearTimeout(timeout))
   }
 
   window.addEventListener('message', fetchListener)
