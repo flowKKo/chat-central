@@ -145,6 +145,23 @@ describe('pullChanges', () => {
     expect(result.error?.code).toBe('auth_failed')
   })
 
+  it('should abort when exceeding max pull pages', async () => {
+    const pullFn = vi.fn().mockResolvedValue({
+      success: true,
+      records: [makeSyncRecord('r')],
+      cursor: 'next',
+      hasMore: true,
+    })
+
+    const provider = createMockProvider({ pull: pullFn })
+    const result = await pullChanges(provider, null)
+
+    // Should stop before going on forever (MAX_PULL_PAGES = 1000)
+    expect(pullFn.mock.calls.length).toBeLessThanOrEqual(1000)
+    expect(result.success).toBe(true)
+    expect(result.records.length).toBe(pullFn.mock.calls.length)
+  })
+
   it('should handle provider returning empty page with no more data', async () => {
     const provider = createMockProvider({
       pull: vi.fn().mockResolvedValue({
