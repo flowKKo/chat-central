@@ -61,6 +61,7 @@ export function BatchActionBar({
             )}
             onClick={handleExport}
             disabled={isDisabled}
+            aria-busy={isExporting}
           >
             <Download className="h-3.5 w-3.5" />
             {t('common:export')}
