@@ -36,7 +36,11 @@ export function hydrateConfig(set: (config: Config) => void): () => void {
   loadConfig().then(set)
 
   // Watch for changes from other contexts (widget, popup, etc.)
-  return watchConfig(set)
+  const unwatch = watchConfig(set)
+  return () => {
+    unwatch()
+    hydrated = false
+  }
 }
 
 // Write version number, used to prevent old writes from overwriting new values
