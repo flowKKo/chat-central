@@ -256,10 +256,6 @@ export const chatgptAdapter: PlatformAdapter = {
 
     if (!conversationId || messagesById.size === 0) return null
 
-    for (const msg of messagesById.values()) {
-      msg.conversationId = `chatgpt_${conversationId}`
-    }
-
     const messages = Array.from(messagesById.values()).sort((a, b) => a.createdAt - b.createdAt)
     const firstUser = messages.find((m) => m.role === 'user')
     const previewSource = firstUser?.content || messages[0]?.content || ''
