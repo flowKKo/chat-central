@@ -13,8 +13,8 @@ const DEFAULT_POLL_INTERVAL_MS = 500
 const DEFAULT_POLL_TIMEOUT_MS = 15_000
 const TAB_LOAD_TIMEOUT_MS = 15_000
 
-/** Per-batch token to prevent race conditions between concurrent batch fetches */
-let activeBatchToken: string | null = null
+/** Per-platform batch tokens to allow concurrent batch fetches on different platforms */
+const activeBatchTokens = new Map<Platform, string>()
 
 export interface BatchFetchProgress {
   status: 'fetching' | 'done' | 'error' | 'cancelled'
@@ -206,9 +206,9 @@ async function executeFetch(
  */
 export async function batchFetchDetails(platform: Platform, limit?: number): Promise<void> {
   const batchToken = `${platform}_${Date.now()}_${Math.random().toString(36).slice(2)}`
-  activeBatchToken = batchToken
+  activeBatchTokens.set(platform, batchToken)
 
-  const isCancelled = () => activeBatchToken !== batchToken
+  const isCancelled = () => activeBatchTokens.get(platform) !== batchToken
   const strategy = getStrategy(platform)
   const pollTimeout = strategy.pollTimeoutMs ?? DEFAULT_POLL_TIMEOUT_MS
   const fetchInterval = strategy.fetchIntervalMs ?? DEFAULT_FETCH_INTERVAL_MS
@@ -385,6 +385,10 @@ async function generateAndSendExport(
 /**
  * Cancel an in-progress batch fetch
  */
-export function cancelBatchFetch(): void {
-  activeBatchToken = null
+export function cancelBatchFetch(platform?: Platform): void {
+  if (platform) {
+    activeBatchTokens.delete(platform)
+  } else {
+    activeBatchTokens.clear()
+  }
 }
