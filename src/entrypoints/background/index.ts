@@ -78,6 +78,15 @@ export default defineBackground({
       }
     })
 
+    // Close spotlight popup when it loses focus (click outside)
+    safeAddListener(browser.windows?.onFocusChanged, (windowId: number) => {
+      if (spotlightWindowId !== null && windowId !== spotlightWindowId) {
+        const id = spotlightWindowId
+        spotlightWindowId = null
+        browser.windows.remove(id).catch(() => {})
+      }
+    })
+
     // Dev reload: Connect to local WebSocket server for auto-reload
     connectDevReloadServer()
   },
