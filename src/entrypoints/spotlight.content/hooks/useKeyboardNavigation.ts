@@ -5,6 +5,7 @@ interface UseKeyboardNavigationOptions {
   onSelect: (index: number) => void
   onModSelect: (index: number) => void
   onClose: () => void
+  onCyclePlatform: () => void
   isVisible: boolean
   /** When this changes, selectedIndex resets to 0. Use to signal fresh results (not appends). */
   resultsVersion: number
@@ -20,6 +21,7 @@ export function useKeyboardNavigation({
   onSelect,
   onModSelect,
   onClose,
+  onCyclePlatform,
   isVisible,
   resultsVersion,
 }: UseKeyboardNavigationOptions): UseKeyboardNavigationReturn {
@@ -59,6 +61,12 @@ export function useKeyboardNavigation({
           }
           break
 
+        case 'Tab':
+          e.preventDefault()
+          e.stopPropagation()
+          onCyclePlatform()
+          break
+
         case 'Escape':
           e.preventDefault()
           e.stopPropagation()
@@ -66,7 +74,7 @@ export function useKeyboardNavigation({
           break
       }
     },
-    [isVisible, itemCount, selectedIndex, onSelect, onModSelect, onClose]
+    [isVisible, itemCount, selectedIndex, onSelect, onModSelect, onClose, onCyclePlatform]
   )
 
   useEffect(() => {

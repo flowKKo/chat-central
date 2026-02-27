@@ -24,6 +24,8 @@ export function App({ isVisible, onClose }: AppProps) {
     hasMore,
     loadMore,
     resultsVersion,
+    activePlatform,
+    cyclePlatform,
   } = useSpotlightSearch(isVisible)
 
   const handleSelect = useCallback(
@@ -68,6 +70,7 @@ export function App({ isVisible, onClose }: AppProps) {
     onSelect: handleSelect,
     onModSelect: handleModSelect,
     onClose,
+    onCyclePlatform: cyclePlatform,
     isVisible,
     resultsVersion,
   })
@@ -76,7 +79,13 @@ export function App({ isVisible, onClose }: AppProps) {
 
   return (
     <SpotlightOverlay onClose={onClose}>
-      <SpotlightInput query={query} onQueryChange={setQuery} isVisible={isVisible} />
+      <SpotlightInput
+        query={query}
+        onQueryChange={setQuery}
+        isVisible={isVisible}
+        activePlatform={activePlatform}
+        onCyclePlatform={cyclePlatform}
+      />
 
       {results.length > 0 ? (
         <SpotlightResultList
@@ -86,6 +95,7 @@ export function App({ isVisible, onClose }: AppProps) {
           onSelect={handleSelect}
           onMouseSelect={setSelectedIndex}
           isDefaultView={isDefaultView}
+          activePlatform={activePlatform}
           hasMore={hasMore}
           isLoadingMore={isLoadingMore}
           onLoadMore={loadMore}

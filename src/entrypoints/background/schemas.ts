@@ -109,6 +109,7 @@ export const BatchFetchCancelSchema = z.object({
 export const SearchWithMatchesSchema = z.object({
   action: z.literal('SEARCH_WITH_MATCHES'),
   query: z.string().min(1),
+  platform: PlatformSchema.optional(),
   limit: z.number().positive().optional(),
   offset: z.number().nonnegative().optional(),
 })
@@ -118,6 +119,7 @@ export const SearchWithMatchesSchema = z.object({
  */
 export const GetRecentConversationsSchema = z.object({
   action: z.literal('GET_RECENT_CONVERSATIONS'),
+  platform: PlatformSchema.optional(),
   limit: z.number().positive().optional(),
   offset: z.number().nonnegative().optional(),
 })

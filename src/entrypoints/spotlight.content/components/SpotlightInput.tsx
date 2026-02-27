@@ -1,13 +1,23 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { Platform } from '@/types'
+import { SpotlightPlatformFilter } from './SpotlightPlatformFilter'
 
 interface SpotlightInputProps {
   query: string
   onQueryChange: (q: string) => void
   isVisible: boolean
+  activePlatform: Platform | null
+  onCyclePlatform: () => void
 }
 
-export function SpotlightInput({ query, onQueryChange, isVisible }: SpotlightInputProps) {
+export function SpotlightInput({
+  query,
+  onQueryChange,
+  isVisible,
+  activePlatform,
+  onCyclePlatform,
+}: SpotlightInputProps) {
   const { t } = useTranslation('spotlight')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -38,6 +48,8 @@ export function SpotlightInput({ query, onQueryChange, isVisible }: SpotlightInp
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.3-4.3" />
       </svg>
+
+      <SpotlightPlatformFilter platform={activePlatform} onCycle={onCyclePlatform} />
 
       <input
         ref={inputRef}

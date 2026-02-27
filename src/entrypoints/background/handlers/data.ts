@@ -141,11 +141,14 @@ export async function handleSearchWithMatches(
     return { error: 'Invalid message format' }
   }
 
-  const { query, limit, offset = 0 } = parseResult.data
+  const { query, platform, limit, offset = 0 } = parseResult.data
   const allResults = await searchConversationsWithMatches(query)
-  const end = limit ? offset + limit : allResults.length
-  const results = allResults.slice(offset, end)
-  return { results, hasMore: end < allResults.length }
+  const filtered = platform
+    ? allResults.filter((r) => r.conversation.platform === platform)
+    : allResults
+  const end = limit ? offset + limit : filtered.length
+  const results = filtered.slice(offset, end)
+  return { results, hasMore: end < filtered.length }
 }
 
 /**
@@ -160,9 +163,14 @@ export async function handleGetRecentConversations(
     return { error: 'Invalid message format' }
   }
 
-  const { limit = 10, offset = 0 } = parseResult.data
+  const { platform, limit = 10, offset = 0 } = parseResult.data
   // Fetch one extra to determine if there are more
-  const conversations = await getConversations({ limit: limit + 1, offset, orderBy: 'updatedAt' })
+  const conversations = await getConversations({
+    platform,
+    limit: limit + 1,
+    offset,
+    orderBy: 'updatedAt',
+  })
   const hasMore = conversations.length > limit
   return { conversations: hasMore ? conversations.slice(0, limit) : conversations, hasMore }
 }

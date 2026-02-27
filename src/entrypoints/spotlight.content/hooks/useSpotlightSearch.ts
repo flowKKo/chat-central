@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { browser } from 'wxt/browser'
-import type { Conversation } from '@/types'
+import type { Conversation, Platform } from '@/types'
 import type { SearchResultWithMatches } from '@/utils/db/search'
 import { createLogger } from '@/utils/logger'
 
@@ -22,11 +22,14 @@ interface UseSpotlightSearchReturn {
   loadMore: () => void
   /** Increments on every fresh load (not on load-more appends) */
   resultsVersion: number
+  activePlatform: Platform | null
+  cyclePlatform: () => void
 }
 
 const DEBOUNCE_MS = 200
 const PAGE_SIZE = 30
 const MIN_LOADING_MS = 500
+const PLATFORM_CYCLE: (Platform | null)[] = [null, 'claude', 'chatgpt', 'gemini']
 
 export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn {
   const [query, setQuery] = useState('')
@@ -36,14 +39,23 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
   const [isDefaultView, setIsDefaultView] = useState(true)
   const [hasMore, setHasMore] = useState(false)
   const [resultsVersion, setResultsVersion] = useState(0)
+  const [platform, setPlatform] = useState<Platform | null>(null)
   const searchVersionRef = useRef(0)
   const offsetRef = useRef(0)
+
+  const cyclePlatform = useCallback(() => {
+    setPlatform((prev) => {
+      const idx = PLATFORM_CYCLE.indexOf(prev)
+      return PLATFORM_CYCLE[(idx + 1) % PLATFORM_CYCLE.length] ?? null
+    })
+  }, [])
 
   // Load recent conversations when spotlight opens
   useEffect(() => {
     if (!isVisible) return
 
     setQuery('')
+    setPlatform(null)
     setIsDefaultView(true)
     setIsLoading(true)
     setHasMore(false)
@@ -80,9 +92,11 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
       })
   }, [isVisible])
 
-  // Debounced search when query changes
+  // Debounced search when query or platform changes
   useEffect(() => {
     if (!isVisible) return
+
+    const platformMsg = platform ? { platform } : {}
 
     if (!query.trim()) {
       // Reset to recent conversations
@@ -93,7 +107,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
       const version = ++searchVersionRef.current
 
       browser.runtime
-        .sendMessage({ action: 'GET_RECENT_CONVERSATIONS', limit: PAGE_SIZE })
+        .sendMessage({ action: 'GET_RECENT_CONVERSATIONS', limit: PAGE_SIZE, ...platformMsg })
         .then((response: unknown) => {
           if (searchVersionRef.current !== version) return
           const res = response as {
@@ -125,7 +139,12 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
 
     const timer = setTimeout(() => {
       browser.runtime
-        .sendMessage({ action: 'SEARCH_WITH_MATCHES', query: query.trim(), limit: PAGE_SIZE })
+        .sendMessage({
+          action: 'SEARCH_WITH_MATCHES',
+          query: query.trim(),
+          limit: PAGE_SIZE,
+          ...platformMsg,
+        })
         .then((response: unknown) => {
           if (searchVersionRef.current !== version) return
           const res = response as {
@@ -148,7 +167,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     }, DEBOUNCE_MS)
 
     return () => clearTimeout(timer)
-  }, [query, isVisible])
+  }, [query, platform, isVisible])
 
   const loadMore = useCallback(() => {
     if (isLoadingMore || !hasMore) return
@@ -158,13 +177,20 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     const currentOffset = offsetRef.current
     const startTime = Date.now()
 
+    const platformMsg = platform ? { platform } : {}
     const message = isDefaultView
-      ? { action: 'GET_RECENT_CONVERSATIONS', limit: PAGE_SIZE, offset: currentOffset }
+      ? {
+          action: 'GET_RECENT_CONVERSATIONS',
+          limit: PAGE_SIZE,
+          offset: currentOffset,
+          ...platformMsg,
+        }
       : {
           action: 'SEARCH_WITH_MATCHES',
           query: query.trim(),
           limit: PAGE_SIZE,
           offset: currentOffset,
+          ...platformMsg,
         }
 
     browser.runtime
@@ -206,7 +232,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
       .finally(() => {
         setIsLoadingMore(false)
       })
-  }, [isLoadingMore, hasMore, isDefaultView, query])
+  }, [isLoadingMore, hasMore, isDefaultView, query, platform])
 
   const handleSetQuery = useCallback((q: string) => {
     setQuery(q)
@@ -222,5 +248,7 @@ export function useSpotlightSearch(isVisible: boolean): UseSpotlightSearchReturn
     hasMore,
     loadMore,
     resultsVersion,
+    activePlatform: platform,
+    cyclePlatform,
   }
 }

@@ -8,6 +8,7 @@ describe('useKeyboardNavigation', () => {
     onSelect: vi.fn(),
     onModSelect: vi.fn(),
     onClose: vi.fn(),
+    onCyclePlatform: vi.fn(),
     isVisible: true,
     resultsVersion: 0,
   }

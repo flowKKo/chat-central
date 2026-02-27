@@ -23,6 +23,10 @@ export function SpotlightFooter() {
         <span>Dashboard</span>
       </div>
       <div className="spotlight-footer-group">
+        <kbd>Tab</kbd>
+        <span>{t('filterPlatform')}</span>
+      </div>
+      <div className="spotlight-footer-group">
         <kbd>Esc</kbd>
         <span>{t('dismiss')}</span>
       </div>

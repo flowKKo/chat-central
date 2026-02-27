@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll'
+import type { Platform } from '@/types'
+import { PLATFORM_CONFIG } from '@/types'
 import type { SpotlightResult } from '../hooks/useSpotlightSearch'
 import { SpotlightResultItem } from './SpotlightResultItem'
 
@@ -11,6 +13,7 @@ interface SpotlightResultListProps {
   onSelect: (index: number) => void
   onMouseSelect: (index: number) => void
   isDefaultView: boolean
+  activePlatform: Platform | null
   hasMore: boolean
   isLoadingMore: boolean
   onLoadMore: () => void
@@ -24,6 +27,7 @@ export function SpotlightResultList({
   onSelect,
   onMouseSelect,
   isDefaultView,
+  activePlatform,
   hasMore,
   isLoadingMore,
   onLoadMore,
@@ -65,7 +69,11 @@ export function SpotlightResultList({
   return (
     <div className="spotlight-results" ref={containerRef} role="listbox">
       {isDefaultView && results.length > 0 && (
-        <div className="spotlight-section-header">{t('recentConversations')}</div>
+        <div className="spotlight-section-header">
+          {activePlatform
+            ? t('recentPlatformConversations', { platform: PLATFORM_CONFIG[activePlatform].name })
+            : t('recentConversations')}
+        </div>
       )}
       {results.map((result, index) => {
         const isNew = newStartIndex.current >= 0 && index >= newStartIndex.current
