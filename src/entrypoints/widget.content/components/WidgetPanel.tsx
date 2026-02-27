@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { browser } from 'wxt/browser'
 import type { Platform } from '@/types'
 import type { BatchFetchProgress } from '@/entrypoints/background/services/detailFetch'
+import { isWidgetExportEnabled } from '@/utils/feature-flags'
 import { createLogger } from '@/utils/logger'
 
 const log = createLogger('WidgetPanel')
@@ -185,6 +186,7 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
   }, [])
 
   const isExpanded = exportState === 'selecting'
+  const showExport = isWidgetExportEnabled(platform)
 
   return (
     <div
@@ -194,7 +196,7 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
       }`}
       style={{ right: 0, top: '50%', transform: 'translateY(-50%)' }}
     >
-      {isExpanded ? (
+      {isExpanded && showExport ? (
         /* ── Expanded: Export Selection Panel ── */
         <>
           {/* Top row: Dashboard + Settings + Close */}
@@ -384,57 +386,61 @@ export function WidgetPanel({ platform, onClose }: WidgetPanelProps) {
             </svg>
           </button>
 
-          <div className="mx-auto h-px w-5 bg-border/60" />
+          {showExport && (
+            <>
+              <div className="mx-auto h-px w-5 bg-border/60" />
 
-          {/* Export button */}
-          {exportState === 'idle' ? (
-            <button
-              type="button"
-              onClick={handleExportClick}
-              className="widget-panel-btn flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-primary hover:shadow-sm"
-              title={t('exportAll')}
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" x2="12" y1="15" y2="3" />
-              </svg>
-            </button>
-          ) : (
-            <div className="flex flex-col items-center gap-0.5 px-0.5">
-              <span className="text-[10px] tabular-nums text-muted-foreground">
-                {progress.completed}/{progress.total}
-              </span>
-              <button
-                type="button"
-                onClick={handleCancelExport}
-                className="flex h-6 w-6 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                title={t('cancelExport')}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              {/* Export button */}
+              {exportState === 'idle' ? (
+                <button
+                  type="button"
+                  onClick={handleExportClick}
+                  className="widget-panel-btn flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-primary hover:shadow-sm"
+                  title={t('exportAll')}
                 >
-                  <line x1="18" x2="6" y1="6" y2="18" />
-                  <line x1="6" x2="18" y1="6" y2="18" />
-                </svg>
-              </button>
-            </div>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" x2="12" y1="15" y2="3" />
+                  </svg>
+                </button>
+              ) : (
+                <div className="flex flex-col items-center gap-0.5 px-0.5">
+                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                    {progress.completed}/{progress.total}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCancelExport}
+                    className="flex h-6 w-6 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    title={t('cancelExport')}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="18" x2="6" y1="6" y2="18" />
+                      <line x1="6" x2="18" y1="6" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </>
       )}
