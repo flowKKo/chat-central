@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-26
+
 ### Added
+
+- Spotlight search (Cmd/Ctrl+Shift+K) for quick conversation lookup
+- Spotlight popup window fallback for restricted pages (chrome://, extensions)
+- Auto-close spotlight popup on focus loss
 - Zod validation for message boundaries in background handlers
 - Unit tests for background modules (schemas, urlParser)
 - Unit tests for conversation components (MessageBubble, ConversationListItem)
@@ -15,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Commitlint for conventional commit messages
 
 ### Changed
+
 - Refactored `gemini.ts` into smaller focused modules (constants, types, payload, utils, list, detail)
 - Refactored `background/index.ts` into handlers and services
 - Refactored `db/index.ts` into repository modules
@@ -25,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-01-23
 
 ### Added
+
 - Initial release
 - Support for Claude, ChatGPT, and Gemini platforms
 - Automatic conversation capture via network interception
@@ -38,11 +46,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Development reload server for faster iteration
 
 ### Technical
+
 - Built with WXT (Web Extension Tools)
 - React 19 with TypeScript
 - Jotai for state management
 - TailwindCSS for styling
 - Vitest for testing
 
-[Unreleased]: https://github.com/user/chat-central/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/user/chat-central/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/user/chat-central/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/user/chat-central/releases/tag/v0.1.0
