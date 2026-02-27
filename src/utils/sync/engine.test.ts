@@ -91,6 +91,7 @@ class MockSyncProvider implements SyncProvider {
   getServerRecords(): SyncRecord[] {
     return Array.from(this.records.values())
   }
+
   getPushHistory(): SyncRecord[][] {
     return this.pushHistory
   }
