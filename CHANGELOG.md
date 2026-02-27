@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-02-27
+
+### Added
+
+- Platform filter in Spotlight search — press Tab to cycle through All / Claude / ChatGPT / Gemini
+- Colored pill badge showing active platform between search icon and input field
+- Filter auto-resets when Spotlight is closed and reopened
+
 ## [0.2.0] - 2026-02-26
 
 ### Added
@@ -53,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TailwindCSS for styling
 - Vitest for testing
 
-[Unreleased]: https://github.com/user/chat-central/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/user/chat-central/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/user/chat-central/releases/tag/v0.1.0
+[Unreleased]: https://github.com/flowKKo/chat-central/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/flowKKo/chat-central/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/flowKKo/chat-central/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/flowKKo/chat-central/releases/tag/v0.1.0
