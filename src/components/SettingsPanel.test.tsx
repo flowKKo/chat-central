@@ -10,12 +10,14 @@ vi.mock('wxt/browser', () => ({
     runtime: {
       sendMessage: vi.fn().mockResolvedValue({}),
     },
+    commands: {
+      getAll: vi.fn().mockResolvedValue([]),
+    },
   },
 }))
 
 // Mock DB functions
 vi.mock('@/utils/db', () => ({
-  clearAllData: vi.fn().mockResolvedValue(undefined),
   clearPlatformData: vi.fn().mockResolvedValue(undefined),
 }))
 
@@ -72,19 +74,18 @@ describe('settingsPanel', () => {
       expect(screen.getByText('Manage your preferences and data')).toBeInTheDocument()
     })
 
-    it('should render all sections except Cloud Sync', () => {
+    it('should render all sections', () => {
       renderWithStore(store)
       expect(screen.getByText('Appearance')).toBeInTheDocument()
+      expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument()
       expect(screen.getByText('Data Transfer')).toBeInTheDocument()
-      expect(screen.queryByText('Cloud Sync')).not.toBeInTheDocument()
       expect(screen.getByText('Platform Data')).toBeInTheDocument()
-      expect(screen.getByText('Your Data is Private')).toBeInTheDocument()
-      expect(screen.getByText('Delete All Data')).toBeInTheDocument()
+      expect(screen.queryByText('Cloud Sync')).not.toBeInTheDocument()
     })
 
     it('should render version info', () => {
       renderWithStore(store)
-      expect(screen.getByText('Chat Central v0.1.0')).toBeInTheDocument()
+      expect(screen.getByText(/Chat Central v/)).toBeInTheDocument()
     })
   })
 
@@ -136,25 +137,6 @@ describe('settingsPanel', () => {
 
       const clearButtons = screen.getAllByText('Clear')
       expect(clearButtons).toHaveLength(3)
-    })
-  })
-
-  describe('danger zone', () => {
-    it('should render delete all button', () => {
-      renderWithStore(store)
-      expect(screen.getByText('Delete All')).toBeInTheDocument()
-      expect(screen.getByText(/Permanently delete all conversations/)).toBeInTheDocument()
-    })
-
-    it('should show confirmation before deleting all data', () => {
-      confirmSpy.mockReturnValue(false)
-      renderWithStore(store)
-
-      fireEvent.click(screen.getByText('Delete All'))
-
-      expect(confirmSpy).toHaveBeenCalledWith(
-        'Are you sure you want to delete all synced conversations? This cannot be undone.'
-      )
     })
 
     it('should show confirmation before clearing platform data', () => {

@@ -171,6 +171,10 @@ async function handleMessage(message: unknown): Promise<unknown> {
     case 'GET_RECENT_CONVERSATIONS':
       return handleGetRecentConversations(message)
 
+    case 'OPEN_SHORTCUTS_PAGE':
+      await browser.tabs.create({ url: 'chrome://extensions/shortcuts' })
+      return { success: true }
+
     case 'OPEN_EXTENSION_PAGE': {
       const path = (message as unknown as { path: unknown }).path
       // Validate: must be a string, start with /manage.html, and only contain safe characters

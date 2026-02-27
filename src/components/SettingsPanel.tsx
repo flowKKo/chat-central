@@ -3,11 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { APP_VERSION } from '@/utils/constants'
 import {
   AppearanceSettings,
-  DangerZoneSettings,
   DataTransferSettings,
+  KeyboardShortcutsSettings,
   LanguageSettings,
   PlatformDataSettings,
-  PrivacyNotice,
   WidgetSettings,
 } from './settings'
 
@@ -27,10 +26,9 @@ export function SettingsPanel() {
         <AppearanceSettings />
         <LanguageSettings />
         <WidgetSettings />
+        <KeyboardShortcutsSettings />
         <DataTransferSettings />
         <PlatformDataSettings />
-        <PrivacyNotice />
-        <DangerZoneSettings />
 
         {/* Version Info */}
         <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">

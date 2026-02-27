@@ -29,11 +29,8 @@
   "platformData": "平台数据",
   "platformDataDesc": "按平台管理同步数据",
   "confirmClearPlatform": "删除所有 {{platform}} 的对话？",
-  "dangerZone": "删除所有数据",
-  "dangerZoneDesc": "永久删除所有对话。此操作不可撤销。",
-  "confirmDeleteAll": "确定要删除所有已同步的对话吗？此操作不可撤销。",
-  "deleteAll": "全部删除",
-  "deleting": "删除中...",
-  "privacy": "你的数据是私密的",
-  "privacyDesc": "所有数据存储在你的浏览器本地，不会发送到外部服务器。"
+  "shortcuts": "键盘快捷键",
+  "shortcutsDesc": "查看和自定义扩展快捷键",
+  "shortcutsChange": "在浏览器设置中更改快捷键",
+  "shortcutsNotSet": "未设置"
 }

@@ -2,15 +2,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { Provider, createStore } from 'jotai'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { ThemePreference } from '@/utils/atoms/theme'
-import { clearAllData, clearPlatformData } from '@/utils/db'
+import { clearPlatformData } from '@/utils/db'
 import { exportData } from '@/utils/sync/export'
 import { downloadBlob } from '@/utils/sync/utils'
 import { importData, importFromJson, validateImportFile } from '@/utils/sync/import'
 import { AppearanceSettings } from './AppearanceSettings'
-import { DangerZoneSettings } from './DangerZoneSettings'
 import { DataTransferSettings } from './DataTransferSettings'
 import { PlatformDataSettings } from './PlatformDataSettings'
-import { PrivacyNotice } from './PrivacyNotice'
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -27,7 +25,6 @@ vi.mock('@/utils/atoms/theme', () => ({
 }))
 
 vi.mock('@/utils/db', () => ({
-  clearAllData: vi.fn().mockResolvedValue(undefined),
   clearPlatformData: vi.fn().mockResolvedValue(undefined),
 }))
 
@@ -51,7 +48,6 @@ vi.mock('@/utils/sync/utils', () => ({
 }))
 
 // Typed mock references
-const mockClearAllData = vi.mocked(clearAllData)
 const mockClearPlatformData = vi.mocked(clearPlatformData)
 const mockExportData = vi.mocked(exportData)
 const mockDownloadBlob = vi.mocked(downloadBlob)
@@ -68,6 +64,14 @@ Object.defineProperty(window, 'location', {
   value: { ...window.location, reload: reloadSpy },
   writable: true,
 })
+
+// Suppress sendMessage calls from KeyboardShortcutsSettings
+vi.mock('wxt/browser', () => ({
+  browser: {
+    commands: { getAll: vi.fn().mockResolvedValue([]) },
+    runtime: { sendMessage: vi.fn().mockResolvedValue({}) },
+  },
+}))
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -123,61 +127,6 @@ describe('appearanceSettings', () => {
     renderWithStore(<AppearanceSettings />, store)
     const radioGroup = screen.getByRole('radiogroup', { name: /theme selection/i })
     expect(radioGroup).toBeInTheDocument()
-  })
-})
-
-describe('dangerZoneSettings', () => {
-  beforeEach(() => {
-    confirmSpy.mockReset()
-    mockClearAllData.mockReset().mockResolvedValue(undefined)
-    reloadSpy.mockReset()
-  })
-
-  it('should render the danger section heading and description', () => {
-    render(<DangerZoneSettings />)
-    expect(screen.getByText('Delete All Data')).toBeInTheDocument()
-    expect(
-      screen.getByText('Permanently delete all conversations. This cannot be undone.')
-    ).toBeInTheDocument()
-  })
-
-  it('should render the delete all button', () => {
-    render(<DangerZoneSettings />)
-    expect(screen.getByText('Delete All')).toBeInTheDocument()
-  })
-
-  it('should show confirmation dialog when clicking delete all', () => {
-    confirmSpy.mockReturnValue(false)
-    render(<DangerZoneSettings />)
-
-    fireEvent.click(screen.getByText('Delete All'))
-
-    expect(confirmSpy).toHaveBeenCalledWith(
-      'Are you sure you want to delete all synced conversations? This cannot be undone.'
-    )
-  })
-
-  it('should not call clearAllData when confirmation is cancelled', () => {
-    confirmSpy.mockReturnValue(false)
-    render(<DangerZoneSettings />)
-
-    fireEvent.click(screen.getByText('Delete All'))
-
-    expect(mockClearAllData).not.toHaveBeenCalled()
-  })
-
-  it('should call clearAllData and reload when confirmation is accepted', async () => {
-    confirmSpy.mockReturnValue(true)
-    render(<DangerZoneSettings />)
-
-    fireEvent.click(screen.getByText('Delete All'))
-
-    await waitFor(() => {
-      expect(mockClearAllData).toHaveBeenCalledOnce()
-    })
-    await waitFor(() => {
-      expect(reloadSpy).toHaveBeenCalledOnce()
-    })
   })
 })
 
@@ -297,21 +246,5 @@ describe('platformDataSettings', () => {
     await waitFor(() => {
       expect(reloadSpy).toHaveBeenCalledOnce()
     })
-  })
-})
-
-describe('privacyNotice', () => {
-  it('should render the privacy heading', () => {
-    render(<PrivacyNotice />)
-    expect(screen.getByText('Your Data is Private')).toBeInTheDocument()
-  })
-
-  it('should render the privacy description', () => {
-    render(<PrivacyNotice />)
-    expect(
-      screen.getByText(
-        'All data is stored locally in your browser. Nothing is sent to external servers.'
-      )
-    ).toBeInTheDocument()
   })
 })
