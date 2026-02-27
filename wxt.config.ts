@@ -10,7 +10,7 @@ export default defineConfig({
     name: '__MSG_appName__',
     description: '__MSG_appDescription__',
     default_locale: 'en',
-    version: '0.1.0',
+    version: '0.2.0',
 
     // Chrome/Edge fixed dev ID (development environment)
     ...(mode === 'development' &&
