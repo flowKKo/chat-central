@@ -29,8 +29,6 @@ Auto-capture, search, tag, and export your Claude, ChatGPT & Gemini conversation
 | i18n                    | ✅ Done        | English and Simplified Chinese                                  |
 | Cloud Sync              | 🚧 In Progress | Google Drive sync with auto background sync                     |
 | Batch Delete / Favorite | 📋 Planned     | Extend batch operations beyond export                           |
-| Keyboard Navigation     | 📋 Planned     | J/K navigation, F favorite, E export, ? help                    |
-| WebDAV Provider         | 📋 Planned     | Self-hosted sync for privacy-focused users                      |
 | Semantic Search         | 📋 Planned     | Search by meaning, not just keywords                            |
 | Knowledge Graph         | 📋 Planned     | Link topics and ideas across conversations                      |
 
