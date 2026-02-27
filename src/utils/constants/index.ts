@@ -35,6 +35,6 @@ export const MAX_CONVERSATIONS = 10000
 export const SEARCH_DEBOUNCE_MS = 300
 
 /**
- * App Version (synced with package.json)
+ * App Version — read from package.json at build time (single source of truth)
  */
-export const APP_VERSION = '0.1.0'
+export { version as APP_VERSION } from '../../../package.json'
