@@ -11,7 +11,7 @@
   "navigate": "导航",
   "open": "打开",
   "dismiss": "关闭",
-  "filterPlatform": "筛选",
+  "filterPlatform": "切换平台",
   "recentPlatformConversations": "最近的 {{platform}} 对话",
   "messagesCount": "{{count}} 条消息"
 }

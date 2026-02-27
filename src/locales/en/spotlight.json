@@ -11,7 +11,7 @@
   "navigate": "Navigate",
   "open": "Open",
   "dismiss": "Dismiss",
-  "filterPlatform": "Filter",
+  "filterPlatform": "Platform",
   "recentPlatformConversations": "Recent {{platform}} Conversations",
   "messagesCount": "{{count}} messages"
 }
