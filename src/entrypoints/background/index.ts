@@ -21,6 +21,9 @@ import { createLogger, getErrorMessage } from '@/utils/logger'
 
 const log = createLogger('ChatCentral')
 
+/** Tracks the spotlight popup window so we can toggle it */
+let spotlightWindowId: number | null = null
+
 export default defineBackground({
   type: 'module',
 
@@ -65,6 +68,13 @@ export default defineBackground({
     safeAddListener(browser.commands?.onCommand, (command: string) => {
       if (command === 'toggle-spotlight') {
         handleSpotlightCommand()
+      }
+    })
+
+    // Track spotlight popup window lifecycle
+    safeAddListener(browser.windows?.onRemoved, (windowId: number) => {
+      if (windowId === spotlightWindowId) {
+        spotlightWindowId = null
       }
     })
 
@@ -171,6 +181,10 @@ async function handleMessage(message: unknown): Promise<unknown> {
 
 /**
  * Handle Spotlight toggle command (Cmd/Ctrl+Shift+K)
+ *
+ * Flow: try sendMessage (existing content script) → try executeScript (inject) → open popup window fallback.
+ * The popup window fallback handles restricted pages (chrome://, chrome-extension://) where
+ * content scripts cannot be injected.
  */
 async function handleSpotlightCommand() {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true })
@@ -188,8 +202,40 @@ async function handleSpotlightCommand() {
       })
       // Script starts hidden; send toggle to open it
       await browser.tabs.sendMessage(tab.id, { action: 'TOGGLE_SPOTLIGHT' })
-    } catch (e) {
-      log.warn('Cannot inject Spotlight into this tab:', e)
+    } catch {
+      // Restricted page — fall back to popup window
+      openSpotlightPopup()
     }
+  }
+}
+
+/**
+ * Open (or toggle) a standalone Spotlight popup window.
+ * Used as a fallback when content script injection is blocked (chrome://, chrome-extension:// pages).
+ */
+async function openSpotlightPopup() {
+  // Toggle: if already open, close it
+  if (spotlightWindowId !== null) {
+    try {
+      await browser.windows.remove(spotlightWindowId)
+    } catch {
+      // Window may already be closed
+    }
+    spotlightWindowId = null
+    return
+  }
+
+  try {
+    const url = browser.runtime.getURL('/spotlight-popup.html')
+    const win = await browser.windows.create({
+      url,
+      type: 'popup',
+      width: 750,
+      height: 560,
+      focused: true,
+    })
+    spotlightWindowId = win.id ?? null
+  } catch (e) {
+    log.warn('Failed to open Spotlight popup window:', e)
   }
 }
