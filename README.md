@@ -14,22 +14,25 @@ Auto-capture, search, tag, and export your Claude, ChatGPT & Gemini conversation
 
 </div>
 
-## Features
+## Feature Roadmap
 
-- **Auto Capture** — No manual saving, it just works
-- **Instant Search** — Full-text search across every conversation
-- **Tags & Favorites** — Your system, your rules
-- **Export** — Markdown, JSON, or ZIP
-- **Dashboard** — Detail view, batch actions, Markdown rendering
-- **Private by Design** — All data stays in your browser. Zero tracking.
-
-## Coming Soon
-
-- **Cloud Sync** — Google Drive sync with automatic background sync
-- **Knowledge Graph** — Link topics and ideas across conversations
-- **AI Memory** — Resurface past insights when relevant
-- **Semantic Search** — Search by meaning, not just keywords
-- **Smart Notes** — Auto-generated summaries organized by topic
+| Feature                 | Status         | Description                                                     |
+| ----------------------- | -------------- | --------------------------------------------------------------- |
+| Auto Capture            | ✅ Done        | Intercepts Claude, ChatGPT & Gemini responses automatically     |
+| Full-text Search        | ✅ Done        | Instant search across all conversations and messages            |
+| Advanced Search         | ✅ Done        | Filter by platform, date range, `tag:`, `is:favorite`, etc.     |
+| Spotlight Search        | ✅ Done        | `Cmd/Ctrl+Shift+K` global shortcut for instant lookup           |
+| Tags & Favorites        | ✅ Done        | Custom tags, star important conversations, filter by any combo  |
+| Import / Export         | ✅ Done        | Markdown, JSON, or ZIP — with checksums and conflict resolution |
+| Dashboard               | ✅ Done        | Detail view, batch export, Markdown rendering, theme support    |
+| Floating Widget         | ✅ Done        | Quick-access bubble on AI platform pages                        |
+| i18n                    | ✅ Done        | English and Simplified Chinese                                  |
+| Cloud Sync              | 🚧 In Progress | Google Drive sync with auto background sync                     |
+| Batch Delete / Favorite | 📋 Planned     | Extend batch operations beyond export                           |
+| Keyboard Navigation     | 📋 Planned     | J/K navigation, F favorite, E export, ? help                    |
+| WebDAV Provider         | 📋 Planned     | Self-hosted sync for privacy-focused users                      |
+| Semantic Search         | 📋 Planned     | Search by meaning, not just keywords                            |
+| Knowledge Graph         | 📋 Planned     | Link topics and ideas across conversations                      |
 
 ## Installation
 
