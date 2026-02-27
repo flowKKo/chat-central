@@ -226,12 +226,25 @@ async function openSpotlightPopup() {
   }
 
   try {
+    // Center the popup on the current window
+    const currentWindow = await browser.windows.getCurrent()
+    const width = 750
+    const height = 560
+    const left = Math.round(
+      (currentWindow.left ?? 0) + ((currentWindow.width ?? width) - width) / 2
+    )
+    const top = Math.round(
+      (currentWindow.top ?? 0) + ((currentWindow.height ?? height) - height) / 2
+    )
+
     const url = browser.runtime.getURL('/spotlight-popup.html')
     const win = await browser.windows.create({
       url,
       type: 'popup',
-      width: 750,
-      height: 560,
+      width,
+      height,
+      left,
+      top,
       focused: true,
     })
     spotlightWindowId = win.id ?? null
