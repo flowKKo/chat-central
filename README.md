@@ -1,3 +1,5 @@
+
+
 <div align="center"><a name="readme-top"></a>
 
 [![Chat Central](docs/images/banner.png)](https://www.chatcentral.cc)
@@ -75,7 +77,7 @@ pnpm dev             # Dev server with HMR
 pnpm validate        # Type-check + lint + test (run before submitting)
 ```
 
-See `CLAUDE.md` for architecture details.
+See `AGENTS.md` for architecture details.
 
 ## License
 
